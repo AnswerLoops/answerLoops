@@ -52,7 +52,11 @@ const PLAN_DESCRIPTIONS: Record<string, string> = {
 }
 
 export function PricingToggle({ plans }: { plans: Plan[] }) {
-  const [annual, setAnnual] = useState(true)
+  // Defaults to monthly because monthly is what checkout charges. Annual is a
+  // real offer, but it is arranged by hand rather than sold self-serve, so
+  // anchoring the page on it would put a price in front of every visitor that
+  // the Start-trial button does not honour.
+  const [annual, setAnnual] = useState(false)
 
   return (
     <>
@@ -83,6 +87,11 @@ export function PricingToggle({ plans }: { plans: Plan[] }) {
       <div className="grid gap-4 lg:grid-cols-3">
         {plans.map((plan) => {
           const isHighlight = plan.id === 'pro'
+          const ctaClass = `relative mt-8 block w-full rounded-full py-3 text-center text-xs font-semibold transition ${
+            isHighlight
+              ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-600/20 hover:brightness-110'
+              : 'border border-slate-200 bg-slate-50 text-slate-800 hover:border-blue-200 hover:bg-blue-50'
+          }`
           const displayPrice = annual ? annualMonthlyPrice(plan) : plan.priceMonthly
           const features = PLAN_FEATURES[plan.id] ?? []
           return (
@@ -135,21 +144,33 @@ export function PricingToggle({ plans }: { plans: Plan[] }) {
                 ))}
               </ul>
 
-              {/* Carries the chosen plan through sign-in so checkout opens on
-                  the plan that was actually clicked. /start-trial reads it
-                  after OAuth and redirects straight to Stripe. */}
-              <Link
-                href={`/login?plan=${plan.id}`}
-                className={`relative mt-8 w-full rounded-full py-3 text-center text-xs font-semibold transition ${
-                  isHighlight
-                    ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-600/20 hover:brightness-110'
-                    : 'border border-slate-200 bg-slate-50 text-slate-800 hover:border-blue-200 hover:bg-blue-50'
-                }`}
-              >
-                Start {TRIAL_DAYS}-day free trial
-              </Link>
+              {/* Monthly carries the chosen plan through sign-in so checkout opens
+                  on the plan that was actually clicked; /start-trial reads it
+                  after OAuth and redirects straight to Stripe.
+
+                  Annual deliberately does not. Stripe holds one price per plan
+                  and it is the monthly one, so a Start-trial button under the
+                  annual figures would charge the monthly rate — a different
+                  number from either the per-month or the yearly total shown
+                  directly above it. Until annual prices exist in Stripe, the
+                  honest control is one that starts a conversation rather than a
+                  subscription. */}
+              {annual ? (
+                <a
+                  href={`mailto:hello@answerloops.com?subject=${encodeURIComponent(`Annual billing — ${plan.name}`)}`}
+                  className={ctaClass}
+                >
+                  Talk to us about annual billing
+                </a>
+              ) : (
+                <Link href={`/login?plan=${plan.id}`} className={ctaClass}>
+                  Start {TRIAL_DAYS}-day free trial
+                </Link>
+              )}
               <p className={`mt-2 text-center text-[0.625rem] ${isHighlight ? 'text-slate-300/60' : 'text-slate-500'}`}>
-                Card required. Not charged for {TRIAL_DAYS} days.
+                {annual
+                  ? 'Annual plans are invoiced directly — we set them up with you.'
+                  : `Card required. Not charged for ${TRIAL_DAYS} days.`}
               </p>
             </div>
           )
