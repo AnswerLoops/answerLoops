@@ -74,6 +74,21 @@ const STRONG = [
   /\bkept (full )?(read|write|access)/i,
   /\bcould be shown\b/i,
   /\banonymous (widget )?(visitor|user|caller)\b/i,
+  // Advisory identifiers name the weakness for the reader without any prose at
+  // all — the whole description is one lookup away. Added after a dependency
+  // bump reached a public message carrying a CVE id.
+  /\bCVE-\d{4}-\d{4,}\b/i,
+  /\bGHSA(-[0-9a-z]{4}){3}\b/i,
+  // Statements that something is still open. The disclosure rule treats these
+  // as the most damaging category, and none of the earlier patterns matched them.
+  /\bunfixable\b/i,
+  /\bunpatched\b/i,
+  /\bno patched version\b/i,
+  /\bno fix (is )?available\b/i,
+  /\bremains? (open|unfixed|vulnerable)\b/i,
+  /\bstill (open|unfixed|vulnerable|exploitable)\b/i,
+  /\bdenial of service\b/i,
+  /\bprompt injection\b/i,
 ]
 
 const NARRATIVE = [
@@ -86,6 +101,10 @@ const NARRATIVE = [
   // Past incorrect ordering, which is how several real cases were phrased —
   // "X ran before Y" describing a sequence that has since been changed.
   /\b(ran|happened|occurred|was checked) before\b/i,
+  // Bare "could" is far too common to flag alone, but paired with an impact
+  // word it is the plainest way to narrate what a weakness allowed.
+  /\bcould\b/i,
+  /\bwas able to\b/i,
 ]
 
 const IMPACT = [
@@ -103,6 +122,11 @@ const IMPACT = [
   /\bcharged\b/i,
   /\bquota\b/i,
   /\breject(ed|ing)? the request\b/i,
+  /\bmalicious\b/i,
+  /\bspoof(ed|able|ing)?\b/i,
+  /\bforge(d|ry)?\b/i,
+  /\bunbounded\b/i,
+  /\bdenial of service\b/i,
 ]
 
 function isExempt(file) {
@@ -198,14 +222,20 @@ function stagedAdditions() {
 function main() {
   const findings = []
 
-  for (const { file, line, text } of stagedAdditions()) {
-    if (text.includes(ALLOW_MARKER)) continue
-    const hit = match(text)
-    if (hit) findings.push({ where: `${file}:${line}`, text: text.trim(), hit })
+  // git hands the message path to commit-msg and nothing to pre-commit, so the
+  // argument tells us which stage we are in. Scanning both in both stages would
+  // double-report every finding, and a message-stage failure listing unrelated
+  // file findings buries the line the author actually has to fix.
+  const msgPath = process.argv[2]
+
+  if (!msgPath) {
+    for (const { file, line, text } of stagedAdditions()) {
+      if (text.includes(ALLOW_MARKER)) continue
+      const hit = match(text)
+      if (hit) findings.push({ where: `${file}:${line}`, text: text.trim(), hit })
+    }
   }
 
-  // The commit message is a public surface too, and was the worst offender.
-  const msgPath = process.argv[2]
   if (msgPath && fs.existsSync(msgPath)) {
     const msg = fs.readFileSync(msgPath, 'utf-8')
     if (!msg.includes(ALLOW_MARKER)) {

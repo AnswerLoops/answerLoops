@@ -49,6 +49,16 @@ const FLAGGED = [
   'the reservation ran before validation, so a rejected request consumed quota', // disclosure-ok: fixture
   'a session cookie alone was enough to reach the admin area', // disclosure-ok: fixture
   'the previous escaper made this exploitable in any spreadsheet', // disclosure-ok: fixture
+  // Advisory identifiers: the entire description is one lookup away, so the
+  // wording around them does not matter.
+  'fix: bump the parser to patch CVE-2026-41305', // disclosure-ok: fixture
+  'advisory GHSA-1a2b-3c4d-5e6f affects the pinned range', // disclosure-ok: fixture
+  // Advisory-status phrasing, which the original pattern set did not cover.
+  'no patched version exists for the legacy line', // disclosure-ok: fixture
+  'this one is unfixable in place and remains open', // disclosure-ok: fixture
+  // Bare "could" carrying an impact word.
+  'a malicious client could omit the length header', // disclosure-ok: fixture
+  'the forwarding header could be spoofed by the caller', // disclosure-ok: fixture
 ]
 
 // Invariant-style phrasings of the same subject matter. These must not fire.
@@ -72,6 +82,12 @@ const INNOCENT = [
   'Anyone on the team can regenerate the fixtures with pnpm seed.',
   'refactor: extract the checkout session builder so the signup path can reuse it',
   'The webhook keeps the subscriptions table current.',
+  // "could" is ordinary engineering vocabulary far more often than it is
+  // narration, so these guard the precision of the bare-could pattern.
+  'This could be simplified once the adapter lands.',
+  'Could not reproduce the flake locally, so the retry stays.',
+  'The importer could take the joined query instead of each part.',
+  'bumps the framework to 16.2.11',
 ]
 
 describe('the disclosure check catches weakness narration', () => {

@@ -1,0 +1,49 @@
+name: Disclosure Check
+
+# The local pre-commit hook and the gh PreToolUse hook both run on the machine
+# writing the change, so both can be skipped there. This one cannot. It is the
+# backstop for commits pushed with --no-verify or from a machine without hooks
+# installed, and the only check at all for a PR title or body written or edited
+# in the web UI.
+#
+# `edited` is in the trigger list on purpose: a PR body is frequently rewritten
+# after the PR is opened, and that edit never touches a commit.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: [main]
+
+concurrency:
+  group: disclosure-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  disclosure:
+    name: No weakness narration
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          # Both sides of the comparison must be present for the diff below.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      # No dependency install: the checker is plain Node with no imports beyond
+      # node: builtins, which keeps this job fast enough to stay unnoticed and
+      # removes the lockfile from its trust surface.
+      - name: Check PR title, body and added lines
+        env:
+          # Passed as environment values rather than interpolated into the run
+          # script. A PR title or body is caller-supplied text on a public repo;
+          # interpolating it would let it alter the command being run.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/ci-disclosure-check.mjs
