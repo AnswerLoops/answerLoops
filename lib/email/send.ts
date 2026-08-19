@@ -19,6 +19,8 @@ async function getAdminEmails(orgId: number): Promise<string[]> {
     .map((m) => m.email as string)
 }
 
+export const SUPPORT_EMAIL = 'support@answerloops.com'
+
 const BASE_STYLE = `font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px`
 const MUTED = `color:#6b7280;font-size:14px`
 const BADGE: Record<string, string> = {
@@ -144,6 +146,70 @@ export async function sendWaitlistConfirmation(email: string): Promise<void> {
       </div>
     `,
   })
+}
+
+/**
+ * Sent once, when a workspace is first created.
+ *
+ * Deliberately not sent on every sign-in: provisionUser only reaches this after
+ * creating the org, so a returning user who already has a membership never gets
+ * it again.
+ *
+ * Never throws. The caller is the sign-in path, and a transactional email
+ * failing is not a reason to fail somebody's signup — they would be left with
+ * an account they cannot get into because a mail provider had a bad minute.
+ */
+export async function sendWelcomeEmail(email: string, name: string | null): Promise<void> {
+  if (MOCK_EXTERNALS || !process.env.RESEND_API_KEY) return
+
+  const fromAddress = process.env.RESEND_FROM ?? 'hello@answerloops.com'
+  const greeting = name?.trim() ? `Welcome, ${name.trim().split(/\s+/)[0]}.` : 'Welcome.'
+  const dashboard = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? 'https://app.answerloops.com'
+
+  try {
+    await client().emails.send({
+      from: fromAddress,
+      to: [email],
+      replyTo: SUPPORT_EMAIL,
+      subject: 'Welcome to AnswerLoops',
+      html: `
+        <div style="${BASE_STYLE}">
+          <img src="https://answerloops.com/logo.png" alt="AnswerLoops" style="height:48px;margin-bottom:24px" />
+          <h2 style="font-size:20px;font-weight:700;color:#111827;margin-bottom:8px">
+            ${greeting}
+          </h2>
+          <p style="${MUTED};margin-bottom:16px">
+            Thanks for signing up. AnswerLoops answers the repeat questions your
+            community keeps asking, so your team can spend its time on the ones
+            that actually need a person.
+          </p>
+          <p style="${MUTED};margin-bottom:24px">
+            The quickest start is to connect one channel and point us at your
+            docs — the knowledge base builds itself from there.
+          </p>
+          <a href="${dashboard}/dashboard"
+             style="display:inline-block;background:#111827;color:#fff;font-size:14px;font-weight:500;padding:10px 20px;border-radius:8px;text-decoration:none">
+            Open your dashboard
+          </a>
+          <p style="${MUTED};margin-top:24px">
+            Questions, or something not working the way you expected? Reply to
+            this email or write to
+            <a href="mailto:${SUPPORT_EMAIL}" style="color:#2563eb">${SUPPORT_EMAIL}</a>
+            — a person reads it.
+          </p>
+          <p style="color:#9ca3af;font-size:12px;margin-top:32px">
+            You're receiving this because you created an AnswerLoops workspace.
+          </p>
+        </div>
+      `,
+    })
+  } catch (err) {
+    // Swallowed on purpose — see the note above. Logged so a provider outage is
+    // visible rather than silent.
+    console.error('[email] welcome email failed', {
+      error: err instanceof Error ? err.message : String(err),
+    })
+  }
 }
 
 export async function sendSlaBreachEmails(
