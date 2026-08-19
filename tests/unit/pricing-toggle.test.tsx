@@ -6,9 +6,14 @@ import { PricingToggle } from '@/components/marketing/pricing-toggle'
 import { ORDERED_PLANS, ANNUAL_DISCOUNT_PCT, annualMonthlyPrice } from '@/lib/billing/plans'
 
 // New standalone /pricing page (Roadmap "Pricing page — Managed SaaS" item).
-// The toggle is display-only: there is no separate Stripe annual price yet,
-// and every CTA links to the waitlist since the product is pre-launch — the
-// toggle only changes the price shown, never triggers a real purchase.
+//
+// There is still no separate Stripe annual price: the plan carries one price id
+// and it is the monthly one. That was harmless while every CTA pointed at a
+// waitlist, and stopped being harmless when the CTAs became a real checkout —
+// the annual figures stayed on screen above a button that charges the monthly
+// rate. These tests pin the two halves that keep the page honest: monthly is
+// the default because monthly is what can be bought, and the annual CTA opens a
+// conversation rather than a subscription.
 
 describe('lib/billing/plans.ts — annualMonthlyPrice', () => {
   it('discounts by ANNUAL_DISCOUNT_PCT off the monthly price', () => {
@@ -24,29 +29,51 @@ describe('lib/billing/plans.ts — annualMonthlyPrice', () => {
 })
 
 describe('PricingToggle', () => {
-  it('defaults to annual billing (anchors on the lower price)', () => {
+  it('defaults to monthly, the period checkout can actually charge', () => {
     render(<PricingToggle plans={ORDERED_PLANS} />)
-    const toggle = screen.getByRole('switch')
-    expect(toggle).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false')
+    const standard = ORDERED_PLANS.find((p) => p.id === 'standard')!
+    expect(screen.getAllByText(`$${(standard.priceMonthly / 100).toFixed(0)}`).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/billed annually/)).not.toBeInTheDocument()
   })
 
-  it('shows the annual (discounted) price by default for every plan', () => {
+  it('shows the discounted annual price for every plan once toggled on', async () => {
+    const user = userEvent.setup()
     render(<PricingToggle plans={ORDERED_PLANS} />)
+    await user.click(screen.getByRole('switch'))
+    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
     for (const plan of ORDERED_PLANS) {
       const expected = `$${(annualMonthlyPrice(plan) / 100).toFixed(0)}`
       expect(screen.getAllByText(expected).length).toBeGreaterThan(0)
     }
   })
 
-  it('switches to full monthly pricing when toggled off', async () => {
+  it('offers no trial-start link while annual is selected', async () => {
+    // The regression this guards: annual figures on screen above a button that
+    // charges the monthly rate.
     const user = userEvent.setup()
     render(<PricingToggle plans={ORDERED_PLANS} />)
     await user.click(screen.getByRole('switch'))
-    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false')
-    const standard = ORDERED_PLANS.find((p) => p.id === 'standard')!
-    expect(screen.getAllByText(`$${(standard.priceMonthly / 100).toFixed(0)}`).length).toBeGreaterThan(0)
-    // Annual-only "billed annually" note disappears once monthly is selected
-    expect(screen.queryByText(/billed annually/)).not.toBeInTheDocument()
+    expect(screen.queryAllByRole('link', { name: /start .* free trial/i })).toHaveLength(0)
+    for (const link of screen.getAllByRole('link')) {
+      expect(link.getAttribute('href') ?? '').not.toMatch(/^\/login\?plan=/)
+    }
+  })
+
+  it('routes annual to a conversation, one per plan', async () => {
+    const user = userEvent.setup()
+    render(<PricingToggle plans={ORDERED_PLANS} />)
+    await user.click(screen.getByRole('switch'))
+    const ctas = screen.getAllByRole('link', { name: /annual billing/i })
+    expect(ctas).toHaveLength(ORDERED_PLANS.length)
+    for (const plan of ORDERED_PLANS) {
+      expect(
+        ctas.some((c) => {
+          const href = c.getAttribute('href') ?? ''
+          return href.startsWith('mailto:') && decodeURIComponent(href).includes(plan.name)
+        }),
+      ).toBe(true)
+    }
   })
 
   // This previously asserted every CTA pointed at the waitlist, on the grounds
