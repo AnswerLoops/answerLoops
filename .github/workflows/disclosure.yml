@@ -29,6 +29,9 @@ jobs:
         with:
           # Both sides of the comparison must be present for the diff below.
           fetch-depth: 0
+          # This job only reads. Leaving the token in .git/config would expose it
+          # to anything else running in the job for no benefit.
+          persist-credentials: false
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
