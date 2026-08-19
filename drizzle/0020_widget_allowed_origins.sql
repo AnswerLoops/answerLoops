@@ -1,0 +1,11 @@
+-- Hostnames the chat widget may be embedded on, newline-separated.
+--
+-- The widget token is necessarily public: it ships in the HTML of every page
+-- the widget renders on. Without an origin check, anyone can lift it and query
+-- that org's knowledge base from their own site. Rate limits bound the cost of
+-- that, but not the access.
+--
+-- Nullable, and NULL/empty means unrestricted. That is the behaviour every
+-- existing embed already relies on, so adding this column changes nothing until
+-- an org opts in by listing its domains.
+ALTER TABLE orgs ADD COLUMN IF NOT EXISTS widget_allowed_origins text;

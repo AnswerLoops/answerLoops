@@ -1,0 +1,116 @@
+---
+title: MCP Server
+description: Give any AI agent (Claude, Cursor, your own bot) direct access to your knowledge base, FAQ, and tickets via the Model Context Protocol.
+---
+
+AnswerLoops ships an [MCP](https://modelcontextprotocol.io) server so any MCP-compatible agent can search your knowledge base, read the latest FAQ, list/create tickets, and generate grounded answers — the same pipeline that powers Discord, Slack, and email.
+
+<Tip>
+  This is what makes AnswerLoops agent-first: the tools below aren't a separate integration bolted on top, they call the exact same triage/answer pipeline every other channel uses, including deflection-limit metering and org-scoped data isolation.
+</Tip>
+
+Not using an MCP-native client? The [Agent API](/docs/integrations/agent-api) exposes the same operations as plain REST + OpenAPI, for frameworks like LangChain or AutoGen that don't speak MCP's JSON-RPC transport. Same API key works for both.
+
+## Setup
+
+1. Go to **Settings → API Keys** (workspace owners and admins only — a key grants read access to the whole org's tickets and knowledge base plus metered AI spend, so minting and revoking them is an admin action)
+2. Click **Create key**, give it a name (e.g. "Cursor" or "Support bot") and optionally pick an expiry (30/90/365 days, or never)
+3. Copy the plaintext key shown — it's only displayed once and cannot be recovered later
+4. Paste the generated config into your MCP client's config file
+
+```json
+{
+  "mcpServers": {
+    "answerloops": {
+      "url": "https://your-instance.example.com/api/mcp",
+      "headers": {
+        "Authorization": "Bearer al_live_..."
+      }
+    }
+  }
+}
+```
+
+Revoke a key any time from the same page. It is rejected immediately and removed from the active-key list. AnswerLoops retains the revoked database record for audit history without presenting it as a usable workspace credential.
+
+## Transport
+
+Streamable HTTP, JSON-RPC 2.0, single endpoint: `POST /api/mcp`.
+
+- `initialize` and `notifications/initialized` don't require auth (standard MCP handshake)
+- Every other method requires `Authorization: Bearer <key>` — the key resolves to an organization, and every tool call is scoped to that org's data only
+- Rate limited per organization (shared across all of that org's keys), enforced globally across every running instance so the limit holds regardless of how many instances are deployed behind it: 60 requests/minute, plus a generous per-IP limit (300/minute) that applies before a key is even resolved. The same counters back the [Agent API](/docs/integrations/agent-api), so a key can't get a second allowance by switching surfaces
+- Throttled requests return `429` with a `Retry-After` header (seconds) and JSON-RPC error code `-32002`, which is distinct from the generic internal-error code so your client can back off instead of alerting
+- If you send an `MCP-Protocol-Version` header, it must be a revision this server implements (`2024-11-05`) — anything else is rejected up front rather than silently ignored
+- Request bodies are capped at 64KB — larger requests get a 413 before the body is read
+
+## Tools
+
+| Tool | Purpose |
+|---|---|
+| `search_kb` | Semantic search over published KB articles (promoted from resolved tickets) |
+| `get_faq` | Fetch the most recently generated FAQ digest |
+| `get_tickets` | List tickets, optionally filtered by `status`, `priority`, or `category` |
+| `create_ticket` | Open a new ticket — runs through the same AI triage pipeline as every other channel |
+| `generate_answer` | Generate a KB-grounded answer with a confidence score, without opening a ticket |
+
+### search_kb
+
+```json
+{ "name": "search_kb", "arguments": { "query": "how do I reset my API key", "limit": 5 } }
+```
+
+`query` is capped at 2000 characters. Returns up to `limit` (max 20) matches: `{ question, answer, score }[]`.
+
+### get_faq
+
+No arguments. Returns the latest weekly FAQ digest, or a message if none has been generated yet.
+
+### get_tickets
+
+```json
+{ "name": "get_tickets", "arguments": { "status": "open", "priority": "high", "limit": 10 } }
+```
+
+All filters are optional. Returns up to `limit` (max 20) tickets, most recent first.
+
+### create_ticket
+
+```json
+{ "name": "create_ticket", "arguments": { "content": "Users report webhook retries are duplicated", "authorName": "Slack bot", "idempotencyKey": "a1b2c3d4" } }
+```
+
+`content` is required (max 4000 characters). The ticket is tagged `source_platform: "mcp"` and runs through the same category/priority classification and auto-draft pipeline as a Discord or Slack message — it may get auto-answered if confidence is high, otherwise it queues for human review in the dashboard. There's no chat channel to post a reply back into, so replies are saved on the ticket for the calling agent to read back via `get_tickets`.
+
+`idempotencyKey` is optional — pass a stable identifier (a UUID, a hash of the content) if your client retries on timeout or network error. Retrying with the same key returns the original ticket (`duplicate: true`) instead of opening a second one and re-running AI triage a second time.
+
+### generate_answer
+
+```json
+{ "name": "generate_answer", "arguments": { "question": "What's the rate limit on the widget API?" } }
+```
+
+`question` is capped at 2000 characters. Returns `{ answer, confidence, answered_fully, high_confidence }`.
+
+Two limits apply before anything is generated:
+
+| Limit | Counts | Ceiling |
+|---|---|---|
+| Monthly deflections | High-confidence generations only, pooled with auto-deflected tickets | Your plan's deflection allowance |
+| Monthly `generate_answer` calls | Every call, high-confidence or not | 5× your plan's deflection allowance |
+
+The second exists because only high-confidence answers are billed as deflections — the same standard a ticket has to clear to auto-deflect on any other channel. Without a separate ceiling, a caller whose questions consistently score low confidence would never move the deflection counter while still paying for an embedding and two model round trips per call. Both limits are unlimited on plans with unlimited deflections. Hitting either returns an error naming which one.
+
+## Security notes
+
+- Keys are shown once at creation; only a SHA-256 hash is stored server-side
+- Creating and revoking keys requires the owner or admin role — members can see which keys exist but not change them
+- Every tool call is scoped by the org resolved from the API key — there is no way for one org's key to read or write another org's data
+- Revoked and expired keys are rejected before any tool runs
+- Usage is recorded against the specific key that made the call, so a suspected leak can be traced to one credential instead of forcing a blanket rotation
+
+### Treat tool output as data, not instructions
+
+`get_tickets` and `search_kb` return text that community members wrote — support tickets and the KB articles promoted from them. Anyone who can file a ticket through any channel can put arbitrary text in there, and that text lands in your agent's context when it calls these tools.
+
+Prompt your agent to treat tool results as untrusted content to reason about, never as instructions to follow. AnswerLoops keeps the blast radius small by design: `create_ticket` is the only tool that writes anything, and no tool can modify the knowledge base, change settings, or touch billing.

@@ -1,0 +1,44 @@
+---
+title: OAuth Setup
+description: Configure GitHub and Google login for your self-hosted instance.
+---
+
+AnswerLoops uses OAuth for authentication. You need at least one provider.
+
+## GitHub OAuth
+
+1. Go to [github.com/settings/developers](https://github.com/settings/developers) → **OAuth Apps** → **New OAuth App**
+2. Fill in:
+   - **Application name**: AnswerLoops (or anything)
+   - **Homepage URL**: `http://localhost:3000` (or your production URL)
+   - **Authorization callback URL**: `http://localhost:3000/api/auth/callback/github`
+3. Click **Register application**
+4. Copy the **Client ID** and generate a **Client Secret**
+
+Add to `.env`:
+```dotenv
+AUTH_GITHUB_ID=your_client_id
+AUTH_GITHUB_SECRET=your_client_secret
+```
+
+## Google OAuth
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com) → **APIs & Services** → **Credentials**
+2. Click **Create Credentials** → **OAuth client ID**
+3. Application type: **Web application**
+4. Add authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
+5. Copy the **Client ID** and **Client Secret**
+
+Add to `.env`:
+```dotenv
+AUTH_GOOGLE_ID=your_client_id
+AUTH_GOOGLE_SECRET=your_client_secret
+```
+
+## Production callback URLs
+
+Replace `http://localhost:3000` with your production domain in all callback URLs.
+
+<Warning>
+  OAuth callback URLs must match exactly — trailing slashes, http vs https, and port numbers all matter.
+</Warning>

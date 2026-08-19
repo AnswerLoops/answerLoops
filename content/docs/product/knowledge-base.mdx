@@ -1,0 +1,101 @@
+---
+title: Knowledge Base
+description: Import, manage, and search your knowledge base so the AI can deflect questions accurately.
+---
+
+The knowledge base is the source of truth for AI deflection. When a question comes in, AnswerLoops searches the KB semantically to find the closest matching content, then uses that content to draft a reply. The better your KB, the more accurate and confident your AI answers.
+
+## Import methods
+
+There are three ways to add content to the knowledge base.
+
+### 1. URL crawl (Firecrawl)
+
+Import a web page or an entire documentation site.
+
+1. Go to **Knowledge Base → Import**
+2. Paste a URL into the import field
+3. Choose **Single page** or **Entire site**
+   - Single page imports only that URL
+   - Entire site crawls linked pages up to a maximum of **25 pages**
+4. Click **Import** — a progress spinner shows while Firecrawl runs (typically 15–60 seconds)
+5. Imported pages appear in the Sources list when complete
+
+Each page becomes a separate source entry. The crawler fetches the rendered content, splits it into chunks, embeds each chunk as a vector, and writes everything to the database.
+
+**Re-import deduplication:** if you import the same URL a second time, pages that were already ingested are skipped automatically. Only new pages are processed. This means you can safely re-run a site import after adding new docs without creating duplicates.
+
+<Note>
+  URL crawling requires a valid `FIRECRAWL_API_KEY`. Without it, the import button is disabled and an inline warning is shown.
+</Note>
+
+### 2. File upload
+
+Drag and drop files directly into the KB.
+
+**Supported formats:** PDF, DOCX, MD, TXT, CSV
+
+**Maximum file size:** 50 MB per file
+
+1. Go to **Knowledge Base → Import**
+2. Drag files onto the upload area, or click to open the file picker
+3. Files are processed immediately — each becomes one or more source entries depending on size
+
+Large files are split into chunks automatically. Each chunk is embedded and indexed for semantic search.
+
+### 3. GitHub repo sync
+
+Connect a GitHub repository and sync its markdown files into the KB.
+
+1. Go to **Knowledge Base → GitHub Sync**
+2. Select the repository from the picker (requires GitHub App installed on your org)
+3. Click **Sync now** to run an immediate import of all `.md` and `.mdx` files
+4. Optionally enable **Auto-sync on push** — AnswerLoops receives a webhook from GitHub on every push to the default branch and re-syncs changed files automatically
+
+The sync respects the repo's file tree. Each markdown file becomes its own source entry.
+
+<Note>
+  GitHub repo sync requires the GitHub App to be installed and `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, and `GITHUB_WEBHOOK_SECRET` to be configured. See [GitHub App setup](/docs/self-hosting/environment-variables#github) for details.
+</Note>
+
+## Sources list
+
+The **Sources** tab on the Knowledge Base page lists every imported source. Each row shows:
+
+| Column | Description |
+|---|---|
+| **Name** | File name or page URL |
+| **Type** | `url`, `file`, or `github` |
+| **Chunks** | Number of vector chunks indexed from this source |
+| **Size** | Approximate content size |
+| **Last synced** | When the source was last imported or re-synced |
+
+To remove a source, click the **Delete** icon on its row. Deleting a source removes all its chunks from the vector index — any articles derived from it will no longer surface in search results.
+
+## Promoting tickets to the KB
+
+When a ticket is resolved with a good answer, you can turn it into a KB article so the AI can reuse that answer for similar future questions.
+
+1. Open a ticket with status `resolved`
+2. Click **Promote to KB** in the ticket actions panel
+3. The Q&A pair is saved as a new KB article
+
+Promoted articles appear in the Sources list with type `ticket`.
+
+## Search
+
+Use the search bar at the top of the Knowledge Base page to find articles.
+
+**Semantic search** (default when an AI provider is configured): searches by meaning rather than exact words. Asking "how do I reset my password" will surface an article titled "Account recovery steps" even though the words don't match exactly.
+
+**Keyword fallback** (when no AI key is configured): falls back to exact text matching. An amber warning banner appears at the top of the KB page to indicate that semantic search is unavailable.
+
+To clear a search and return to the full article list, click the **×** inside the search field or the **Clear** button.
+
+## Data persistence
+
+KB articles and source chunks are stored in the `kb_articles` and `kb_sources` tables in PostgreSQL. They persist across Docker restarts as long as you retain the `postgres-data` volume.
+
+<Warning>
+  Never run `docker compose down -v`. The `-v` flag deletes all Docker volumes, which permanently removes your KB articles, tickets, and all other data. Use `docker compose down` (without `-v`) to stop the stack safely.
+</Warning>

@@ -1,0 +1,64 @@
+---
+title: "What is AnswerLoops?"
+description: "AI-powered community support that automatically deflects repetitive questions across Discord, Slack, GitHub, Telegram, Email, and your website."
+---
+
+Every growing community hits the same wall: the same ten questions, asked by different people, forever. AnswerLoops watches the channels where your users actually ask — Discord, Slack, GitHub, Telegram, email, your website — and answers the ones it can from your knowledge base, so your team spends time on the questions that actually need a human.
+
+It's not a chatbot bolted onto your support inbox. The confidence-gated pipeline below is the whole product: every answer gets graded before it goes out, so it either posts with real confidence or it doesn't post at all.
+
+## How it works
+
+1. **Ingest** — a question lands in Discord, Slack, a GitHub Issue or Discussion, Telegram, email, or your website widget
+2. **Search** — AnswerLoops runs a semantic search for the closest match. On your connected channels that covers your knowledge base and past resolved tickets; the website widget searches published knowledge-base articles only, since its visitors are anonymous and resolved tickets can contain details specific to whoever raised them
+3. **Deflect** — if the AI's confidence clears your threshold (0.8 by default), it posts the answer directly, no human involved
+4. **Escalate** — if confidence is too low, it pings your support role with a drafted answer attached, so staff aren't starting from a blank page
+5. **Learn** — resolved tickets can be promoted into the knowledge base, so the same question is easier to answer next time
+
+## What's actually in the box
+
+| Feature | What it does |
+| --- | --- |
+| AI deflection | Answers questions from your docs automatically, gated by a configurable confidence threshold |
+| Multi-channel ingest | Discord (text + forum channels), Slack, GitHub Issues & Discussions, Telegram, Email, website widget |
+| Knowledge base | Build it from a docs-site crawl, file upload (PDF/DOCX/MD/TXT/CSV), a GitHub repo sync, or resolved tickets |
+| Knowledge gaps | Surfaces the questions the AI couldn't answer, so you know exactly what content to add next |
+| Human escalation | Pings a support role when confidence is too low — never a silent failure |
+| CSAT scoring | A quick rating prompt after every auto-deflected answer, sent through the same channel |
+| Simulation mode | Replay past tickets through the pipeline with zero writes, before you trust it with live traffic |
+| Ticket list | One inbox for every channel, with a source badge so you know where each question came from |
+| Multi-provider AI | OpenAI, Anthropic, Google Gemini, Groq, Mistral, or any OpenAI-compatible endpoint — bring your own key |
+| Website widget | An embeddable script tag with lead capture, for support outside your community platform |
+| Billing | Deflection-based hosted plans, or self-host for free — see [Billing Plans](/docs/reference/billing-plans) |
+
+## Ingest channels
+
+| Channel | How it connects | What it ingests |
+| --- | --- | --- |
+| Discord | 1-click OAuth (cloud) or bot token (self-host) | Text channel messages, forum thread posts, and replies |
+| Slack | 1-click OAuth or polling mode | Channel messages |
+| Google Chat | Connect-code space pairing | Messages in the paired space |
+| GitHub | GitHub App webhook | Issues, issue comments, Discussions, discussion comments |
+| Telegram | Webhook via bot token | Messages in configured chats |
+| Email | Provider-agnostic inbound webhook | Any inbound email forwarded to the webhook URL |
+| Website widget | Embeddable `<script>` tag | Widget chat sessions |
+
+## Two ways to run it
+
+**Cloud** — sign up, connect a channel, and AnswerLoops starts ingesting immediately. No servers, no bot hosting, no Developer Portal fumbling for Discord.
+
+**Self-host** — clone the repo, set your environment variables, and run it on your own infrastructure with Docker Compose. Full data ownership, your own AI provider keys, every feature included — it just takes a few more setup steps than the cloud path, since you're the one standing up the servers.
+
+<CardGroup>
+  <Card title="Cloud Quickstart" icon="rocket" href="/docs/quickstart-cloud">
+    Sign up and connect your first channel in a few minutes
+  </Card>
+
+  <Card title="Self-Host Quickstart" icon="server" href="/docs/quickstart-self-host">
+    Docker Compose setup, full data ownership, ~15-20 minutes end to end
+  </Card>
+</CardGroup>
+
+<Note>
+  A machine-readable summary of AnswerLoops for AI agents and LLM crawlers is published at [`/llms.txt`](/llms.txt), following the [llms.txt convention](https://llmstxt.org/) — separate from `robots.txt`, which controls crawler *access*, not content summarization.
+</Note>

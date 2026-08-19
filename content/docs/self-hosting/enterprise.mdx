@@ -1,0 +1,90 @@
+---
+title: Enterprise Deployment
+description: How AnswerLoops works in environments with strict security policies — no inbound webhooks, no admin approvals, outbound-only.
+---
+
+AnswerLoops is designed to work inside enterprise security perimeters without requiring firewall exceptions or admin approval from your IT team.
+
+## The two concerns that usually block a rollout
+
+### 1. "We can't expose an inbound webhook endpoint"
+
+Standard SaaS integrations require you to open an inbound HTTPS endpoint so the third-party service (Slack, Discord, etc.) can push events to you. Many enterprise environments block this outright.
+
+**AnswerLoops polling mode** inverts the connection: your bot container calls out to the platform API on a schedule. No inbound connections. No firewall rule changes.
+
+| | Webhook mode | Polling mode |
+|---|---|---|
+| Connection direction | Inbound (Slack → your server) | Outbound (your server → Slack) |
+| Public URL required | Yes | No |
+| Firewall rule change | Yes | No |
+| Message latency | Instant | Configurable (default 60s) |
+| Admin approval needed | Varies | No |
+
+### 2. "We can't grant admin/workspace-level permissions"
+
+Some platforms require elevated OAuth scopes for webhook installation. AnswerLoops doesn't.
+
+**Minimum required scopes for polling mode:**
+```
+channels:history   — read message history
+channels:read      — list channels
+channels:join      — auto-join a public channel once it's selected in the picker
+chat:write         — post AI answers
+reactions:write    — post CSAT prompts
+```
+
+No `admin.*` scopes. No workspace-level access. A standard user with "install apps" permission can set this up without IT involvement.
+
+## Supported polling platforms
+
+| Platform | Webhook path | Polling path |
+|---|---|---|
+| Slack | ✅ Events API | ✅ `conversations.history` |
+| Discord | ✅ Gateway (WebSocket) | N/A — gateway requires no admin |
+| Telegram | N/A | ✅ `getUpdates` (polling by design) |
+| Email | ✅ Inbound webhook | Planned — IMAP |
+
+Discord's bot gateway is a persistent outbound WebSocket — it's already outbound-only and requires no admin approval or inbound ports.
+
+## Self-hosting for full data control
+
+AnswerLoops is fully self-hostable via Docker. Community messages, tickets, and your knowledge base never leave your infrastructure.
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+See [Docker Setup](/docs/self-hosting/docker) and [Production Checklist](/docs/self-hosting/production).
+
+**What stays on your servers:**
+- All community messages ingested as tickets
+- Knowledge base articles and embeddings
+- AI API calls go to your own API key (not routed through AnswerLoops)
+- No telemetry or message content sent to AnswerLoops
+
+## Network requirements (polling mode)
+
+Outbound HTTPS only:
+
+| Destination | Port | Purpose |
+|---|---|---|
+| `slack.com` | 443 | Slack API (polling + replies) |
+| `discord.com` | 443 + WSS | Discord gateway |
+| `api.telegram.org` | 443 | Telegram API |
+| `api.openai.com` (or your AI provider) | 443 | AI inference |
+| Your `DATABASE_URL` host | 5432 | Postgres (Neon or self-hosted) |
+
+No inbound ports required in polling mode.
+
+## Checklist for enterprise IT review
+
+Share this with your security team:
+
+- [ ] **No admin OAuth scopes.** Only `channels:history`, `channels:read`, `channels:join`, `chat:write`, `reactions:write`.
+- [ ] **Outbound-only.** The bot container initiates every connection; nothing listens for inbound HTTP.
+- [ ] **Encrypted secrets.** Bot tokens and API keys are stored with AES-256-GCM encryption at rest.
+- [ ] **Self-hostable.** All data stays in your infrastructure.
+- [ ] **No message content leaves your servers.** AI calls use your own API key and go direct to your AI provider.
+- [ ] **Configurable poll interval.** `SLACK_POLL_INTERVAL_SECONDS`, default 60s.
+- [ ] **Cursor-based dedup.** No message is ever processed twice — safe to run across restarts.

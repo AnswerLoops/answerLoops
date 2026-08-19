@@ -1,0 +1,47 @@
+---
+title: Simulation Mode
+description: Dry-run the AI pipeline against past tickets without writing to the database.
+---
+
+Simulation mode lets you test how your AI configuration would have performed on real historical tickets — with zero writes to the database.
+
+## What it does
+
+- Fetches the last N tickets (1–100)
+- Runs each through the full AI pipeline: embed → KB search → generate answer → assess confidence
+- Compares simulated outcomes to what actually happened
+- Returns per-ticket results and aggregate stats
+
+No tickets are created, updated, or deleted during a simulation run.
+
+## How to run
+
+1. Go to **Simulation** in the sidebar
+2. Choose your model, confidence threshold, and ticket count
+3. Click **Run simulation**
+4. Review results in the table and aggregate stats
+
+## Reading results
+
+| Column | Description |
+|---|---|
+| Ticket | Question text |
+| Sim confidence | AI confidence score in this run |
+| Sim deflect | Would this have been deflected at your threshold? |
+| Actual deflect | Was it actually deflected in production? |
+| Match | Do sim and actual agree? |
+| Duration | Time the AI took to process this ticket |
+
+## Aggregate stats
+
+- **Deflect rate** — % of tickets the AI would deflect in this simulation
+- **Actual deflect rate** — % that were actually deflected in production
+- **Match rate** — how closely simulation matches production outcomes
+- **Avg confidence** — mean confidence across all tickets
+- **Delta** — difference between sim deflect rate and production rate
+
+## Use cases
+
+- Test a new model before switching in production
+- See the impact of raising or lowering the confidence threshold
+- Diagnose why certain questions aren't being deflected

@@ -1,0 +1,130 @@
+---
+title: Tickets
+description: View, triage, and reply to support tickets from every connected community platform.
+---
+
+Every question posted in a monitored channel — Discord forum, GitHub Issue, Slack message, Telegram message, or inbound email — becomes a ticket. Tickets track the full lifecycle from first contact through resolution, with AI-generated draft replies posted back to the source platform.
+
+## Ticket list
+
+The ticket list is your central inbox. Each row shows:
+
+| Column | Description |
+|---|---|
+| **#** | Auto-incrementing ticket ID |
+| **Summary** | AI-generated one-line summary of the question |
+| **Source** | Colour-coded platform badge (see below) |
+| **Category** | Auto-classified topic |
+| **Priority** | `low`, `medium`, `high`, or `urgent` |
+| **Status** | Current lifecycle state |
+| **AI** | Whether an AI draft was generated |
+| **SLA** | Time remaining before SLA breach |
+| **Author** | Display name of the person who asked |
+| **Created** | Timestamp of the original message |
+
+### Source platform badges
+
+The Source badge identifies where the ticket originated. Colours are consistent across the app:
+
+| Platform | Badge colour |
+|---|---|
+| Discord | Indigo |
+| GitHub | Gray |
+| Slack | Green |
+| Telegram | Sky |
+| Email | Yellow |
+
+## Ticket statuses
+
+| Status | Meaning |
+|---|---|
+| `open` | New ticket, not yet handled |
+| `in_progress` | Being worked — AI draft generated or human assigned |
+| `resolved` | Answer provided; eligible for KB promotion |
+| `closed` | Ticket archived, no further action needed |
+
+## Filters
+
+Use the filter dropdowns at the top of the Tickets page to narrow by:
+
+- **Status** — `open`, `in_progress`, `resolved`, `closed`
+- **Priority** — `low`, `medium`, `high`, `urgent`
+- **Category** — see [Ticket categories](#ticket-categories) below
+- **Source** — filter to a single platform (Discord, GitHub, etc.)
+
+Filters stack — you can combine status + priority + source at the same time. The count in the page header updates live as filters change.
+
+## Ticket categories
+
+AnswerLoops automatically classifies each ticket into one of the following categories:
+
+| Category | When it's used |
+|---|---|
+| `how_to` | Step-by-step usage questions |
+| `documentation` | Requests to clarify or find docs |
+| `bug` | Reports of broken behaviour |
+| `feature_request` | Suggestions for new functionality |
+| `general_question` | Everything else that's a genuine question |
+| `uncategorized` | Could not be confidently classified |
+
+### How category changes the AI response
+
+Category isn't just a label — it changes what the AI does next:
+
+- **`how_to`, `documentation`, `general_question`** — answered from the knowledge base as usual. The draft is graded for confidence and auto-posted when confidence is high enough; otherwise it's routed to a human for review.
+- **`bug`, `feature_request`** — never auto-answered from the knowledge base, because the fix or feature doesn't exist there yet. Instead the AI:
+  1. Checks whether the report matches an existing open ticket and, if so, replies referencing that ticket number.
+  2. Otherwise checks the knowledge base for a relevant workaround and, if found, posts it explicitly labeled as a workaround, not a fix.
+  3. Otherwise acknowledges the report and routes it straight to a human — no generated answer is posted.
+
+  Bug and feature-request tickets never go through the confidence grader and never auto-deflect on their own; a duplicate-match or workaround reply is the only way this category resolves without a human.
+
+## Ticket detail
+
+Click any ticket row to open the detail view.
+
+### Platform-aware source link
+
+The detail page shows a direct link back to the original message on its platform:
+
+- GitHub ticket → **View on GitHub ↗** (opens the Issue or Discussion)
+- Discord ticket → **View in Discord ↗** (opens the channel/thread)
+- Slack ticket → **View in Slack ↗**
+- Telegram ticket → **View in Telegram ↗**
+- Email ticket → shows the original sender and subject
+
+### AI draft panel
+
+When an AI provider is configured, AnswerLoops generates a draft reply automatically. The AI draft panel appears on the right side of the ticket detail. From there you can:
+
+- **Approve** — posts the draft reply directly to the source platform (as a GitHub comment, Discord message, Slack reply, etc.)
+- **Edit** — opens the draft in an editable text field so you can adjust it before posting
+- **Dismiss** — hides the draft without posting; the ticket remains open
+
+<Note>
+  If the AI draft panel never appears, no AI provider is configured. Go to **Settings → AI Model** and add an API key, or configure a per-org model.
+</Note>
+
+### Reply form
+
+Below the thread, the reply form lets you send a manual message back to the user. The submit button label reflects the destination platform:
+
+- **Send reply to GitHub**
+- **Send reply to Discord**
+- **Send reply to Slack**
+- **Send reply to Telegram**
+- **Send reply to Email**
+
+The reply is posted to the original thread on the source platform, not just stored internally.
+
+### Ticket actions
+
+From the detail page you can also:
+
+- **Promote to KB** — available on resolved tickets; turns the Q&A into a knowledge base article for future deflection
+- **Change status** — move the ticket to any status manually
+- **Change priority** — override the AI-assigned priority
+
+## Export
+
+Click **Export CSV** on the ticket list page to download all currently visible tickets (respecting active filters) as a comma-separated file. The export includes all columns shown in the list.

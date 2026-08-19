@@ -1,0 +1,47 @@
+# AnswerLoops
+
+> AnswerLoops turns a stream of community support questions (Discord, Slack, Google Chat, GitHub, Telegram, email, website chat) into a self-improving knowledge base that deflects repeat questions automatically, escalating only the long tail to a human.
+
+## What it does
+
+A community member asks a question. AnswerLoops classifies it, searches the org's knowledge base and past resolved tickets for a matching answer, drafts a grounded response, and grades that response's confidence. High-confidence answers post automatically. Low-confidence answers route to a human support queue with an AI-drafted reply ready to edit. Every resolved answer feeds back into the knowledge base, so the same question gets cheaper and faster to answer next time.
+
+## Who it's for
+
+Open-source maintainers, developer-tool companies, and community teams who get repeat support questions across Discord, Slack, Google Chat, GitHub Issues/Discussions, Telegram, email, or their own website — and want an AI layer that answers correctly instead of hallucinating, with humans only touching the questions the AI isn't sure about.
+
+## Core capabilities
+
+- **Confidence-gated auto-answer** — a second AI pass grades every drafted answer before it goes out; only answers that clear the bar post automatically, everything else queues for human review
+- **Multi-channel ingest** — Discord, Slack, Google Chat, GitHub Issues/Discussions, Telegram, email, and an embeddable website chat widget, all through one pipeline
+- **Self-improving knowledge base** — resolved tickets promote into a searchable KB; community 👍/👎 feedback prunes bad answers over time
+- **Bring your own LLM** — OpenAI, Anthropic, Google Gemini, Groq, Mistral, or any OpenAI-compatible endpoint (including local models via Ollama); each org configures its own key and cost
+- **Agent-first API access** — an MCP server (`POST /api/mcp`, JSON-RPC 2.0) lets AI agents (Claude, Cursor, custom bots) call `search_kb`, `get_faq`, `get_tickets`, `create_ticket`, and `generate_answer` directly against an org's data, authenticated with a per-org API key
+- **Self-hostable** — AGPL-3.0 licensed; `docker compose up` runs the full stack on your own infrastructure with no data leaving your servers
+- **Analytics** — deflection rate, hours saved, per-category accuracy, SLA attainment, all computed from real ticket data
+
+## Pricing
+
+Self-hosted: free forever (AGPL-3.0). Hosted (managed SaaS): Pro $29/mo, Scale $79/mo, Enterprise $299/mo — all with a 14-day free trial, tiered by monthly deflection volume.
+
+## Integrations
+
+- Discord: https://answerloops.com/docs/integrations/discord
+- Slack: https://answerloops.com/docs/integrations/slack
+- Google Chat: https://answerloops.com/docs/integrations/google-chat
+- Telegram: https://answerloops.com/docs/integrations/telegram
+- Email: https://answerloops.com/docs/integrations/email
+- GitHub: https://answerloops.com/docs/integrations/github
+- MCP server: https://answerloops.com/docs/integrations/mcp
+- Agent API (REST): https://answerloops.com/docs/integrations/agent-api
+
+## Links
+
+- Marketing site: https://answerloops.com
+- Documentation: https://answerloops.com/docs
+- Source code (self-hosted): https://github.com/AnswerLoops/AnswerLoops
+- API/MCP endpoint: https://answerloops.com/api/mcp
+
+## Full documentation
+
+https://answerloops.com/docs

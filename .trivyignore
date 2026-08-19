@@ -1,0 +1,2 @@
+# pnpm local store — third-party package cache, not project source
+.pnpm-store/

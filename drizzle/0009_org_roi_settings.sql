@@ -1,0 +1,2 @@
+ALTER TABLE orgs ADD COLUMN IF NOT EXISTS roi_minutes_per_ticket INTEGER;
+ALTER TABLE orgs ADD COLUMN IF NOT EXISTS roi_staff_hourly_rate INTEGER;

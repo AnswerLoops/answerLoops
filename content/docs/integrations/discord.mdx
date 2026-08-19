@@ -1,0 +1,149 @@
+---
+title: Discord
+description: Connect Discord text channels and forum channels to AnswerLoops for automatic AI deflection and ticket tracking.
+---
+
+## Overview
+
+AnswerLoops integrates with Discord at two levels:
+
+- **Text channels** — every message in a watched channel is ingested as a ticket. The bot replies in-thread when AI confidence is above your threshold **and Automatic Deflections is turned on**.
+- **Forum channels** — new forum posts create tickets via the `ThreadCreate` event. The initial post is ingested as the ticket body. Replies inside the forum thread also ingest via `MessageCreate` and are attached to the same ticket.
+
+Both channel types appear in the unified ticket list with a Discord source badge.
+
+<Callout type="info">
+  **Automatic Deflections** is off by default for every newly connected platform. While it's off, even a high-confidence answer is held as a draft on the dashboard awaiting Approve/Edit/Dismiss — Discord gets a brief acknowledgment instead of the real answer, or silence. Turn it on per-platform in **Settings → Discord** once you've reviewed enough approved drafts to trust the AI's answers going out unsupervised.
+</Callout>
+
+---
+
+## Cloud setup (recommended)
+
+No Discord Developer Portal access required. AnswerLoops manages the bot and OAuth app on your behalf.
+
+1. In the onboarding wizard (or **Settings → Channels → Discord**), click **"Add AnswerLoops to Discord"**
+2. Select the server you want to connect in the Discord authorization screen
+3. Approve the requested permissions and click **Authorize**
+4. Back in AnswerLoops, a channel picker appears showing all text channels and forum channels on your server
+5. Select the channels where the bot should listen and click **Save**
+
+The bot joins your server immediately. No token to copy, no manifest to upload.
+
+<Tip>
+  You can return to **Settings → Channels → Discord** at any time to add or remove channels without re-authorizing.
+</Tip>
+
+---
+
+## Connecting multiple servers
+
+You're not limited to one Discord server. Click **"Add AnswerLoops to Discord"** again from **Settings → Channels → Discord** to connect another — each server gets its own card with its own channel picker and its own escalation role, and can be removed independently without affecting the others. A server can only be connected to one AnswerLoops account at a time; if you try to connect a server that's already linked elsewhere, you'll see an error instead of it silently switching ownership.
+
+---
+
+## Self-hosted setup
+
+For self-hosted deployments you need to create your own Discord application and configure three environment variables.
+
+### 1. Create a Discord application
+
+1. Go to [discord.com/developers/applications](https://discord.com/developers/applications) and click **New Application**
+2. Under **Bot**, click **Add Bot** and copy the **Bot Token** → this is `DISCORD_TOKEN`
+3. Under **OAuth2 → General**, copy the **Client ID** → `DISCORD_CLIENT_ID`
+4. Copy the **Client Secret** → `DISCORD_CLIENT_SECRET`
+5. Add your callback URL to **OAuth2 → Redirects**: `{AUTH_URL}/api/discord/callback`
+
+### 2. Set required permissions
+
+Under **Bot → Privileged Gateway Intents**, enable:
+- **Message Content Intent**
+- **Server Members Intent** (required for user lookups)
+
+Under **OAuth2 → URL Generator**, select scopes: `bot`, `applications.commands`. Select bot permissions: **Read Messages/View Channels**, **Send Messages**, **Create Public Threads**, **Read Message History**.
+
+### 3. Configure environment variables
+
+Set these on your `app` service (not only on the bot service — the app service needs `DISCORD_TOKEN` for the channel picker to work):
+
+| Variable | Description |
+|---|---|
+| `DISCORD_TOKEN` | Bot token from the Discord Developer Portal |
+| `DISCORD_CLIENT_ID` | Application (client) ID |
+| `DISCORD_CLIENT_SECRET` | OAuth2 client secret |
+| `DISCORD_APPLICATION_ID` | Same as `DISCORD_CLIENT_ID` — required for slash commands |
+| `BOT_TARGET_URL` | Internal URL the bot uses to reach the app API (no trailing slash) |
+
+### 4. Register the OAuth callback
+
+Make sure `AUTH_URL` is set to your public app URL (e.g. `https://support.yourcompany.com`). Discord will redirect to `{AUTH_URL}/api/discord/callback` after authorization.
+
+---
+
+## Forum channels
+
+Forum channels work without any extra configuration beyond selecting the channel in the channel picker.
+
+When a user creates a new post in a forum channel:
+- AnswerLoops receives a `ThreadCreate` event
+- The post's initial message is ingested as a new ticket
+- The bot replies in the thread if AI confidence is above threshold
+
+When anyone replies inside that forum thread:
+- AnswerLoops receives `MessageCreate` events for each reply
+- Replies are attached to the original ticket for full context
+
+<Note>
+  Forum channel replies by AnswerLoops appear inside the thread, not as top-level posts — keeping conversations organized for your community members.
+</Note>
+
+---
+
+## Slash commands
+
+AnswerLoops supports two slash commands in connected servers:
+
+| Command | What it does |
+|---|---|
+| `/ask <question>` | Queries the KB and returns an AI answer inline (visible only to the user who ran it) |
+| `/summarize` | Summarizes the current thread or recent channel activity |
+
+Slash commands require `DISCORD_APPLICATION_ID` to be set. After setting it, register the commands by running:
+
+```bash
+pnpm run discord:register-commands
+```
+
+---
+
+## Environment variables reference
+
+| Variable | Required | Description |
+|---|---|---|
+| `DISCORD_TOKEN` | Yes (self-host) | Bot token — set on both `app` and `bot` services |
+| `DISCORD_CLIENT_ID` | Yes (self-host) | OAuth2 client ID |
+| `DISCORD_CLIENT_SECRET` | Yes (self-host) | OAuth2 client secret |
+| `DISCORD_APPLICATION_ID` | For slash commands | Usually the same value as `DISCORD_CLIENT_ID` |
+| `BOT_TARGET_URL` | Yes (self-host) | URL the bot uses to call the app API — no trailing slash |
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Channel picker is empty after authorization">
+    `DISCORD_TOKEN` must be set on the **app** service, not only on the bot service. The channel picker fetches the channel list from the Discord API using this token. Restart the app service after adding the variable.
+  </Accordion>
+  <Accordion title="Bot joins the server but never replies">
+    Check that `BOT_TARGET_URL` has no trailing slash (e.g. `http://app:3000`, not `http://app:3000/`). A trailing slash causes the bot's API calls to 404. Also verify **Message Content Intent** is enabled in the Developer Portal.
+  </Accordion>
+  <Accordion title="OAuth callback returns 'invalid_client'">
+    `DISCORD_TOKEN` and `DISCORD_CLIENT_ID` must belong to the same Discord application. If you regenerated the bot token after setting `DISCORD_CLIENT_ID`, make sure you updated `DISCORD_TOKEN` to the new value.
+  </Accordion>
+  <Accordion title="Forum channel posts aren't creating tickets">
+    Confirm the forum channel is selected in **Settings → Channels → Discord → Channel picker**. AnswerLoops only listens on explicitly selected channels. Also verify the bot has **Read Messages** and **View Channels** permission in that forum.
+  </Accordion>
+  <Accordion title="Slash commands aren't showing up in Discord">
+    Run `pnpm run discord:register-commands` and confirm `DISCORD_APPLICATION_ID` is set. Discord can take up to an hour to propagate global slash commands — guild-scoped registration is instant if you specify a `DISCORD_GUILD_ID`.
+  </Accordion>
+</AccordionGroup>

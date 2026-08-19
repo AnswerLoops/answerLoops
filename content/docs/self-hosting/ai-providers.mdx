@@ -1,0 +1,54 @@
+---
+title: AI Provider Config
+description: Configure which AI model AnswerLoops uses for deflection and embeddings.
+---
+
+AnswerLoops uses AI for two things:
+- **Chat** — generating answers to questions
+- **Embeddings** — converting text to vectors for semantic search
+
+## Platform default
+
+Set `OPENAI_API_KEY` in `.env`. This is used by all orgs that haven't configured a custom key in Settings.
+
+```dotenv
+OPENAI_API_KEY=sk-proj-...
+```
+
+## Per-org keys (via Settings UI)
+
+Each org can override the platform key in **Settings → AI Model**. Keys are encrypted at rest using `ENCRYPTION_KEY`.
+
+Supported providers:
+
+| Provider | Models |
+|---|---|
+| OpenAI | `gpt-4o`, `gpt-4.1`, `gpt-4.1-mini`, `gpt-4.1-nano`, `o3`, `o4-mini` |
+| Anthropic | `claude-sonnet-4-6`, `claude-opus-4-8`, `claude-haiku-4-5-20251001` |
+| Google Gemini | `gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-2.0-flash` |
+| Groq | `llama-3.3-70b-versatile`, `llama-3.1-8b-instant` |
+| Mistral | `mistral-large-latest`, `mistral-small-latest`, `codestral-latest` |
+| OpenAI-compatible | Any model behind an OpenAI-compatible API (Ollama, LM Studio, vLLM) |
+
+## Embeddings
+
+Embeddings always use OpenAI's `text-embedding-3-small` by default. This can be changed per-org in Settings → Embeddings.
+
+<Info>
+  Embedding vectors are stored in the database alongside each KB article. Changing the embedding model requires re-importing all KB articles.
+</Info>
+
+## Self-hosted AI (Ollama)
+
+To use Ollama instead of a cloud provider:
+
+1. Run Ollama: `ollama serve`
+2. Pull a model: `ollama pull llama3.2`
+3. In Settings → AI Model → Chat provider: **OpenAI-compatible**
+4. Base URL: `http://localhost:11434/v1`
+5. Model ID: `llama3.2`
+6. Leave API key blank
+
+<Warning>
+  Ollama runs on the host machine, not inside Docker. Use `http://host.docker.internal:11434/v1` as the base URL when running AnswerLoops in Docker on Mac/Windows.
+</Warning>

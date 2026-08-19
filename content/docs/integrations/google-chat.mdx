@@ -1,0 +1,131 @@
+---
+title: Google Chat
+description: Connect a Google Chat space to AnswerLoops with a one-time connect code — no OAuth flow required.
+---
+
+## Overview
+
+Google Chat connects differently than Slack or Discord. Google Chat's app model has no equivalent of Slack's "Add to Slack" OAuth button for installing across an arbitrary customer's Workspace — there's no redirect-based install AnswerLoops can drive. Instead, an org generates a one-time **connect code** in AnswerLoops, a Workspace admin adds the AnswerLoops app to a Chat space themselves, and posting that code in the space pairs it to the org.
+
+Every message in a paired space is ingested as a ticket, exactly like every other channel:
+- AI deflection with a configurable confidence threshold — gated by the **Automatic Deflections** toggle below
+- Ticket creation and deduplication
+- Thread-aware replies — a reply inside a Google Chat thread appends to its existing ticket instead of creating a new one
+- Attachment handling — an attachment-only message with no caption is still ingested; each attachment is folded into a `[Attachment: name] — url` line so nothing gets silently dropped
+- Escalation mention when AI confidence is low, addressed to a specific Chat user id you configure
+
+<Callout type="info">
+  **Automatic Deflections** is off by default for every newly connected platform. While it's off, even a high-confidence answer is held as a draft on the dashboard awaiting Approve/Edit/Dismiss instead of posting to the space automatically — the space gets a brief acknowledgment instead. Turn it on per-platform in **Settings → Google Chat → Edit escalation, confidence & deflections**, toggle **Automatic Deflections**, then **Save**, once you trust the AI's answers going out unsupervised.
+</Callout>
+
+<Callout type="info">
+  v1 supports one connected Google Chat space per org. Multi-space support (like Discord's multi-server connections) may follow later if there's demand.
+</Callout>
+
+---
+
+## The connect-code pairing flow
+
+This is Google Chat's most distinctive setup step, so it's worth walking through exactly what happens on each side.
+
+### 1. Generate a connect code
+
+In **Settings → Integrations → Google Chat**, click **Generate connect code**. This calls `generateGoogleChatConnectCodeAction`, which:
+
+- Checks the org isn't already connected — if a `google_chat` integration row already exists with `enabled: true` and a paired space id, the action refuses and returns an error telling you to disconnect first. Regenerating a code for an already-paired org has no legitimate use case in v1, and silently overwriting the pairing would be surprising.
+- Generates a code shaped like `gc_<24 hex chars>` (`crypto.randomBytes(12).toString('hex')`, prefixed).
+- Writes an `integrations` row with that code as `bot_secret` and **`enabled: false`** — the row exists to hold the pending code, but it isn't a live connection yet.
+
+The code is shown once in the Settings UI along with the remaining steps.
+
+### 2. Add the AnswerLoops app to a Google Chat space
+
+You (or your Workspace admin) add the AnswerLoops Chat app to the space you want connected — the same app every AnswerLoops org uses, hosted under AnswerLoops' own Google Cloud project. If your Workspace admin hasn't enabled third-party Chat apps for the domain yet, they'll need to do that first from their Admin Console before the app can be added.
+
+### 3. Post the code in that space
+
+Post `/connect <code>` as a message in the space. That message hits the shared inbound webhook (`app/api/google-chat/events/route.ts`), which matches it against `^\/connect\s+(\S+)$` before doing anything else with the event. The handler looks the code up with `getIntegrationByPairingCode` — deliberately **not** filtered on `enabled`, since the whole point of this lookup is to find the still-pending row created in step 1.
+
+- **Code not recognized** (typo, already consumed, or never generated): the space gets back "That connect code wasn't recognized — check Settings → Integrations → Google Chat for a fresh one." Nothing is written to the database.
+- **Code recognized**: `completeGoogleChatPairing(orgId, spaceName)` runs, setting `team_id` to the space's `resourceName` (e.g. `spaces/AAAAxxxxxxx`) and flipping `enabled` to `1`. The space receives "✅ This space is now connected. Questions posted here will flow into your AnswerLoops dashboard."
+
+### 4. Confirm on the Settings page
+
+Back in AnswerLoops, click **Check connection status** (or just reload the page). Once pairing has completed server-side, the card shows **Connected · space paired** and reveals the connected space id, escalation user, confidence threshold, and Automatic Deflections state.
+
+<Tip>
+  The connect code and the "add the app to a space" step can happen in either order — generating the code doesn't require the app to already be in the space, and adding the app doesn't require a code yet. Pairing only completes once `/connect <code>` is posted in the space *after* the app has joined it.
+</Tip>
+
+---
+
+## Authentication model
+
+Unlike Slack and Discord, where each connected workspace/server gets its own bot token, Google Chat authenticates every send as a **single service account shared by every connected org** — the Chat app itself, owned by AnswerLoops' Google Cloud project, scoped to `https://www.googleapis.com/auth/chat.bot`. There's no per-org token to paste or rotate; routing an outbound reply to the right org's space happens entirely by mapping the message's `spaceName` to the paired `integrations` row.
+
+Inbound events are verified the same centralized way: every request Google Chat sends to the webhook carries a signed OIDC ID token in its `Authorization` header, issued by `chat@system.gserviceaccount.com` with an audience matching `GOOGLE_CHAT_ENDPOINT_URL` exactly. `lib/google-chat/verify.ts` checks both the issuer and the audience before any event is processed — a request that doesn't carry a valid token from Google is rejected with a 403 before it's even parsed.
+
+Outbound replies longer than 2,990 characters are split across multiple messages at the nearest newline (`lib/google-chat/send.ts`), the same conservative threshold used for Slack. A reply into an existing thread sets `messageReplyOption=REPLY_MESSAGE_OR_FAIL` and includes the thread's `resourceName` (`spaces/AAAA/threads/BBBB`) — Google Chat's equivalent of Slack's `thread_ts`.
+
+---
+
+## Escalation and thresholds
+
+Configure these from **Settings → Google Chat → Edit escalation, confidence & deflections**:
+
+| Field | Format | Notes |
+|---|---|---|
+| Escalation user id | `users/12345678901234567890` | The Chat resource name of the person to notify when AI confidence is below threshold. Google Chat has no role or group-mention equivalent — escalation always targets one specific user. |
+| Confidence threshold | `0`–`1`, default `0.8` | Answers scoring at or above this are eligible to auto-post (if Automatic Deflections is on) or auto-approve as drafts otherwise. |
+| Automatic Deflections | on/off, default off | See the callout above. |
+
+<Note>
+  A reply inside a tracked thread is ingested even if it's very short — anything under 10 characters that isn't a tracked reply and carries no attachment is dropped as noise (e.g. a lone "ok" or emoji reaction in an otherwise unrelated space). This mirrors the noise filtering other channels apply.
+</Note>
+
+---
+
+## What's different from Slack/Discord
+
+- **No bot token per org.** Sending replies authenticates as the single AnswerLoops-owned service account described above — nothing to paste or rotate per workspace.
+- **No OAuth callback.** Pairing is the connect-code flow above, not a redirect-based "Add to Slack"/"Add to Discord"-style install, because Google Chat's unlisted-app model doesn't hand back an install callback with the space id.
+- **No role/group mentions.** Escalation targets exactly one Chat user id, not a role or usergroup.
+- **One space per org (v1).** Discord supports multiple connected servers per org; Google Chat currently supports one paired space.
+
+---
+
+## Environment variables reference
+
+These are set once by the platform operator — they configure the single shared Chat app, not anything per-org. Self-hosted deployments must set both; AnswerLoops Cloud manages them centrally.
+
+| Variable | Required | Description |
+|---|---|---|
+| `GOOGLE_CHAT_SERVICE_ACCOUNT_JSON` | Yes (self-host) | Full JSON key for the service account used to authenticate outbound sends, as a single-line string |
+| `GOOGLE_CHAT_ENDPOINT_URL` | Yes (self-host) | Public HTTPS URL of the inbound webhook (`https://{domain}/api/google-chat/events`) — must exactly match the endpoint configured in the Chat app's connection settings, since Google signs each request's token audience to this value |
+
+See [Google Chat App Setup](/docs/self-hosting/google-chat-app) for the full one-time Google Cloud walkthrough (creating the project, enabling the Chat API, creating the service account, and configuring the app's connection settings and visibility).
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="'That connect code wasn't recognized' when posting /connect">
+    The code is a one-time token stored on a pending `integrations` row (`enabled: false`). This message means no row matches that exact code — check for a typo, confirm you copied the whole `gc_...` string, or generate a fresh code from **Settings → Integrations → Google Chat** if the old one has already been used to complete a pairing.
+  </Accordion>
+  <Accordion title="'Google Chat is already connected. Disconnect first to generate a new code.'">
+    `generateGoogleChatConnectCodeAction` refuses to issue a new code while an `enabled: true` row with a paired space already exists, to avoid silently orphaning the current connection. Click **Disconnect** on the Settings card first, then generate a new code to pair a different space.
+  </Accordion>
+  <Accordion title="Posted the code but the space never shows 'Connected'">
+    Confirm the message was posted as `/connect <code>` with nothing else in the message — the handler matches `^\/connect\s+(\S+)$` exactly. Also confirm the AnswerLoops app has actually joined the space (it needs to be added before it can see the message at all) and that `GOOGLE_CHAT_ENDPOINT_URL` on the server matches the HTTP endpoint URL configured in the Chat app's connection settings — a mismatch fails the inbound token's audience check and the event never reaches the pairing logic.
+  </Accordion>
+  <Accordion title="Escalation mention never appears">
+    The escalation user id must be the Chat resource name, formatted `users/<numeric id>` — not an email address or display name. Grab the correct id from the Google Chat API's people/membership lookups, or from a prior message by that user in the space.
+  </Accordion>
+  <Accordion title="Messages in the space aren't creating tickets">
+    Confirm the space shows **Connected** on the Settings page (an unpaired space is simply ignored — not an error). Also check whether the message is very short (under 10 characters) with no attachment and isn't a reply inside an already-tracked thread; those are filtered as noise by design.
+  </Accordion>
+  <Accordion title="Webhook returns 403 Forbidden">
+    This means either `GOOGLE_CHAT_ENDPOINT_URL` isn't set on the server, or the inbound request's signed token failed verification — check that the configured endpoint URL matches character-for-character (including no trailing slash) what's set in the Chat app's connection settings in Google Cloud Console.
+  </Accordion>
+</AccordionGroup>

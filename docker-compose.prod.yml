@@ -1,0 +1,51 @@
+name: answerloops
+
+# Production stack: built image, no source bind-mount, no dev server.
+# Requires a .env file with DATABASE_URL pointing to Neon (or another Postgres).
+#
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# On Railway: push to GitHub — Railway builds from the Dockerfile automatically.
+# BOT_TARGET_URL must be set to the app service's public URL when services are
+# deployed separately (e.g. https://your-app.up.railway.app).
+services:
+  app:
+    build:
+      context: .
+      target: runner
+    image: answerloops:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+    command: ["pnpm", "start"]
+
+  bot:
+    build:
+      context: .
+      target: runner
+    image: answerloops:latest
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - NODE_ENV=production
+      # Set BOT_TARGET_URL to the app's public URL when services are separate.
+      # Use http://app:3000 only when both run in the same Docker network (single-host).
+      - BOT_TARGET_URL=http://app:3000
+    command: ["pnpm", "bot:start"]
+    depends_on:
+      - app
+    # The image's HEALTHCHECK (see Dockerfile) probes :3000/api/health — the
+    # bot process serves no HTTP at all, so that probe fails forever here.
+    # Disabled rather than given its own check, since there's no port for one
+    # to hit; the bot's liveness is its Discord gateway connection + Slack
+    # poller, both visible in logs, not an HTTP endpoint.
+    healthcheck:
+      disable: true

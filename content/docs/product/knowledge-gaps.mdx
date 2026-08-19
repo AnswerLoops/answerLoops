@@ -1,0 +1,85 @@
+---
+title: Knowledge Gaps
+description: Discover what your AI couldn't answer and close content holes in your knowledge base to improve deflection rate over time.
+---
+
+## What are knowledge gaps?
+
+A knowledge gap is a question that AnswerLoops received but couldn't answer well. Gaps appear when:
+
+- The AI's confidence score was too low to post an answer
+- The AI flagged the ticket as needing a human
+- A ticket was resolved by a human but no matching KB article exists — meaning the next person with the same question will get the same poor result
+
+The **Knowledge Gaps** page surfaces all three categories in one place so you can prioritize which content to add next.
+
+---
+
+## Gap reasons
+
+Each gap is tagged with one of three reasons:
+
+| Reason | When it appears | Condition |
+|---|---|---|
+| **Low AI confidence** | The AI searched the KB but wasn't confident enough in any result to post an answer | Confidence score `< 0.6` |
+| **Needs human** | The AI determined the question requires a human to answer (e.g. account-specific, billing, or policy questions) | `ai_draft_status = needs_human` |
+| **Missing KB article** | A how-to or docs ticket was resolved by a human but there's no KB article that covers the topic | Resolved ticket with no linked KB content |
+
+---
+
+## The Knowledge Gaps page
+
+The page opens with four stat cards at the top:
+
+| Card | What it shows |
+|---|---|
+| **Total gaps** | All open knowledge gaps across all channels |
+| **Needs human** | Gaps where the AI flagged the question as requiring human handling |
+| **Low confidence** | Gaps where the AI searched but confidence was below 0.6 |
+| **Missing KB article** | Resolved tickets with no covering KB content |
+
+Below the stat cards is the gap list. Each row shows:
+
+- The original question (truncated)
+- The **reason badge** (Low confidence / Needs human / Missing KB article)
+- The **confidence %** for low-confidence gaps
+- The channel source (Discord, GitHub, Slack, etc.)
+- A **+ KB** button to jump directly to the Knowledge Base with the ticket pre-selected
+
+On the right side of the page, the **Category breakdown** sidebar groups gaps by topic category so you can spot clusters — if 12 gaps are all about your API authentication flow, that's your highest-value content to write next.
+
+---
+
+## How to close a gap
+
+<Steps>
+  <Step title="Find the gap">
+    Open **Knowledge Gaps** and sort by reason or category. Start with the highest-volume clusters.
+  </Step>
+  <Step title="Review the original ticket">
+    Click the gap summary to open the full ticket detail. Read the question and the human answer that resolved it (if available).
+  </Step>
+  <Step title="Add KB content">
+    Click **+ KB** next to the gap. This opens the Knowledge Base with the ticket pre-selected. You can:
+    - **Promote the ticket** — turn the human's resolution into a KB article in one click
+    - **Upload a file** — add a doc that covers the topic
+    - **Crawl a URL** — point AnswerLoops at an existing help article
+  </Step>
+  <Step title="Verify the gap closes">
+    After the new content is embedded, the gap will be re-evaluated the next time a similar question comes in. If the AI answers it above threshold, the gap is automatically resolved.
+  </Step>
+</Steps>
+
+---
+
+## Why it matters
+
+Every closed gap improves your **deflection rate** — the percentage of incoming questions the AI answers without human intervention. The Knowledge Gaps page is the fastest way to systematically raise that number because it shows exactly which questions are costing you human time right now.
+
+<Tip>
+  Resolve gaps in bulk by category. Writing one thorough KB article about a topic can close 5–10 gaps at once if they all stem from the same content hole.
+</Tip>
+
+<Note>
+  Gaps don't expire automatically. Once you add KB content that covers a gap, similar future questions will be deflected — but the gap entry stays in the list until you explicitly dismiss it or it gets resolved by a new deflection.
+</Note>

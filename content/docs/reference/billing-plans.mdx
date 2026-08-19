@@ -1,0 +1,46 @@
+---
+title: Billing Plans
+description: Plan tiers, deflection limits, and pricing for AnswerLoops Cloud.
+---
+
+## Plans
+
+Pricing is deflection-based, not per-seat. Every hosted plan includes the full AI pipeline — higher tiers add scale, insight, and support.
+
+| Plan | Price (monthly) | Price (annual, per mo) | Deflections/mo |
+|---|---|---|---|
+| Standard | $29 | $23.20 (20% off) | 500 |
+| Pro | $79 | $63.20 (20% off) | 2,000 |
+| Enterprise | $299 | $239.20 (20% off) | Unlimited |
+
+There is no free tier. Every plan starts with a 14-day trial — see below.
+
+Annual billing saves 20% off the monthly rate, shown as an Annual/Monthly toggle on the public [pricing page](https://answerloops.com/pricing). There is no separate Stripe annual price configured yet — annual is a display-only rate on the marketing page until the product leaves waitlist mode.
+
+## What counts as a deflection
+
+A deflection is one question the AI answered automatically with high enough confidence that no human needed to step in. Questions routed to a human for review — even if the AI drafted a suggested reply — don't count.
+
+## Trial
+
+Pick a plan at signup and it's fully unlocked for 14 days (card required, `trial_period_days: 14` in Stripe) — every feature and the deflection limit of the tier you chose, not a reduced trial-only allowance. Cancel any time before the trial ends and you won't be charged. If the trial ends without a valid payment method, access stops immediately — there's no free tier to drop back to.
+
+## Free AI trial
+
+Separate from the 14-day plan trial above: every new org also gets **5 lifetime free tickets** fully AI-processed on AnswerLoops' own key, with no AI provider key required at all. This is a one-time allowance (not monthly, not tied to plan tier) meant to let a brand-new org see the full pipeline work before adding their own key. Once used up, AI processing pauses until a key is added in **Settings → AI Model** — a dashboard banner makes this clear rather than tickets silently going untriaged. Doesn't apply to self-hosted deployments.
+
+## What's included per tier
+
+See the comparison table on the [pricing page](https://answerloops.com/pricing) for the full feature breakdown. Summary:
+
+- **Standard** — core channels (Discord, Slack, GitHub, Telegram, Email), website widget, knowledge base, bring-your-own AI provider, CSV export, and the white-label widget (removes "Powered by AnswerLoops").
+- **Pro** — everything in Standard, plus CSAT scoring, human escalation routing, simulation/dry-run mode, knowledge gap dashboard, and priority support.
+- **Enterprise** — everything in Pro, plus custom AI model configuration, SLA + dedicated support, and custom invoicing.
+
+## Approaching or hitting your limit
+
+Once an org crosses 80% of its monthly deflection allowance, an in-app warning banner appears on **Settings → Billing** with a one-click upgrade to the next tier. If the limit is reached, AI auto-answering pauses for the rest of the billing period and new questions route straight to the human queue instead — nothing breaks, and there's no surprise overage charge.
+
+## Self-hosting
+
+The core platform is AGPL-3.0 licensed. Self-hosted deployments have no deflection limit and no billing integration required — see [Production Setup Guide](/docs/self-hosting/production).

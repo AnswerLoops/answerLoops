@@ -1,0 +1,53 @@
+---
+title: Google Chat App Setup
+description: One-time Google Cloud configuration to enable Google Chat as a support channel.
+---
+
+This is a platform-operator, one-time setup — done once for your whole deployment, not per connected org. Individual orgs then connect via the connect-code flow in [Google Chat integration docs](/docs/integrations/google-chat).
+
+## 1. Create a Google Cloud project (or reuse an existing one)
+
+Go to the [Google Cloud Console](https://console.cloud.google.com) and create a project, or reuse one you already have.
+
+## 2. Enable the Google Chat API
+
+**APIs & Services → Library** → search **Google Chat API** → **Enable**.
+
+## 3. Create a service account
+
+**IAM & Admin → Service Accounts → Create Service Account**. No special IAM roles are required for basic messaging — the Chat API authorizes based on the Chat app configuration, not project-level IAM roles.
+
+Create a JSON key for this service account and keep it safe — it becomes `GOOGLE_CHAT_SERVICE_ACCOUNT_JSON`.
+
+## 4. Configure the Chat app
+
+**Google Chat API → Configuration**:
+
+- **App name / avatar / description** — however you want the bot to appear
+- **Functionality** — enable "Receive 1:1 messages" and "Join spaces and group conversations"
+- **Connection settings** → **HTTP endpoint URL** → your public endpoint:
+  ```
+  https://{YOUR_DOMAIN}/api/google-chat/events
+  ```
+- **Visibility** — for an unlisted app usable outside your own Google Workspace, list the specific domains or individual users/groups allowed to install it. A Workspace admin on the *installing* side may also need to enable third-party Chat apps for their domain (their **Admin Console → Apps → Google Workspace Marketplace apps** settings) before the app can be added to a space at all.
+
+## 5. Set environment variables
+
+```bash
+GOOGLE_CHAT_SERVICE_ACCOUNT_JSON='{"type":"service_account","project_id":"...", ...}'  # the full JSON key, as a single-line string
+GOOGLE_CHAT_ENDPOINT_URL=https://{YOUR_DOMAIN}/api/google-chat/events
+```
+
+<Callout type="warn">
+  `GOOGLE_CHAT_ENDPOINT_URL` must exactly match the HTTP endpoint URL configured in step 4 — Google signs each incoming request's token audience to that exact value, and verification fails on any mismatch (trailing slash included).
+</Callout>
+
+## 6. Connect an org
+
+Once the above is live, any org can connect from **Settings → Integrations → Google Chat** — see [Google Chat integration docs](/docs/integrations/google-chat) for the connect-code flow.
+
+## Distribution note
+
+This setup makes the app installable as an **unlisted app** — fast to stand up, but each customer's Workspace admin has a manual step (enabling third-party apps, then adding this one to a space). A [Google Workspace Marketplace](https://developers.google.com/workspace/marketplace/about-app-review) listing would let a customer install with a couple of clicks and no admin-console detour first, at the cost of a one-time Google review (OAuth verification + listing review, commonly a few weeks) before it goes live. Both use the same `/api/google-chat/events` endpoint and env vars — a later Marketplace listing wouldn't require re-doing this setup.
+
+Marketplace submission asks for a public privacy policy URL as part of the app configuration and OAuth verification — the hosted deployment already has one at `/privacy`.

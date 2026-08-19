@@ -1,0 +1,67 @@
+{
+  // Replaced ESLint + eslint-config-next (see fix/clear-high-audit-advisories).
+  // ESLint was the sole path to minimatch@3 > brace-expansion, whose advisory
+  // has no fix for the 1.x line minimatch@3 requires. oxlint ships as a single
+  // Rust binary with no JS dependencies, so it can't reintroduce that class of
+  // problem.
+  //
+  // KNOWN COVERAGE GAP — react-hooks/rules-of-hooks is NOT implemented by
+  // oxlint as of 1.74.0. Verified directly: a component calling useState inside
+  // an `if` block produces no diagnostic, where eslint-plugin-react-hooks would
+  // have errored. Conditional/early-return hook calls are therefore not caught
+  // statically. React itself throws a loud runtime error on hook-order
+  // violations, so these surface in dev rather than shipping silently, which is
+  // why this was accepted rather than blocking the swap.
+  //
+  // react-hooks/exhaustive-deps IS implemented and enabled at error severity —
+  // that's the rule catching *silent* bugs (stale closures, missing deps), so
+  // the more valuable half of the plugin is intact.
+  //
+  // RE-CHECK ~2026-08-07: oxlint ships roughly weekly and rules-of-hooks is a
+  // known roadmap item upstream. Run the probe in the Roadmap entry to test, and
+  // enable the rule here once it lands.
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "jsx-a11y", "nextjs", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2024": true
+  },
+  "ignorePatterns": [
+    ".next/**",
+    "out/**",
+    "build/**",
+    "node_modules/**",
+    "next-env.d.ts",
+    "public/**",
+    "test-results/**",
+    "playwright-report/**"
+  ],
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+
+    "typescript/no-unused-vars": "warn",
+    "typescript/no-explicit-any": "warn",
+
+    "jsx-a11y/label-has-associated-control": "warn",
+    "jsx-a11y/click-events-have-key-events": "warn",
+    "jsx-a11y/no-static-element-interactions": "warn",
+    "jsx-a11y/control-has-associated-label": "warn",
+    "jsx-a11y/prefer-tag-over-role": "warn",
+    "jsx-a11y/no-autofocus": "warn",
+    "nextjs/no-html-link-for-pages": "warn",
+    "eslint/no-unused-expressions": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["tests/**/*.ts", "tests/**/*.tsx", "e2e/**/*.ts"],
+      "rules": {
+        "typescript/no-explicit-any": "off"
+      }
+    }
+  ]
+}

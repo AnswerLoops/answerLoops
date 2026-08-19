@@ -1,0 +1,199 @@
+---
+title: Troubleshooting
+description: Fixes for common issues encountered when self-hosting AnswerLoops.
+---
+
+## App won't start
+
+**Check logs first:**
+
+```bash
+docker compose logs app --tail=50
+```
+
+**Common causes:**
+
+- **Missing required env var** — the logs will name the variable. Add it to `.env` and restart.
+- **`DATABASE_URL` wrong or Postgres not ready** — Postgres takes a few seconds to initialise on first boot. Wait 10 seconds and run `docker compose restart app`.
+- **Port 3000 already in use** — change the host port in `docker-compose.yml`, e.g. `"3001:3000"`.
+- **`AUTH_SECRET` or `AUTH_URL` missing** — AnswerLoops uses Auth.js v5. The correct variable names are `AUTH_SECRET` and `AUTH_URL`, **not** `NEXTAUTH_SECRET` / `NEXTAUTH_URL`. Rename them if you are upgrading from an older deployment.
+
+## Database connection refused
+
+```
+Error: connect ECONNREFUSED 127.0.0.1:5432
+```
+
+Postgres is not yet ready or is on a different host. Fix:
+
+```bash
+docker compose restart app
+```
+
+If the error persists, verify that the `postgres` service is running and healthy:
+
+```bash
+docker compose ps
+docker compose logs postgres --tail=20
+```
+
+Check that `DATABASE_URL` in your `.env` uses the service name as the host (`postgres`), not `localhost`:
+
+```
+DATABASE_URL=postgresql://community:password@postgres:5432/community
+```
+
+## OAuth redirect mismatch
+
+**Error:** `redirect_uri_mismatch` or `Error 400: redirect_uri_mismatch`
+
+Add the exact callback URL to your OAuth app's allowed redirect URIs:
+
+| Provider | Callback URL |
+|---|---|
+| GitHub | `https://<your-domain>/api/auth/callback/github` |
+| Discord | `https://<your-domain>/api/auth/callback/discord` |
+| Google | `https://<your-domain>/api/auth/callback/google` |
+
+Also verify that `AUTH_URL` in your `.env` matches your actual public domain exactly, including the scheme (`https://`), and has no trailing slash.
+
+## AI draft never appears
+
+No AI provider is configured. The draft panel is hidden when there is no valid AI key.
+
+Fix: go to **Settings → AI Model** and add an API key, or set one of the platform-default env vars (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `GROQ_API_KEY`, or `MISTRAL_API_KEY`) and restart the app.
+
+Verify the key is accepted — the Settings page shows a "Key saved ✓" badge after a successful save.
+
+## GitHub webhook returning 401 Unauthorized
+
+The webhook receives a 401 if either of the following is true:
+
+1. **`/api/github/webhook` is not in `PUBLIC_PATHS`** — Auth.js v5 protects all routes by default. The webhook route must be explicitly excluded in `auth.ts`. Check that `PUBLIC_PATHS` includes `/api/github/webhook`.
+
+2. **`GITHUB_WEBHOOK_SECRET` has a trailing newline** — `openssl rand -hex 32` appends a newline character. If you paste the output directly, the secret stored in your `.env` will not match what GitHub sends. Fix:
+   - Regenerate with `openssl rand -hex 32 | tr -d '\n'`, or
+   - Open `.env`, find `GITHUB_WEBHOOK_SECRET`, and manually remove any trailing whitespace
+
+After fixing, restart the app and re-deliver the failed webhook from the GitHub App settings page.
+
+## Discord forum posts not creating tickets
+
+**Symptom:** questions posted as new forum posts are not ingested; replies inside existing threads work fine.
+
+**Cause:** Discord fires a `ThreadCreate` event for new forum posts, not a `MessageCreate` event. The bot must have a `ThreadCreate` listener to capture these.
+
+**Fix:** ensure you are running the bot image built after the July 2026 `ThreadCreate` fix. Pull the latest image and restart:
+
+```bash
+docker compose pull bot
+docker compose up -d bot
+```
+
+Replies inside threads fire `MessageCreate` and continue to work as before. Only the initial forum post requires `ThreadCreate`.
+
+## Discord channel picker shows "loading…" indefinitely
+
+The channel picker in the AnswerLoops UI calls Discord's API to list channels. It requires `DISCORD_TOKEN` to be set on the **app** service, not only on the bot service.
+
+Check your `docker-compose.yml` or environment config and ensure `DISCORD_TOKEN` is present in the `app` service's environment block, then restart:
+
+```bash
+docker compose up -d app
+```
+
+## Discord bot not connecting (`DISCORD_TOKEN` and `DISCORD_CLIENT_ID` mismatch)
+
+`DISCORD_TOKEN` and `DISCORD_CLIENT_ID` must both come from the **same Discord application**. If you created a new application or regenerated the token, update both variables together and restart the bot.
+
+## `BOT_TARGET_URL` causing 404 on `/api/ingest`
+
+The bot appends `/api/ingest` to `BOT_TARGET_URL`. A trailing slash or period produces a malformed URL:
+
+| Value | Result |
+|---|---|
+| `https://answerloops.com` | ✅ `https://answerloops.com/api/ingest` |
+| `https://answerloops.com/` | ❌ `https://answerloops.com//api/ingest` |
+| `https://answerloops.com.` | ❌ `https://answerloops.com./api/ingest` |
+
+Set `BOT_TARGET_URL` to the bare domain with no trailing slash or period.
+
+## FAQ page always shows "No FAQ generated yet"
+
+**Cause:** a missing `await` on the `getLatestFAQ()` call in the GET `/api/faq` route caused the response to resolve before the DB query completed. This was fixed in July 2026.
+
+If you are on an older build, pull the latest image:
+
+```bash
+docker compose pull app
+docker compose up -d app
+```
+
+Note: the FAQ is generated only from tickets with status `resolved` or `closed`. If no tickets have been resolved yet, the FAQ will legitimately be empty.
+
+## `/knowledge-gaps` page crashes with a server error
+
+**Cause:** a nested `<Link>` inside another `<Link>` caused an SSR crash when gap data existed. Fixed in July 2026. Pull the latest app image to resolve.
+
+## Slack events not ingesting
+
+1. Verify `SLACK_CLIENT_ID`, `SLACK_CLIENT_SECRET`, and `SLACK_SIGNING_SECRET` are all set correctly.
+2. Check the Slack App's Event Subscriptions page — the request URL must be publicly reachable and returning 200.
+3. Confirm `SLACK_POLL_INTERVAL_SECONDS` is set if you are using polling mode rather than event subscriptions.
+4. Check app logs for Slack-related errors:
+
+```bash
+docker compose logs app --tail=50 | grep -i slack
+```
+
+## Emails not sending
+
+1. Verify `RESEND_API_KEY` is valid and not expired.
+2. Verify `RESEND_FROM` is set to an address in a verified Resend domain.
+3. Check that the sending domain is verified in your Resend dashboard.
+4. Inspect logs:
+
+```bash
+docker compose logs app --tail=50 | grep -i resend
+```
+
+## Widget returns 500
+
+A 500 from the widget embed script usually means the app is not reachable from the browser, or the widget's org token is invalid.
+
+1. Open the browser console — the error message from the fetch response is logged there.
+2. Confirm the app is running and accessible at its public URL.
+3. Go to **Settings → Widget** and verify the org token has not been regenerated without updating the embed snippet.
+
+## Data lost after restart
+
+You ran `docker compose down -v`. The `-v` flag deletes all named volumes, including `postgres-data`. This is permanent — there is no recovery without a backup.
+
+Always stop the stack with:
+
+```bash
+docker compose down
+```
+
+Never use `-v` unless you intentionally want to wipe all data.
+
+## Page crashes with "X.map is not a function"
+
+An API route returned a non-array (usually an error object or `null`). Check:
+
+```bash
+docker compose logs app --tail=30 | grep -i error
+```
+
+Common causes: missing API key, failed DB query, or an unhandled exception in an API handler.
+
+## Onboarding wizard shows on every login
+
+`onboarded_at` is null in the `orgs` table — the onboarding wizard was never completed. Complete it once: name your workspace, then click through all steps (you can skip optional ones).
+
+To inspect via the database directly:
+
+```bash
+docker compose exec postgres psql -U community -d community \
+  -c "SELECT id, name, onboarded_at FROM orgs;"
+```

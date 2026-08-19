@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: community
+      POSTGRES_PASSWORD: community
+      POSTGRES_DB: community
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U community"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      target: deps   # dev: deps only, source is bind-mounted and run via pnpm dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - DATABASE_URL=postgres://community:community@postgres:5432/community
+      - NEXT_TELEMETRY_DISABLED=1
+    volumes:
+      - .:/app
+      - app_node_modules:/app/node_modules
+    command: sh -c "pnpm install --no-frozen-lockfile --store-dir /app/.pnpm-store && pnpm dev"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  bot:
+    build:
+      context: .
+      target: deps
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - BOT_TARGET_URL=http://app:3000
+      - DATABASE_URL=postgres://community:community@postgres:5432/community
+    volumes:
+      - .:/app
+      - bot_node_modules:/app/node_modules
+    command: sh -c "pnpm install --no-frozen-lockfile --store-dir /app/.pnpm-store && pnpm bot"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      app:
+        condition: service_started
+
+volumes:
+  postgres-data:    # Postgres data — never wipe unless intentionally resetting
+  app_node_modules: # app deps cache — safe to wipe when packages change
+  bot_node_modules: # bot deps cache

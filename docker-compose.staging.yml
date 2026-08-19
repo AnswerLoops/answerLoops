@@ -1,0 +1,77 @@
+# Staging stack: prod-identical build, local Postgres, isolated volumes.
+# Runs on port 3001 so it doesn't clash with the dev server on 3000.
+#
+# Setup:
+#   cp .env.staging.example .env.staging
+#   # fill in .env.staging (see comments in that file)
+#
+# Start:
+#   docker compose -f docker-compose.staging.yml up --build
+#
+# Stop (keep data):
+#   docker compose -f docker-compose.staging.yml down
+#
+# Wipe staging data and start fresh:
+#   docker compose -f docker-compose.staging.yml down -v
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: community_staging
+      POSTGRES_PASSWORD: ${STAGING_POSTGRES_PASSWORD:?set STAGING_POSTGRES_PASSWORD in .env.staging}
+      POSTGRES_DB: community_staging
+    ports:
+      - "5433:5432"   # 5433 externally so it doesn't clash with dev postgres on 5432
+    volumes:
+      - staging-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U community_staging"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      target: runner   # prod build — same image as production
+    restart: unless-stopped
+    ports:
+      - "3001:3000"   # 3001 externally so dev server on 3000 stays accessible
+    env_file:
+      - path: .env.staging
+        required: true
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - DATABASE_URL=postgres://community_staging:${STAGING_POSTGRES_PASSWORD:?set STAGING_POSTGRES_PASSWORD in .env.staging}@postgres:5432/community_staging
+    command: ["pnpm", "start"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  bot:
+    build:
+      context: .
+      target: runner
+    restart: unless-stopped
+    # The image HEALTHCHECK probes the app's HTTP port; the bot serves no HTTP,
+    # so the inherited check would mark this container permanently unhealthy.
+    healthcheck:
+      disable: true
+    env_file:
+      - path: .env.staging
+        required: true
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgres://community_staging:${STAGING_POSTGRES_PASSWORD:?set STAGING_POSTGRES_PASSWORD in .env.staging}@postgres:5432/community_staging
+      - BOT_TARGET_URL=http://app:3000   # internal Docker network — always 3000
+    command: ["pnpm", "bot:start"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      app:
+        condition: service_started
+
+volumes:
+  staging-postgres-data:   # isolated from dev — safe to wipe with down -v

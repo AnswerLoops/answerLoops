@@ -1,0 +1,12 @@
+{
+  "title": "AnswerLoops Docs",
+  "pages": [
+    "introduction",
+    "quickstart-cloud",
+    "quickstart-self-host",
+    "self-hosting",
+    "product",
+    "integrations",
+    "reference"
+  ]
+}

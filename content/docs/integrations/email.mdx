@@ -1,0 +1,137 @@
+---
+title: Email
+description: Turn any support inbox into an AI-triaged ticket queue by pointing your email provider at AnswerLoops's webhook.
+---
+
+## Overview
+
+AnswerLoops accepts inbound support email through a webhook, not inbox polling. Every message that arrives is triaged, embedded against your knowledge base, and answered by the AI pipeline, then threaded back to the sender with proper RFC 5322 headers (`Message-ID` / `In-Reply-To` / `References`) so a customer's next reply lands in the same ticket instead of opening a new one.
+
+Two things are independent and configured separately:
+
+- **Inbound mail** — point your own email provider (SendGrid, Mailgun, Postmark, Cloudflare Email Routing, or anything that can POST a webhook) at AnswerLoops with a shared secret. See [Setup](#setup) below.
+- **Outbound sending (the `From:` address)** — either the platform default, a domain you verify, or your own connected Gmail/Outlook mailbox. See [Custom domain](#custom-domain-verified-sending) and [Connect a mailbox](#connect-a-mailbox-gmail-or-outlook-send-only-oauth) below.
+
+All email tickets appear in the unified ticket list with an Email source badge.
+
+<Callout type="info">
+  **Automatic Deflections** is off by default for every newly connected platform, email included. While it's off, even a high-confidence answer is held as a draft on the dashboard awaiting Approve/Edit/Dismiss — the customer gets a brief acknowledgment reply instead of the real answer. Turn it on in **Settings → Email → Edit sender filters & deflections** once you've reviewed enough approved drafts to trust the AI's answers going out unsupervised.
+</Callout>
+
+---
+
+## Setup
+
+### 1. Prerequisites
+
+`RESEND_API_KEY` and `RESEND_FROM` must be set on the app service — AnswerLoops sends every outbound reply through Resend (directly, via a verified custom domain, or as the fallback for OAuth-connected mailboxes).
+
+### 2. Configure in AnswerLoops
+
+Go to **Settings → Channels → Email** and fill in:
+
+| Setting | Field | What it does |
+|---|---|---|
+| Allowed senders | `allowedSenders` | Comma-separated list of email addresses and/or domains (e.g. `example.com, partner@other.com`). Only mail from a matching sender is accepted; everything else is silently filtered before it reaches the AI pipeline. Leave blank to accept all inbound mail. |
+| Escalation email | `escalationEmail` | Referenced in the reply body when AI confidence comes back below your threshold or a ticket needs human review — email has no @mention concept, so this is surfaced as plain text ("This question has been flagged for human review. `team@yourcompany.com` will follow up."). |
+| Confidence threshold | `confidenceThreshold` | 0–1, default `0.8`. Answers scoring below this are routed to a human instead of posting automatically. |
+| Automatic Deflections | `autoDeflectEnabled` | See the callout above. Off by default. |
+
+Click **Connect**. A webhook secret is generated and shown once — copy it before navigating away.
+
+### 3. Point your provider at the webhook
+
+```
+POST https://yourapp.com/api/email/ingest
+```
+
+with header:
+
+```
+X-Email-Webhook-Secret: <your webhook secret>
+```
+
+**SendGrid Inbound Parse** — Settings → Inbound Parse → Add Host & URL, enter your domain and the webhook URL, set the secret header under HTTP POST settings.
+
+**Mailgun Routes** — Sending → Routes → Create Route, match filter `match_recipient("support@yourdomain.com")`, action `forward("https://yourapp.com/api/email/ingest")`, add the secret header on the route.
+
+**Postmark Inbound** — Message Streams → Inbound → Settings, set the inbound webhook URL, set the secret header in Postmark's webhook settings.
+
+**Cloudflare Email Routing** — Email → Email Routing → Rules, forward to a Worker that POSTs to the webhook URL with the secret header attached.
+
+<Note>
+  Full self-hosting details, including a deeper reliability writeup (loop detection, idempotency, spam handling) live on the [Email Channel Setup](/docs/self-hosting/email-channel) page.
+</Note>
+
+---
+
+## Custom domain (verified sending)
+
+The professional option for outbound sending — replies go out with your own domain in the `From:` address instead of the platform default, and unlike connecting a personal mailbox, verification doesn't depend on any login staying active.
+
+Without domain verification, a raw `From:` override is spoofing from the receiving mail server's perspective — Gmail/Outlook will flag or reject mail claiming a domain the sending infrastructure was never authorized (via SPF/DKIM) to send as. Verification proves ownership before AnswerLoops will send as that domain.
+
+1. Go to **Settings → Channels → Email** and find **Use your own domain**.
+2. Enter the domain you want replies to come from (e.g. `yourcompany.com`) and click **Use your own domain**.
+3. AnswerLoops registers the domain with Resend and shows two DNS records (DKIM and a return-path/SPF record) — add both at your domain's DNS host.
+4. Click **Check verification status** once the records have propagated (this can take a few minutes to a few hours depending on your DNS host).
+5. Once verified, replies automatically send from `noreply@<your-domain>` — no separate toggle needed.
+
+Removing a verified domain reverts sending to the platform default (`RESEND_FROM`).
+
+---
+
+## Connect a mailbox (Gmail or Outlook, send-only OAuth)
+
+The quick option for outbound sending — connect your own Gmail or Outlook mailbox so replies go out through it directly and inherit its sender reputation, no DNS work required. Unlike the custom-domain path, this depends on the connection staying valid (a password change or long inactivity can revoke it). **Only one mailbox connection can exist per org at a time** — connecting Outlook while Gmail is connected (or vice versa) replaces the existing connection.
+
+AnswerLoops only ever requests permission to *send* mail as you — it never reads your inbox.
+
+1. Go to **Settings → Channels → Email** and find **Connect a mailbox**.
+2. Click **Connect Gmail** or **Connect Outlook** and approve AnswerLoops on the provider's consent screen.
+3. Once approved, replies automatically send from your connected mailbox — no separate toggle needed.
+
+If the connection is ever revoked (password change, admin revocation, long inactivity), AnswerLoops detects it the next time it tries to send, emails your org's admins the same day with a reconnect link, and falls replies back to the platform default in the meantime — nothing is silently dropped. The Email card shows a distinct "connection lost — reconnect" state until you reconnect.
+
+Removing the connection reverts sending to the platform default.
+
+<Note>
+  Outlook-sent replies thread slightly differently than Resend- or Gmail-sent ones in the customer's own mail client — Microsoft Graph's sending API can't carry a `References` header the way the other paths can, so only partial thread context (`In-Reply-To`) comes through. AnswerLoops's own internal ticket-threading is unaffected either way.
+</Note>
+
+---
+
+## Environment variables reference
+
+| Variable | Required | Description |
+|---|---|---|
+| `RESEND_API_KEY` | Yes | Required for every outbound reply |
+| `RESEND_FROM` | Yes | Default reply-from address (e.g. `support@yourdomain.com`); used when no custom domain or connected mailbox is set |
+| `GMAIL_CLIENT_ID` / `GMAIL_CLIENT_SECRET` | For Gmail connect | A Google Cloud OAuth client requesting only the `gmail.send` scope. Without these, the **Connect Gmail** button is unavailable but every other email path still works |
+| `GMAIL_REDIRECT_URI` | No | Overrides the derived callback URL (`<app-url>/api/email/gmail/callback`) if it differs from `AUTH_URL`/`NEXTAUTH_URL` |
+| `OUTLOOK_CLIENT_ID` / `OUTLOOK_CLIENT_SECRET` | For Outlook connect | A Microsoft Entra app registration requesting only the delegated `Mail.Send` scope. Without these, the **Connect Outlook** button is unavailable but every other email path still works |
+| `OUTLOOK_REDIRECT_URI` | No | Overrides the derived callback URL (`<app-url>/api/email/outlook/callback`) if it differs from `AUTH_URL`/`NEXTAUTH_URL` |
+
+The inbound webhook secret is generated per org and stored in the database — no env var needed for that.
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Emails aren't creating tickets">
+    Check **Allowed senders** in Settings — if it's non-empty, mail from a sender not on the list is filtered before the pipeline runs and the ticket never appears. Also confirm the sender isn't triggering the loop guard (no-reply addresses, mailing-list headers, auto-responder headers) — those are rejected by design to prevent mail loops, not routing failures.
+  </Accordion>
+  <Accordion title="AI replies aren't being sent">
+    `RESEND_API_KEY` must be valid and not expired, and the reply-from address (custom domain, connected mailbox, or `RESEND_FROM`) must belong to a domain verified in your Resend dashboard (or, for Gmail/Outlook, a currently-connected mailbox). An unverified sending domain causes Resend to reject the send silently from AnswerLoops' perspective — check `docker compose logs app | grep -i resend` for the actual Resend error.
+  </Accordion>
+  <Accordion title="Customer replies open a new ticket instead of threading">
+    Threading depends on the customer's mail client preserving `In-Reply-To`/`References` headers, which most clients do automatically. If a reply genuinely can't be matched to an existing ticket's Message-ID chain, AnswerLoops treats it as a new inbound message rather than guessing — this is deliberate to avoid misfiling unrelated mail into an old ticket.
+  </Accordion>
+  <Accordion title="Same email keeps generating duplicate tickets">
+    Every inbound email is keyed on its RFC `Message-ID`, so a provider's webhook retry should be a no-op. If duplicates are appearing, check that the sending mail server is generating a stable `Message-ID` per message (some legacy on-prem mail servers omit it, in which case AnswerLoops falls back to the provider's own id).
+  </Accordion>
+  <Accordion title="Automatic Deflections toggle isn't affecting replies">
+    Confirm you clicked **Update** after toggling — the setting only takes effect after the form is saved, and the read-only summary view on the card won't reflect an unsaved change. Also note it only changes what happens on **high-confidence** answers; low-confidence answers always go to the draft queue regardless of this setting.
+  </Accordion>
+</AccordionGroup>

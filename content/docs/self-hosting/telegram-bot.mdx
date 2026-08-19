@@ -1,0 +1,63 @@
+---
+title: Telegram Bot Setup
+description: Connect AnswerLoops to a Telegram group or supergroup.
+---
+
+## How it works
+
+AnswerLoops uses Telegram's **webhook API** — no persistent process required. Telegram pushes updates to your AnswerLoops instance via `POST /api/telegram/webhook`. The platform triage, embeds, and AI answer the question, then replies in the same chat.
+
+## 1. Create a bot with BotFather
+
+1. Open Telegram and search for **@BotFather**
+2. Send `/newbot` and follow the prompts
+3. Copy the bot token — format: `123456789:AAHdqTcv...`
+
+## 2. Configure in AnswerLoops Settings
+
+Go to **Settings → Telegram** and enter:
+
+- **Bot Token** — from BotFather
+- **Chat IDs** (optional) — group/supergroup IDs to monitor. Leave blank to monitor all chats the bot is added to. Group chat IDs are negative numbers (e.g. `-1001234567890`). Forward a message to [@userinfobot](https://t.me/userinfobot) to get the chat ID.
+- **Escalation username** (optional) — @mentioned when AI confidence is below threshold
+- **Confidence threshold** — 0–1, default 0.8
+
+Click **Connect** to save.
+
+## 3. Add the bot to your group
+
+In Telegram, add your bot to the group or supergroup you want to monitor. The bot needs permission to read messages.
+
+For a supergroup: go to Group Info → Edit → Administrators → Add Administrator → search your bot name.
+
+## 4. Register the webhook
+
+After saving the token, click **Register webhook** in Settings. This calls Telegram's `setWebhook` API and points it at your AnswerLoops instance.
+
+You can also call this endpoint directly:
+
+```bash
+POST /api/telegram/register
+```
+
+Requires an active session (dashboard login).
+
+## 5. Verify
+
+Send a message in your monitored group. A new ticket should appear in `/tickets` within a few seconds.
+
+## Environment variables
+
+No additional env vars are required beyond the token saved in Settings. For a platform default (before any org configures their own token):
+
+```dotenv
+TELEGRAM_BOT_TOKEN=123456789:AAHdqTcv...
+```
+
+## Notes
+
+- Telegram group chats IDs are negative integers. Supergroup IDs start with `-100`.
+- The bot only processes text messages. Stickers, photos, and media are silently ignored.
+- Messages under 10 characters are ignored (too short to be a support question).
+- The webhook secret is auto-generated per org and verified on every incoming update — Telegram cannot spoof messages.
+- Unlike Discord (persistent gateway), Telegram is fully stateless — webhook delivery is Telegram's responsibility.

@@ -1,0 +1,112 @@
+---
+title: Self-Host Quickstart
+description: Run AnswerLoops on your own infrastructure with Docker.
+---
+
+This is the path for teams that need their data to never leave their own servers — privacy-first companies, fintech, healthcare, or anyone who just doesn't want to hand support data to a third party. It's not a one-liner: you'll clone the repo, generate two secrets, register an OAuth app, and start the containers. Budget 15-20 minutes if this is your first time through it, most of which is waiting on an OAuth app to be created in another tab.
+
+If you'd rather skip all of this, the [cloud quickstart](/docs/quickstart-cloud) gets you the same product with none of the infrastructure.
+
+## Prerequisites
+
+- [Node.js 22+](https://nodejs.org)
+- [Docker + Docker Compose](https://docs.docker.com/get-docker/)
+- [pnpm 9+](https://pnpm.io/installation)
+- An AI provider key (OpenAI recommended, or any [supported provider](/docs/self-hosting/ai-providers))
+- At least one OAuth provider (GitHub, Discord, or Google)
+
+## 1. Clone the repo
+
+```bash
+git clone https://github.com/AnswerLoops/AnswerLoops.git
+cd AnswerLoops
+```
+
+## 2. Configure environment
+
+```bash
+cp .env.local.example .env.local
+```
+
+Edit `.env.local` with at minimum:
+
+```dotenv
+# Required
+DATABASE_URL=postgresql://community:community@postgres:5432/community
+AUTH_URL=http://localhost:3000
+AUTH_SECRET=<run: openssl rand -hex 32>
+ENCRYPTION_KEY=<run: openssl rand -hex 32>
+
+# At least one OAuth provider
+AUTH_GITHUB_ID=<your-github-client-id>
+AUTH_GITHUB_SECRET=<your-github-client-secret>
+
+# AI (required for deflection and KB search)
+OPENAI_API_KEY=<your-openai-api-key>
+```
+
+<Note>
+  This project uses **Auth.js v5**. The env vars are `AUTH_URL` and `AUTH_SECRET` — not `NEXTAUTH_URL` / `NEXTAUTH_SECRET`.
+</Note>
+
+See the full [environment variables reference](/docs/reference/environment-variables) for all options.
+
+## 3. Start with Docker
+
+Once your `.env.local` has real values (not the ones above), this one command does the rest:
+
+```bash
+docker compose up --build
+```
+
+This starts:
+- **app** on `http://localhost:3000`
+- **bot** (Discord/Slack listener) connecting to the app
+- **postgres** on `localhost:5432` (data persisted in a named volume)
+
+Drizzle migrations run automatically on first start — no manual migration step.
+
+<Warning>
+  Never run `docker compose down -v` — this deletes your database volume and all data.
+  Use `docker compose down` (no `-v`) to stop without data loss.
+</Warning>
+
+## 4. Create your account
+
+Open [http://localhost:3000](http://localhost:3000) and sign in with GitHub, Discord, or Google OAuth. On first login you'll see the onboarding wizard:
+
+1. **Connect your community** — Discord 1-click invite, Slack token, or skip
+2. **Seed your knowledge base** — drag-drop docs files or paste a URL
+3. **Configure AI** — verify your API key and pick a model
+4. **Go live** — checklist summary with links to Tickets and KB
+
+## 5. Verify it works
+
+```bash
+# Health check
+curl http://localhost:3000/api/health
+# → {"ok":true}
+
+# Confirm tables were created
+docker compose exec postgres psql -U community -d community -c "\dt"
+```
+
+## Next steps
+
+<CardGroup>
+  <Card title="Discord Bot" icon="discord" href="/docs/self-hosting/discord-bot">
+    Set up the Discord integration
+  </Card>
+  <Card title="Slack App" icon="slack" href="/docs/self-hosting/slack-app">
+    Set up Slack polling or OAuth
+  </Card>
+  <Card title="Google Chat App" icon="google" href="/docs/self-hosting/google-chat-app">
+    Connect a Google Chat space
+  </Card>
+  <Card title="GitHub App" icon="github" href="/docs/integrations/github">
+    Ingest Issues and Discussions
+  </Card>
+  <Card title="Deploy to Production" icon="rocket" href="/docs/self-hosting/production">
+    Railway, Fly.io, or any Docker host
+  </Card>
+</CardGroup>

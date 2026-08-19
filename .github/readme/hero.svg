@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">AnswerLoops — open-source support infrastructure</title>
+  <desc id="desc">A dark blue developer-focused banner showing the AnswerLoops confidence-gated support loop and a Docker Compose quickstart.</desc>
+
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#030611"/>
+      <stop offset="0.55" stop-color="#071126"/>
+      <stop offset="1" stop-color="#050914"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#60a5fa"/>
+      <stop offset="0.5" stop-color="#67e8f9"/>
+      <stop offset="1" stop-color="#818cf8"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(600 75) rotate(90) scale(420 720)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563eb" stop-opacity="0.27"/>
+      <stop offset="1" stop-color="#2563eb" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#94a3b8" stroke-opacity="0.055"/>
+    </pattern>
+    <filter id="soft-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="520" rx="28" fill="url(#background)"/>
+  <rect width="1200" height="520" rx="28" fill="url(#grid)"/>
+  <rect width="1200" height="520" rx="28" fill="url(#glow)"/>
+  <rect x="1" y="1" width="1198" height="518" rx="27" fill="none" stroke="#ffffff" stroke-opacity="0.08"/>
+
+  <g transform="translate(64 48)">
+    <path d="M7 24C12 6 23 5 26 19c2 12-2 25-10 25-9 0-10-14-1-18 10-5 29 1 26 12" fill="none" stroke="url(#brand)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="20" cy="32" r="2.7" fill="#67e8f9"/>
+    <text x="55" y="35" fill="#f8fafc" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="27" font-weight="650" letter-spacing="-0.6">answer<tspan fill="#60a5fa">Loops</tspan></text>
+  </g>
+
+  <g transform="translate(938 52)">
+    <rect width="198" height="34" rx="17" fill="#60a5fa" fill-opacity="0.07" stroke="#93c5fd" stroke-opacity="0.18"/>
+    <circle cx="20" cy="17" r="4" fill="#6ee7b7"/>
+    <circle cx="20" cy="17" r="8" fill="#6ee7b7" fill-opacity="0.12"/>
+    <text x="34" y="22" fill="#bfdbfe" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="650" letter-spacing="1.25">OPEN SOURCE · AGPL</text>
+  </g>
+
+  <text x="64" y="155" fill="#93c5fd" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="2.25">SUPPORT INFRASTRUCTURE FOR DEVELOPER COMMUNITIES</text>
+  <text x="64" y="221" fill="#ffffff" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="58" font-weight="700" letter-spacing="-2.8">Support runs itself.</text>
+  <text x="64" y="286" fill="url(#brand)" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="58" font-weight="700" letter-spacing="-2.8">Your team stays in control.</text>
+  <text x="66" y="334" fill="#94a3b8" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="17">Grounded answers. Independent review. Human escalation.</text>
+
+  <g transform="translate(790 130)">
+    <rect width="346" height="214" rx="18" fill="#030712" fill-opacity="0.72" stroke="#ffffff" stroke-opacity="0.1"/>
+    <rect width="346" height="43" rx="18" fill="#ffffff" fill-opacity="0.025"/>
+    <path d="M0 43H346" stroke="#ffffff" stroke-opacity="0.08"/>
+    <circle cx="21" cy="22" r="4" fill="#475569"/>
+    <circle cx="35" cy="22" r="4" fill="#475569"/>
+    <circle cx="49" cy="22" r="4" fill="#475569"/>
+    <text x="68" y="27" fill="#64748b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="11">answerloops / local</text>
+
+    <text x="22" y="79" fill="#64748b" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="13">$</text>
+    <text x="40" y="79" fill="#e2e8f0" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="13">docker compose up --build</text>
+    <circle cx="27" cy="113" r="4" fill="#6ee7b7"/>
+    <text x="40" y="118" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="12">app</text>
+    <text x="84" y="118" fill="#67e8f9" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="12">http://localhost:3000</text>
+    <circle cx="27" cy="146" r="4" fill="#6ee7b7"/>
+    <text x="40" y="151" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="12">bot</text>
+    <text x="84" y="151" fill="#c4b5fd" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="12">listener ready</text>
+    <circle cx="27" cy="179" r="4" fill="#6ee7b7"/>
+    <text x="40" y="184" fill="#94a3b8" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="12">db</text>
+    <text x="84" y="184" fill="#93c5fd" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="12">postgres ready</text>
+  </g>
+
+  <g transform="translate(64 403)" font-family="Inter, ui-sans-serif, system-ui, sans-serif">
+    <rect width="238" height="66" rx="14" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.08"/>
+    <circle cx="27" cy="25" r="4" fill="#818cf8"/>
+    <text x="41" y="29" fill="#cbd5e1" font-size="11" font-weight="700" letter-spacing="1.4">01 · INGEST</text>
+    <text x="22" y="51" fill="#64748b" font-size="11">Seven channels, one pipeline</text>
+
+    <path d="M314 33H334" stroke="#60a5fa" stroke-opacity="0.5"/>
+    <path d="m330 29 5 4-5 4" fill="none" stroke="#60a5fa" stroke-opacity="0.5"/>
+
+    <rect x="346" width="238" height="66" rx="14" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.08"/>
+    <circle cx="373" cy="25" r="4" fill="#60a5fa"/>
+    <text x="387" y="29" fill="#cbd5e1" font-size="11" font-weight="700" letter-spacing="1.4">02 · GROUND</text>
+    <text x="368" y="51" fill="#64748b" font-size="11">Docs, code, and resolved tickets</text>
+
+    <path d="M660 33H680" stroke="#67e8f9" stroke-opacity="0.5"/>
+    <path d="m676 29 5 4-5 4" fill="none" stroke="#67e8f9" stroke-opacity="0.5"/>
+
+    <rect x="692" width="202" height="66" rx="14" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.08"/>
+    <circle cx="719" cy="25" r="4" fill="#67e8f9"/>
+    <text x="733" y="29" fill="#cbd5e1" font-size="11" font-weight="700" letter-spacing="1.4">03 · REVIEW</text>
+    <text x="714" y="51" fill="#64748b" font-size="11">Independent confidence gate</text>
+
+    <path d="M970 33H990" stroke="#6ee7b7" stroke-opacity="0.5"/>
+    <path d="m986 29 5 4-5 4" fill="none" stroke="#6ee7b7" stroke-opacity="0.5"/>
+
+    <rect x="1002" width="134" height="66" rx="14" fill="#6ee7b7" fill-opacity="0.055" stroke="#6ee7b7" stroke-opacity="0.16"/>
+    <circle cx="1029" cy="25" r="4" fill="#6ee7b7"/>
+    <text x="1043" y="29" fill="#d1fae5" font-size="11" font-weight="700" letter-spacing="1.3">04 · ACT</text>
+    <text x="1024" y="51" fill="#64748b" font-size="11">Post or escalate</text>
+  </g>
+
+  <rect x="326" y="496" width="548" height="1" fill="url(#brand)" opacity="0.65" filter="url(#soft-glow)"/>
+</svg>

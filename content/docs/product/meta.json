@@ -1,0 +1,19 @@
+{
+  "title": "Product Guide",
+  "pages": [
+    "dashboard",
+    "knowledge-base",
+    "tickets",
+    "ai-deflection",
+    "escalation",
+    "csat",
+    "simulation",
+    "knowledge-gaps",
+    "widget",
+    "faq-generator",
+    "analytics",
+    "team",
+    "ai-config",
+    "billing"
+  ]
+}

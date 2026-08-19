@@ -1,0 +1,203 @@
+---
+title: Environment Variables
+description: Every environment variable AnswerLoops uses, with defaults and requirements.
+---
+
+Copy `.env.local.example` to `.env.local` and fill in the values below.
+
+<Note>
+  AnswerLoops uses **Auth.js v5**. The required env vars are `AUTH_URL` and `AUTH_SECRET`. If you see `NEXTAUTH_URL` or `NEXTAUTH_SECRET` in older docs or guides, those are the v4 names — they will not work here.
+</Note>
+
+## Core (required)
+
+| Variable | Description | Example |
+|---|---|---|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://community:community@postgres:5432/community` |
+| `DIRECT_DATABASE_URL` | Non-pooled connection string, used only for `LISTEN`/`NOTIFY` (config hot-reload, live team updates). **Required if `DATABASE_URL` goes through a connection pooler** (Neon's `-pooler` endpoint, PgBouncer, Supabase's pooled port) — pooled connections don't reliably deliver `NOTIFY` to a `LISTEN`er, since the pooler can swap the physical backend between statements. Falls back to `DATABASE_URL` if unset, which is correct for a plain unpooled Postgres instance (e.g. the local `docker compose` Postgres) but silently breaks hot-reload on a pooled provider. | Neon: the same connection string with `-pooler` removed from the hostname (Neon dashboard → Connection Details → toggle "Pooled connection" off) |
+| `AUTH_URL` | Full public URL of your deployment | `http://localhost:3000` or `https://app.example.com` |
+| `AUTH_SECRET` | Random 32-byte hex — signs JWT sessions | `openssl rand -hex 32` |
+| `ENCRYPTION_KEY` | Random 32-byte hex — encrypts stored API keys and bot tokens at rest | `openssl rand -hex 32` |
+
+## Networking (optional)
+
+| Variable | Description | Example |
+|---|---|---|
+| `TRUST_PROXY_HOPS` | How many proxies sit between the public internet and the app. Defaults to `1` | `1` |
+
+Rate limiting needs the real client IP, and it reads that from `x-forwarded-for`. That header is a list each proxy appends to, so its *leftmost* entry is whatever the caller claimed — trusting it lets anyone mint a fresh rate-limit bucket per request just by rotating a header value. AnswerLoops instead counts in from the right by `TRUST_PROXY_HOPS`, reading the entry your own infrastructure appended.
+
+## Multi-domain (optional)
+
+Only relevant if you're running the dashboard on a separate subdomain from your marketing/root domain (e.g. `app.example.com` alongside `example.com`) while both point at the same deployment. Most self-hosted setups use a single domain and can skip this section entirely.
+
+| Variable | Description | Example |
+|---|---|---|
+| `NEXT_PUBLIC_APP_URL` | Base URL of the dashboard subdomain. When set, marketing-page CTAs link there instead of a relative `/dashboard` path. Leave unset for a single-domain deployment. | `https://app.example.com` |
+| `AUTH_COOKIE_DOMAIN` | Shares the session cookie across every subdomain of your apex domain. Required alongside `NEXT_PUBLIC_APP_URL` — without it, a user signed in on the root domain appears logged out the moment they land on the app subdomain, since a session cookie is host-only by default. Leave unset for a single-domain deployment. | `.example.com` |
+
+<Warning>
+  Set this to the actual number of proxies in front of the app. Too high and you read a value the client controls, which defeats per-IP limiting. Too low and everyone behind your edge shares one bucket, which throttles legitimate traffic. The default of `1` is correct for a single load balancer or CDN (Railway, Fly, a lone nginx). Add one for each additional layer — Cloudflare in front of Railway is `2`.
+</Warning>
+
+Cloudflare's `cf-connecting-ip` header is used when present and takes precedence, since Cloudflare overwrites rather than appends it.
+
+| Variable | Description | Example |
+|---|---|---|
+| `ORIGIN_VERIFY_SECRET` | Optional secret that locks the proxy-supplied client-IP header's trust to traffic that actually passed through your edge proxy/CDN | `openssl rand -hex 32` |
+
+The proxy-supplied client-IP header (`cf-connecting-ip` or equivalent) is only spoof-proof if the origin is unreachable except through your edge proxy. If your origin is still reachable directly, anyone can set that header themselves and mint a fresh rate-limit bucket per request, bypassing both the per-IP limiter and your edge's own WAF/DDoS layer.
+
+To close this:
+
+1. Generate a secret: `openssl rand -hex 32`.
+2. Set `ORIGIN_VERIFY_SECRET` to that value in your deployment's environment.
+3. On your CDN/edge proxy, add a rule (most offer a "modify request header" or equivalent feature) that runs for all traffic and sets a request header `x-origin-verify` to the same secret value.
+4. Confirm requests hitting your origin without that header now get a `403 Forbidden` from `/api/mcp`, `/api/agent/*`, and `/api/widget/chat`.
+
+<Warning>
+  Until this is configured, the proxy-supplied client-IP header is trusted unconditionally — the app has no way to tell an edge-routed request from a direct one. Set `ORIGIN_VERIFY_SECRET` on any deployment sitting behind a CDN or edge proxy.
+</Warning>
+
+## OAuth (at least one required)
+
+Login uses GitHub, Discord, or Google OAuth. Configure at least one.
+
+| Variable | Description |
+|---|---|
+| `AUTH_GITHUB_ID` | GitHub OAuth App client ID |
+| `AUTH_GITHUB_SECRET` | GitHub OAuth App client secret |
+| `AUTH_DISCORD_ID` | Discord OAuth2 client ID |
+| `AUTH_DISCORD_SECRET` | Discord OAuth2 client secret |
+| `AUTH_GOOGLE_ID` | Google OAuth client ID |
+| `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
+
+Callback URLs to register:
+- GitHub: `{AUTH_URL}/api/auth/callback/github`
+- Discord: `{AUTH_URL}/api/auth/callback/discord`
+- Google: `{AUTH_URL}/api/auth/callback/google`
+
+## AI providers (optional — at least one recommended)
+
+Per-org AI keys set in **Settings → AI Model** override these env vars for that org. The platform key is the fallback when no org key is set.
+
+| Variable | Provider |
+|---|---|
+| `OPENAI_API_KEY` | OpenAI (covers all features including embeddings) |
+| `ANTHROPIC_API_KEY` | Anthropic platform default |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Google Gemini platform default |
+| `GROQ_API_KEY` | Groq platform default |
+| `MISTRAL_API_KEY` | Mistral platform default |
+
+## Discord (optional)
+
+| Variable | Description |
+|---|---|
+| `DISCORD_TOKEN` | Platform shared bot token. Required for 1-click OAuth mode and for the channel picker in Settings. |
+| `DISCORD_CLIENT_ID` | Application ID — enables the "Add to Discord" OAuth flow. Register callback: `{AUTH_URL}/api/discord/callback` |
+| `DISCORD_CLIENT_SECRET` | OAuth2 client secret from Discord Developer Portal → OAuth2 tab |
+| `DISCORD_APPLICATION_ID` | Application ID for slash command registration (same value as `DISCORD_CLIENT_ID`) |
+| `DISCORD_GUILD_ID` | Guild ID for guild-scoped slash command registration during dev (instant vs. global's 1-hour delay) |
+| `BOT_SECRET` | Shared secret between the bot service and `/api/ingest`. Auto-generated per-org via Settings; this is the env fallback. |
+| `BOT_TARGET_URL` | URL of the app service as seen from the bot container. **No trailing slash or period.** Default: `http://localhost:3000` |
+
+<Warning>
+  `DISCORD_TOKEN` must be set on **both** the app service and the bot service. The app service uses it to power the channel picker in Settings → Discord. The bot service uses it to connect to Discord's gateway. If they reference different Discord applications, the bot joins a different server than users authorized.
+</Warning>
+
+## Slack (optional)
+
+| Variable | Description |
+|---|---|
+| `SLACK_CLIENT_ID` | OAuth app Client ID. Enables 1-click "Add to Slack" install. |
+| `SLACK_CLIENT_SECRET` | OAuth app Client Secret. Required with `SLACK_CLIENT_ID`. |
+| `SLACK_SIGNING_SECRET` | Signing secret — verifies Events API webhook payloads. |
+| `SLACK_POLL_INTERVAL_SECONDS` | Poll interval in polling mode. Default: `60`. Minimum: `30`. |
+
+Add `{AUTH_URL}/api/slack/callback` to your Slack app's OAuth Redirect URLs.
+
+## Google Chat (optional)
+
+| Variable | Description |
+|---|---|
+| `GOOGLE_CHAT_SERVICE_ACCOUNT_JSON` | Full service-account JSON key, as a single-line string. Used to authenticate outgoing replies to the Chat API. |
+| `GOOGLE_CHAT_ENDPOINT_URL` | Public HTTP endpoint URL, e.g. `https://{YOUR_DOMAIN}/api/google-chat/events`. Must exactly match the endpoint URL configured in the Chat app — Google verifies each request's token audience against this value. |
+
+See [Google Chat App Setup](/docs/self-hosting/google-chat-app) for the one-time Google Cloud configuration these values come from.
+
+## GitHub App (optional)
+
+| Variable | Description |
+|---|---|
+| `GITHUB_APP_ID` | App ID from GitHub App settings page |
+| `GITHUB_APP_PRIVATE_KEY` | Base64-encoded PEM: `base64 -i your-app.pem \| tr -d '\n'` |
+| `GITHUB_WEBHOOK_SECRET` | Webhook secret. **Generate with `openssl rand -hex 32` and paste without the trailing newline.** |
+| `GITHUB_APP_SLUG` | URL-safe app name (slug) — shown in your GitHub App's URL |
+
+Register these URLs in your GitHub App:
+- Callback URL: `{AUTH_URL}/api/github/callback`
+- Webhook URL: `{AUTH_URL}/api/github/webhook`
+
+Subscribe to events: Issues, Issue comments, Discussions, Discussion comments, Push.
+
+## Telegram (optional)
+
+| Variable | Description |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | Bot token from @BotFather. Fallback when no org token is saved. |
+
+After deploying, register the webhook: `POST {AUTH_URL}/api/telegram/register` (or click **Register webhook** in Settings → Telegram).
+
+## Email notifications — Resend (optional)
+
+| Variable | Description |
+|---|---|
+| `RESEND_API_KEY` | API key from resend.com. Enables email alerts (new ticket, SLA breach, resolved). |
+| `RESEND_FROM` | Verified sender address e.g. `hello@yourdomain.com` |
+| `RESEND_WAITLIST_FROM` | From address for waitlist confirmation emails. Falls back to `RESEND_FROM`. |
+| `RESEND_WEBHOOK_SECRET` | Svix signing secret (`whsec_...`) for Resend's outbound delivery-status webhooks (`email.bounced`/`email.complained`/etc.) — see [Email Channel Setup](/docs/self-hosting/email-channel) |
+| `GMAIL_CLIENT_ID` / `GMAIL_CLIENT_SECRET` | Google Cloud OAuth client credentials for the "Connect Gmail" send-only integration (see [Email Channel Setup](/docs/self-hosting/email-channel)) — optional, requires manual GCP OAuth-client + consent-screen setup |
+| `GMAIL_REDIRECT_URI` | Optional override for the Gmail OAuth callback URL (defaults to `<AUTH_URL or NEXTAUTH_URL>/api/email/gmail/callback`) |
+| `OUTLOOK_CLIENT_ID` / `OUTLOOK_CLIENT_SECRET` | Microsoft Entra app registration credentials for the "Connect Outlook" send-only integration (see [Email Channel Setup](/docs/self-hosting/email-channel)) — optional, requires manual Entra app registration + (for external users) Partner Center publisher verification |
+| `OUTLOOK_REDIRECT_URI` | Optional override for the Outlook OAuth callback URL (defaults to `<AUTH_URL or NEXTAUTH_URL>/api/email/outlook/callback`) |
+
+If absent, email notifications skip silently — nothing breaks. Without `RESEND_WEBHOOK_SECRET`, bounce/complaint tracking on outbound replies is unavailable, but sending and inbound ingest both still work. Without `GMAIL_CLIENT_ID`/`GMAIL_CLIENT_SECRET` or `OUTLOOK_CLIENT_ID`/`OUTLOOK_CLIENT_SECRET`, the respective Connect button is unavailable but every other email path still works.
+
+
+## URL ingest — Firecrawl (optional)
+
+| Variable | Description |
+|---|---|
+| `FIRECRAWL_API_KEY` | API key from firecrawl.dev. Enables Settings → Import from URL to crawl docs sites into the KB. |
+
+## Web push notifications (optional)
+
+| Variable | Description |
+|---|---|
+| `VAPID_PUBLIC_KEY` | VAPID public key |
+| `VAPID_PRIVATE_KEY` | VAPID private key |
+| `VAPID_EMAIL` | `mailto:you@example.com` — identifies your push endpoint |
+
+Generate keys:
+```bash
+pnpm dlx web-push generate-vapid-keys
+```
+
+## Billing / deployment mode
+
+| Variable | Description | Example |
+|---|---|---|
+| `DEPLOYMENT_MODE` | Set to `cloud` only on AnswerLoops' own managed SaaS. Leave unset (or anything other than `cloud`) on a self-hosted deployment. | `cloud` |
+| `STRIPE_SECRET_KEY` | Only relevant when `DEPLOYMENT_MODE=cloud`. Not needed for self-hosting. | — |
+
+Self-hosted deployments (the default — `DEPLOYMENT_MODE` unset) are never metered and every plan-gated feature (Discord/Slack integrations, CSAT scoring, simulation/dry-run mode, knowledge gap dashboard, custom AI model config, etc.) is unlocked unconditionally. You're already bringing your own AI provider, database, and hosting — there's no usage of yours for AnswerLoops to meter or restrict.
+
+<Warning>
+  Don't set `DEPLOYMENT_MODE=cloud` on a self-hosted instance — it opts the deployment into plan-tier gating with no Stripe subscription behind it, which locks every gated feature instead of unlocking them.
+</Warning>
+
+## Access control (optional)
+
+| Variable | Description |
+|---|---|
+| `ALLOWED_EMAILS` | Comma-separated email addresses allowed to log in. Leave empty for open access. Blocked users see an invite-only error at `/login?error=AccessDenied`. |

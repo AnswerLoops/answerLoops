@@ -1,0 +1,173 @@
+name: Security Scan
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+  schedule:
+    - cron: '0 6 * * 1'  # weekly Monday 6am UTC
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  trivy:
+    name: Trivy — deps + secrets + Dockerfile
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          persist-credentials: false
+
+      - name: Run Trivy (filesystem scan)
+        uses: aquasecurity/trivy-action@df678dbccf677bc6937338d569ba0da18964a8cc  # master 2026-07-01
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: '1'        # fail the job on CRITICAL or HIGH
+          ignore-unfixed: true  # skip vulns with no fix yet
+          skip-dirs: .pnpm-store,node_modules/.cache
+
+  audit:
+    name: pnpm audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1  # v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # --ignore-unfixable mirrors the Trivy job's ignore-unfixed: true —
+      # skip advisories with no patched version published yet rather than
+      # blocking every PR on a fix that doesn't exist (e.g. GHSA-w3rx-r6r6-pgpr/
+      # GHSA-5p2g-fcmc-qvqq on image-size via @mastra/memory, and
+      # GHSA-866g-f22w-33x8 on @ai-sdk/provider-utils via @mastra/core, both
+      # advisories with a stated patched version that isn't actually published).
+      - run: pnpm audit --audit-level=high --ignore-unfixable
+
+  semgrep:
+    name: Semgrep SAST
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          persist-credentials: false
+
+      - name: Install Semgrep
+        run: pip install semgrep --quiet
+
+      - name: Run Semgrep SAST
+        run: |
+          semgrep scan \
+            --config=auto \
+            --error \
+            --no-rewrite-rule-ids \
+            --skip-unknown-extensions \
+            . 2>&1
+
+  zizmor:
+    name: Zizmor — GitHub Actions workflow audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          persist-credentials: false
+
+      - name: Install zizmor
+        run: pip install zizmor --quiet
+
+      - name: Audit workflows
+        # Catches script-injection via untrusted ${{ github.event.* }} interpolation,
+        # unpinned third-party actions (tag/branch instead of commit SHA — the exact
+        # class of thing this repo's own actions are pinned against below), overly
+        # broad `permissions:`, and unsafe pull_request_target usage. Regular persona
+        # (not --pedantic) to match this pipeline's existing bar — blocking on real
+        # findings, not code-smell-level nitpicks like missing concurrency groups.
+        run: zizmor .github/workflows/
+
+  trust-policy:
+    name: Supply-chain trust audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # Fails if any dependency has a trust downgrade (provenance attestation removed
+    # relative to an earlier version — indicator of possible package takeover).
+    # Runs separately from the main install so local dev is not blocked by beta deps
+    # that legitimately lack provenance (e.g. next-auth@5.0.0-beta.x).
+    # Known exceptions tracked here — remove when the package ships provenance:
+    #   next-auth@5.0.0-beta.31 — Auth.js v5 beta; no provenance on pre-releases.
+    #                             Re-enable strict check when v5 stable ships.
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1  # v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: 22
+
+      - name: Check for trust downgrades
+        # Inject trustPolicy via env — overrides pnpm-workspace.yaml for this job only.
+        # Expected failures listed below are reviewed on every Auth.js beta bump.
+        env:
+          NPM_CONFIG_TRUST_POLICY: no-downgrade
+        run: |
+          set +e
+          OUTPUT=$(pnpm install --frozen-lockfile 2>&1)
+          EXIT=$?
+          echo "$OUTPUT"
+
+          if [ $EXIT -ne 0 ]; then
+            # Strip expected known exceptions before failing
+            UNEXPECTED=$(echo "$OUTPUT" | grep "ERR_PNPM_TRUST_DOWNGRADE" | \
+              grep -v "next-auth@5.0.0-beta")
+
+            if [ -n "$UNEXPECTED" ]; then
+              echo ""
+              echo "🚨 UNEXPECTED trust downgrade(s) detected — possible supply chain attack:"
+              echo "$UNEXPECTED"
+              echo ""
+              echo "ACTION: inspect the flagged package(s) immediately."
+              echo "  - Check npmjs.com for recent publish activity"
+              echo "  - Compare against the last known-good lockfile"
+              echo "  - If confirmed malicious: remove from package.json, run pnpm install, open incident"
+              exit 1
+            else
+              echo ""
+              echo "⚠️  Known trust exceptions present (next-auth beta — tracked, not blocking)."
+              echo "    Review if next-auth version changed since last check."
+            fi
+          else
+            echo "✅ All dependencies pass trust policy check."
+          fi

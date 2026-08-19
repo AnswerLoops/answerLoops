@@ -1,0 +1,30 @@
+name: Notion Sync Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: [main]
+
+concurrency:
+  group: notion-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  notion-checklist:
+    name: Notion pages updated
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check Notion checklist item is ticked
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          if echo "$PR_BODY" | grep -qF '- [ ] Notion'; then
+            echo "❌ Notion sync checklist item is unchecked."
+            echo ""
+            echo "Before merging, update Notion (Build Plan + Architecture + Production Setup Guide)"
+            echo "then tick the '- [x] Notion updated' checkbox in the PR description."
+            exit 1
+          fi
+          echo "✅ Notion checklist item is checked."

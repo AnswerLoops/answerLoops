@@ -1,0 +1,74 @@
+---
+title: FAQ Generator
+description: Auto-generate a weekly FAQ from resolved tickets and publish it anywhere with one click.
+---
+
+## What is the FAQ Generator?
+
+The FAQ Generator turns your resolved support tickets into a structured FAQ document. Each week, AnswerLoops scans all tickets that were resolved in the past 7 days, clusters them by topic, and uses AI to write clean Q&A pairs — one FAQ entry per question cluster.
+
+The result is a living FAQ that reflects what your community is actually asking, not what you assumed they'd ask when you wrote your original docs.
+
+---
+
+## How to generate a FAQ
+
+1. Go to **FAQ** in the left sidebar
+2. Click **Generate from this week's tickets**
+3. AnswerLoops calls the AI with all resolved tickets from the past 7 days
+4. The FAQ appears on the page — review and copy it wherever you publish docs
+
+<Note>
+  Only **resolved** tickets count. Open or in-progress tickets are excluded. If you click Generate and see "No tickets to generate from", resolve some tickets first or check that your tickets have been updated to resolved status.
+</Note>
+
+---
+
+## What a FAQ entry looks like
+
+Each entry contains:
+
+- **Question** — the original question, cleaned up and normalized
+- **Answer** — the resolution, written as a self-contained answer (not "see the thread above")
+- **Source ticket link** — links back to the original ticket for full context
+
+Multiple tickets that ask the same thing are merged into one FAQ entry.
+
+---
+
+## FAQ history
+
+Every time you generate a FAQ, AnswerLoops saves a snapshot with:
+- The week it covers (Monday → Sunday)
+- How many tickets were included
+- The full FAQ content
+
+You can view past snapshots by returning to the FAQ page — previous weeks are listed below the current week's output.
+
+---
+
+## Copying and publishing
+
+The FAQ is plain text (Markdown). Copy it and paste it into:
+- Your docs site
+- A Notion page
+- A Discord `#faq` channel
+- Your GitHub wiki
+
+AnswerLoops doesn't auto-publish — you control where the FAQ goes.
+
+---
+
+## Troubleshooting
+
+**Generate button does nothing / spinner disappears with no output**
+
+The most common cause is no resolved tickets in the past 7 days. Go to **Tickets**, filter by status, and confirm some are marked Resolved. If they are and it still fails, check your AI provider key in **Settings → AI Model**.
+
+**FAQ shows last week's content even after generating again**
+
+Refresh the page after generating. The new snapshot is saved immediately but the page may show a cached version.
+
+**FAQ is too long / too many entries**
+
+Each resolved ticket contributes at most one entry. To reduce FAQ length, resolve fewer tickets per week (close duplicates without resolving them separately) or edit the output after generating.

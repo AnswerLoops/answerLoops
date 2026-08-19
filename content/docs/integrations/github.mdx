@@ -1,0 +1,127 @@
+---
+title: GitHub
+description: Ingest GitHub Issues and Discussions as tickets, and sync repo markdown and answered Discussions into the Knowledge Base.
+---
+
+## Overview
+
+The GitHub integration does three things:
+
+1. **Ticket ingest** — new Issues and Discussions become tickets in AnswerLoops. AI drafts a reply and posts it back as a GitHub comment automatically when confidence is high enough **and Automatic Deflections is turned on for that repo** (off by default — see [per-repo settings](#5-configure-per-repo-settings)). Issues, comments, and discussions authored by anyone with write access to the repo — owners, org members, and collaborators (GitHub's `author_association` field) — are skipped, so maintainers filing their own work-tracking issues never turn into support tickets or count against your deflection rate.
+2. **Markdown KB sync** — markdown files in a repo are embedded into the Knowledge Base. Syncs automatically on every push (when enabled) or manually via **Sync now**.
+3. **Discussions KB sync** — answered GitHub Discussions become first-class KB articles: the discussion title is the question, the accepted answer is the answer, attributed to the answering user. A discussion syncs the moment it's marked answered, and un-marking an answer removes the article. **Sync now** also backfills every already-answered discussion in the repo.
+
+## Prerequisites
+
+- A GitHub App created under your account or org
+- `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_APP_SLUG`, and `GITHUB_WEBHOOK_SECRET` set in your environment
+
+## 1. Create a GitHub App
+
+Go to **github.com → Settings → Developer settings → GitHub Apps → New GitHub App**.
+
+| Field | Value |
+|---|---|
+| GitHub App name | Your app name (e.g. `AnswerLoops`) |
+| Homepage URL | `https://yourdomain.com` |
+| Callback URL | `https://yourdomain.com/api/auth/callback/github` |
+| Setup URL (Post installation) | `https://yourdomain.com/api/github/callback` |
+| Webhook URL | `https://yourdomain.com/api/github/webhook` |
+| Webhook secret | Any random string — save it as `GITHUB_WEBHOOK_SECRET` |
+
+Under **Permissions**, set:
+
+- **Repository → Issues**: Read & write
+- **Repository → Contents**: Read-only (for KB sync)
+- **Repository → Metadata**: Read-only
+- **Repository → Discussions**: Read-only (or Read & write)
+
+<Warning>
+  Grant **Repository → Discussions** before trying to subscribe to Discussion events. GitHub only shows event checkboxes for permissions you've already granted — if Discussions isn't set, the **Discussion** and **Discussion comment** checkboxes in the next step won't be visible at all, not greyed out, just missing. If you already saved the app without this permission, add it now, click **Save changes** (its own button, separate from the rest of the page), accept the org re-authorization prompt, then come back to Subscribe to events.
+</Warning>
+
+Under **Subscribe to events**, tick:
+
+- Issues
+- Issue comments
+- Discussions
+- Discussion comments
+- Push (for automatic KB sync on push)
+
+Save the app. Note the **App ID** and your **App slug** (the URL-safe name).
+
+## 2. Generate a private key
+
+In your GitHub App settings → **Private keys** → **Generate a private key**. This downloads a `.pem` file.
+
+Base64-encode it:
+
+```bash
+base64 -i your-app.pem | tr -d '\n'
+```
+
+Set the result as `GITHUB_APP_PRIVATE_KEY`.
+
+## 3. Set environment variables
+
+```bash
+GITHUB_APP_ID=<your-app-id>
+GITHUB_APP_PRIVATE_KEY=<base64-encoded-pem>
+GITHUB_APP_SLUG=<your-app-slug>
+GITHUB_WEBHOOK_SECRET=<your-webhook-secret>
+```
+
+## 4. Install the app
+
+In your AnswerLoops dashboard, go to **Settings → GitHub → Connect GitHub**. This opens the GitHub App install page for your account or org. After authorizing, GitHub redirects back and your repos are auto-discovered.
+
+## 5. Configure per-repo settings
+
+Each connected repo has three controls:
+
+- **Monitored events** — choose Issues, Discussions, Both, or None. This governs *ticket ingest* only.
+- **Automatic Deflections** — off by default. While it's off, even a high-confidence answer is held as a draft on the dashboard awaiting Approve/Edit/Dismiss instead of posting as a GitHub comment automatically — the issue gets a brief acknowledgment comment instead. Turn it on per-repo once you trust the AI's answers going out unsupervised.
+- **Knowledge Base source** — toggle KB sync on/off; **Sync now** triggers an immediate sync
+
+When KB sync is enabled: every push to the default branch re-embeds all `.md` and `.mdx` files automatically, and every discussion marked as answered syncs into the KB immediately (independent of **Monitored events** — a repo can feed the KB from Discussions even if ticket ingest is set to `Issues` or `None`). **Sync now** re-syncs both markdown files and the full set of currently-answered discussions.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="GitHub webhook returns 401">
+    Two causes:
+
+    1. **Auth guard** — confirm `/api/github/webhook` is in `PUBLIC_PATHS` in `auth.ts`. GitHub sends unauthenticated POSTs; Auth.js blocks them before the route handler runs if the path isn't whitelisted.
+    2. **Secret mismatch** — `GITHUB_WEBHOOK_SECRET` in your environment must exactly match the webhook secret set in the GitHub App. No leading/trailing whitespace. Regenerate both if unsure.
+
+    To diagnose: GitHub App → **Advanced** → **Recent Deliveries** shows the response body. `{"error":"Unauthorized"}` = auth guard. `{"error":"bad signature"}` = secret mismatch.
+  </Accordion>
+
+  <Accordion title="Issues not appearing as tickets">
+    Check:
+    - Webhook deliveries show 200 (not 401 or 500)
+    - Repo's **Monitored events** in Settings → GitHub is set to `Issues` or `Both`
+    - The GitHub App has **Issues** ticked under **Subscribe to events**
+  </Accordion>
+
+  <Accordion title="Discussions not appearing as tickets, even though Monitored events includes Discussions">
+    Almost always a missing app permission, not a config problem in AnswerLoops. In the GitHub App's **Permissions & events** page:
+    1. Check **Repository permissions → Discussions** is actually set (Read-only or Read & write) — if it's blank, the **Discussion** / **Discussion comment** checkboxes under Subscribe to events don't render at all, so it's easy to think you already subscribed when the app never had the option to.
+    2. If you just added the Discussions permission, click **Save changes**, accept the org re-authorization prompt, then scroll back down — the event checkboxes only appear after that save round-trip.
+    3. Confirm **Discussion** and **Discussion comment** are checked under Subscribe to events and saved.
+    4. GitHub does not retroactively redeliver past events — any test Discussion created before you fixed the permission/subscription needs to be recreated to actually test the fix.
+  </Accordion>
+
+  <Accordion title="KB sync shows 0 chunks">
+    - Confirm the repo contains `.md` or `.mdx` files outside `node_modules`, `vendor`, or test directories
+    - Check that an AI provider is configured in Settings → AI Model (embeddings require an API key)
+    - Check Railway/server logs for embedding errors
+  </Accordion>
+
+  <Accordion title="Answered Discussions not appearing in the KB">
+    - Confirm **Knowledge Base source** is toggled on for the repo — Discussions sync follows this flag, not **Monitored events**
+    - The GitHub App must have **Repository permissions → Discussions** granted, and **Discussion** ticked under **Subscribe to events** — see the permission-before-events note above if the event checkbox was never visible to check
+    - GitHub only sends the `answered` action when a maintainer explicitly marks a comment as the answer — discussions with replies but no accepted answer are intentionally excluded
+    - Run **Sync now** to backfill discussions answered before the integration was connected
+  </Accordion>
+</AccordionGroup>

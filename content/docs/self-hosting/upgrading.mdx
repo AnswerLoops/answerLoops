@@ -1,0 +1,39 @@
+---
+title: Upgrading
+description: How to update your self-hosted AnswerLoops instance.
+---
+
+## Standard upgrade
+
+```bash
+git pull origin main
+docker compose up --build -d
+```
+
+Drizzle migrations run automatically on startup.
+
+## Check migration status
+
+```bash
+docker compose exec postgres psql -U community -d community \
+  -c "SELECT * FROM __drizzle_migrations ORDER BY created_at DESC LIMIT 5;"
+```
+
+## Rollback
+
+AnswerLoops doesn't ship automatic rollback tooling. To revert:
+
+```bash
+git checkout <previous-tag>
+docker compose up --build -d
+```
+
+<Warning>
+  If a migration added new columns or tables, rolling back the code won't remove them. This is generally safe — extra columns are ignored. Dropped columns may cause issues; check the migration diff before rolling back.
+</Warning>
+
+## Check current version
+
+```bash
+git log --oneline -1
+```

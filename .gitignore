@@ -1,0 +1,68 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# local sqlite database (runtime data, never versioned)
+/data/*.db
+/data/*.db-shm
+/data/*.db-wal
+
+# testing
+/coverage
+/e2e/.tmp
+/test-results
+/playwright-report
+/playwright/.cache
+
+# next.js
+/.next/
+/out/
+
+# fumadocs-mdx codegen — regenerated on dev/build from content/docs
+/.source/
+/.cache/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+.env.local
+# ...but the example files are documentation and must stay tracked.
+!.env.example
+!.env.staging.example
+!.env.notion.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+.pnpm-store/
+
+
+# Local Notion migration working files — contains workspace page IDs
+.notion-migration/
+
+# Local-only sibling checkout, not part of this repo
+.internal-tools/
+.env

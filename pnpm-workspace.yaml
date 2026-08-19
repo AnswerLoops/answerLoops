@@ -1,0 +1,55 @@
+packages: []
+
+# Supply-chain hardening
+blockExoticSubdeps: true       # block deps installed from non-registry sources (git, file, http)
+minimumReleaseAge: 10080       # require packages to be 7 days old before installing (minutes)
+# trustPolicy: no-downgrade — disabled: next-auth@5.0.0-beta.31 lacks provenance attestation
+# Re-enable when Auth.js v5 stable ships with provenance
+
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - unrs-resolver
+allowBuilds:
+  better-sqlite3: true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@mendable/firecrawl-js@4.28.1'
+  # 4 high-severity Next.js advisories (middleware/proxy bypass, Server Actions
+  # DoS, Server Actions SSRF, rewrites SSRF) fixed only in 16.2.11+ — first-party
+  # Vercel release, can't wait out the normal 7-day aging window. @next/* are
+  # next's own per-platform binary/env subpackages, published in lockstep.
+  - 'next@16.2.11'
+  - '@next/env@16.2.11'
+  - '@next/swc-darwin-arm64@16.2.11'
+  - '@next/swc-darwin-x64@16.2.11'
+  - '@next/swc-linux-arm64-gnu@16.2.11'
+  - '@next/swc-linux-arm64-musl@16.2.11'
+  - '@next/swc-linux-x64-gnu@16.2.11'
+  - '@next/swc-linux-x64-musl@16.2.11'
+  - '@next/swc-win32-arm64-msvc@16.2.11'
+  - '@next/swc-win32-x64-msvc@16.2.11'
+  # 1 critical (email-normalizer homoglyph bypass) + 2 high Auth.js advisories
+  # fixed only in next-auth 5.0.0-beta.32 / @auth/core 0.41.3 — first-party
+  # Auth.js release, can't wait out the normal 7-day aging window.
+  - 'next-auth@5.0.0-beta.32'
+  - '@auth/core@0.41.3'
+  # 4 moderate/low Hono advisories (algorithmic-complexity DoS, SSR output
+  # cross-user leak, proxy header handling) fixed only in 4.12.34, published
+  # inside the 7-day window — pulled in transitively via
+  # @mastra/core>@modelcontextprotocol/sdk, not a direct dependency we can
+  # pin to an older patched release instead.
+  - 'hono@4.12.34'
+overrides:
+  ws: '>=8.21.0'
+  shell-quote: '>=1.8.5'   # GHSA-395f-4hp3-45gv — >=1.8.4 wasn't actually patched, 1.8.4 itself is vulnerable
+  undici: '>=6.28.0 <7.0.0'   # GHSA-8xcm-r25x-g524 (response desync via retry interceptor) — raised from ^6.27.0, reached via discord.js. Capped below 7.x after an open range let a newer transitive demand (added by @mastra/pg/@mastra/memory) drag discord.js's pinned undici@6.24.1 up to 8.9.0 — 3 majors past what discord.js@14.26.4/@discordjs/rest@2.6.1 actually declare and are built against, breaking their Headers construction at runtime (bot crash-looped on every Discord REST call). Same failure mode already caught once below for js-yaml's <4.0.0 cap — apply the same defensive bound to every open-ended override, not just the one that already broke.
+  postcss: '>=8.5.23'   # GHSA-fxqj-rqcc-2cmp (incomplete fix of GHSA-6g55-p6wh-862q, arbitrary .map disclosure) — raised from >=8.5.18, which the newer advisory outgrew
+  sharp: '>=0.35.0'   # GHSA-f88m-g3jw-g9cj — inherited libvips CVEs (2026-33327/33328/35590/35591), pulled in by next and next-auth>next; single resolved version in this tree so an open range is safe here
+  js-yaml: '>=3.15.1 <4.0.0'   # GHSA-5p4m-2wfm-xmqj (quadratic CPU consumption in !!omap resolution) — reached via @mastra/core>gray-matter, which requires the legacy 3.x safeLoad/safeDump API removed in 4.x; an open range resolved to 5.x and broke gray-matter entirely
+  nanoid: '>=3.3.17'   # GHSA-2v37-7h3g-55p8 (custom generators loop indefinitely on size 0) — reached via fumadocs-core/fumadocs-mdx>next>postcss
+  esbuild: '>=0.24.3'   # GHSA-67mh-4wv8-2f99 (dev server accepts requests from any origin) — reached via drizzle-kit>@esbuild-kit
+  hono: '>=4.12.34'   # GHSA-8j4g-w8fx-2239, GHSA-f23p-vx2j-j53r, GHSA-54fx-42gc-7vw4, GHSA-79qm-7rj5-m7r9 — reached via @mastra/core>@modelcontextprotocol/sdk
+  '@ai-sdk/provider-utils': '>=3.0.31'   # GHSA-866g-f22w-33x8 (uncontrolled resource consumption) — reached via @mastra/core, which npm-aliases this exact package to a pinned 3.0.30; 3.0.31 is the newest 3.0.x published (no 3.0.98 exists despite the advisory's stated patched range)

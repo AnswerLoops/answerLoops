@@ -1,0 +1,14 @@
+node_modules
+.pnpm-store
+.claude
+npm-debug.log
+.next
+.git
+data
+e2e/.tmp
+test-results
+playwright-report
+.gitignore
+README.md
+.env.local
+.env.*.local

@@ -1,0 +1,116 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "theme": "mint",
+  "name": "AnswerLoops",
+  "favicon": "/favicon.ico",
+  "logo": {
+    "light": "/logo/logo.png",
+    "dark": "/logo/logo.png"
+  },
+  "colors": {
+    "primary": "#2563eb",
+    "light": "#60a5fa",
+    "dark": "#1e3a8a"
+  },
+  "font": {
+    "headings": { "family": "Geist" },
+    "body": { "family": "Geist" }
+  },
+  "background": {
+    "style": "gradient"
+  },
+  "topbar": {
+    "style": "gradient"
+  },
+  "topbarLinks": [
+    { "name": "Dashboard", "url": "https://app.answerloops.com/dashboard" }
+  ],
+  "topbarCtaButton": {
+    "name": "Get Started",
+    "url": "https://app.answerloops.com/login"
+  },
+  "navigation": {
+    "anchors": [
+      {
+        "name": "GitHub",
+        "icon": "github",
+        "url": "https://github.com/AnswerLoops/AnswerLoops"
+      }
+    ],
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": ["introduction", "quickstart-cloud", "quickstart-self-host"]
+      },
+      {
+        "group": "Self-Hosting",
+        "pages": [
+          "self-hosting/prerequisites",
+          "self-hosting/environment-variables",
+          "self-hosting/docker",
+          "self-hosting/oauth",
+          "self-hosting/ai-providers",
+          "self-hosting/discord-bot",
+          "self-hosting/slack-app",
+          "self-hosting/telegram-bot",
+          "self-hosting/email-channel",
+          "self-hosting/stripe",
+          "self-hosting/enterprise",
+          "self-hosting/security-scanning",
+          "self-hosting/production",
+          "self-hosting/upgrading",
+          "self-hosting/troubleshooting"
+        ]
+      },
+      {
+        "group": "Product Guide",
+        "pages": [
+          "product/dashboard",
+          "product/knowledge-base",
+          "product/tickets",
+          "product/ai-deflection",
+          "product/escalation",
+          "product/csat",
+          "product/simulation",
+          "product/knowledge-gaps",
+          "product/widget",
+          "product/faq-generator",
+          "product/analytics",
+          "product/team",
+          "product/ai-config",
+          "product/billing"
+        ]
+      },
+      {
+        "group": "Integrations",
+        "pages": [
+          "integrations/discord",
+          "integrations/slack",
+          "integrations/github",
+          "integrations/mcp",
+          "integrations/agent-api",
+          "integrations/openai",
+          "integrations/anthropic",
+          "integrations/google-gemini",
+          "integrations/groq",
+          "integrations/mistral",
+          "integrations/ollama",
+          "integrations/stripe"
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "reference/environment-variables",
+          "reference/api-endpoints",
+          "reference/webhooks",
+          "reference/data-model",
+          "reference/billing-plans"
+        ]
+      }
+    ]
+  },
+  "footerSocials": {
+    "github": "https://github.com/AnswerLoops/AnswerLoops"
+  }
+}

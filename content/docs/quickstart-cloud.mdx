@@ -1,0 +1,99 @@
+---
+title: Cloud Quickstart
+description: Connect your community and start deflecting questions in under 5 minutes — no infrastructure or Developer Portal required.
+---
+
+## 1. Create an account
+
+Go to [app.answerloops.com](https://app.answerloops.com) and sign in with **GitHub** or **Google**. No credit card required to start.
+
+## 2. Complete the onboarding wizard
+
+On first login, the onboarding wizard launches automatically. It has four steps — you can finish all of them now or skip any step and return to it from Settings later.
+
+| Step | What you do |
+|---|---|
+| **Connect community** | Add Discord, Slack, GitHub, Telegram, Email, or Widget |
+| **Seed KB** | Upload files or paste a URL to crawl |
+| **Configure AI** | Choose your AI provider and tune the confidence threshold |
+| **Go live** | Review your settings and enable the bot |
+
+## 3. Connect your first channel
+
+<Tabs items={["Discord (recommended)","Slack","GitHub","Other channels"]}>
+  <Tab>
+    Click **"Add AnswerLoops to Discord"** in the wizard. This opens a standard Discord OAuth screen where you authorize the bot on your server.
+
+    - No Discord Developer Portal access needed
+    - No bot token to copy
+    - After authorization, your server's channels appear in a picker — select the ones where you want the bot to listen
+
+    <Tip>
+      If you manage a forum channel, select it here too. AnswerLoops listens for new forum posts via the ThreadCreate event and ingests replies inside the thread automatically.
+    </Tip>
+  </Tab>
+  <Tab>
+    Click **"Connect Slack"** in the wizard. You'll go through a standard Slack OAuth flow — approve the permission scopes and pick your workspace.
+
+    After OAuth, select the channels where the bot should listen. No Slack admin approval or manifest upload required on the cloud plan.
+  </Tab>
+  <Tab>
+    Click **"Connect GitHub"** in the wizard (Settings → GitHub → Connect GitHub). Install the AnswerLoops GitHub App on your organization or repository.
+
+    Once installed, Issues, Discussions, and their comments are ingested automatically. AI replies post back as GitHub comments on the same thread.
+  </Tab>
+  <Tab>
+    **Telegram** — Provide your Telegram bot token. AnswerLoops registers a webhook automatically.
+
+    **Email** — Copy the inbound webhook URL from Settings → Email and configure forwarding in your email provider.
+
+    **Website widget** — Copy the `<script>` tag from Settings → Widget and paste it into your site's `<head>`.
+  </Tab>
+</Tabs>
+
+## 4. Seed your knowledge base
+
+Go to **Knowledge Base** (or continue in the wizard's "Seed KB" step) and add your content:
+
+<Tabs items={["Upload files","Crawl a URL","GitHub repo sync"]}>
+  <Tab>
+    Drag and drop one or more files into the upload area. Supported formats: **PDF, DOCX, MD, TXT, CSV**.
+
+    Files are chunked, embedded, and ready to search within about 30 seconds.
+  </Tab>
+  <Tab>
+    Paste a URL into the URL field and click **Import**. AnswerLoops uses Firecrawl to fetch and embed the page (or up to 25 pages for a full site crawl).
+
+    Typical crawl time is 15–60 seconds depending on page count.
+  </Tab>
+  <Tab>
+    In Settings → GitHub, enable **Repo Sync**. AnswerLoops imports all Markdown files from the configured repo. Re-sync manually or enable automatic sync on push.
+  </Tab>
+</Tabs>
+
+## 5. Test a deflection
+
+Post a question in one of your connected channels that you know is covered by the content you just imported. You should see AnswerLoops reply within a few seconds.
+
+<Tip>
+  If the AI doesn't reply, the confidence score may be below your threshold. Check **Tickets** to see the score, and lower the threshold in **Settings → AI Config** if needed.
+</Tip>
+
+If a question comes in that the AI can't answer well, it will appear in **Knowledge Gaps** so you can address the content hole.
+
+## Next steps
+
+<CardGroup>
+  <Card title="AI Configuration" icon="sliders" href="/docs/product/ai-config">
+    Switch AI providers or tune the confidence threshold
+  </Card>
+  <Card title="Knowledge Gaps" icon="circle-question" href="/docs/product/knowledge-gaps">
+    See what questions the AI couldn't answer and close the gaps
+  </Card>
+  <Card title="Escalation" icon="bell" href="/docs/product/escalation">
+    Route low-confidence tickets to a human support role
+  </Card>
+  <Card title="Invite your team" icon="users" href="/docs/product/team">
+    Add teammates to your workspace
+  </Card>
+</CardGroup>

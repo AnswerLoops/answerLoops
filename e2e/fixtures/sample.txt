@@ -1,0 +1,5 @@
+AnswerLoops Test Document
+
+Configure the client by setting DATABASE_URL.
+Authentication requires AUTH_SECRET.
+For bot issues verify BOT_SECRET matches.

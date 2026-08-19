@@ -1,0 +1,20 @@
+{
+  "title": "Self-Hosting",
+  "pages": [
+    "prerequisites",
+    "environment-variables",
+    "docker",
+    "oauth",
+    "ai-providers",
+    "discord-bot",
+    "slack-app",
+    "google-chat-app",
+    "telegram-bot",
+    "email-channel",
+    "enterprise",
+    "security-scanning",
+    "production",
+    "upgrading",
+    "troubleshooting"
+  ]
+}

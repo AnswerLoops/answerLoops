@@ -1,0 +1,20 @@
+{
+  "title": "Integrations",
+  "pages": [
+    "discord",
+    "slack",
+    "google-chat",
+    "telegram",
+    "email",
+    "github",
+    "mcp",
+    "agent-api",
+    "openai",
+    "anthropic",
+    "google-gemini",
+    "groq",
+    "mistral",
+    "ollama",
+    "stripe"
+  ]
+}

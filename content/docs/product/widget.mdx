@@ -1,0 +1,87 @@
+---
+title: Widget
+description: Embed an AI chat widget on your site that answers from your knowledge base.
+---
+
+The widget is a chat bubble you drop onto any website. Visitors ask questions and get answers grounded in your knowledge base, without logging in or opening a ticket.
+
+<Callout>
+  The widget answers from **published knowledge-base articles only**. Unlike your connected channels, it does not draw on past resolved tickets — those are written for the one person who raised them and often contain account details or internal notes, and a widget visitor is anonymous.
+
+  The practical consequence: a workspace with an empty knowledge base gets thin widget answers. Promoting a few resolved tickets into the knowledge base is what makes the widget useful, and it's the same step that generalises an answer so it's safe for anyone to read.
+</Callout>
+
+## Setup
+
+1. Go to **Settings → Widget**
+2. Copy the embed snippet — it looks like this:
+
+```html
+<script src="https://your-instance.example.com/widget.js" data-widget-id="..."></script>
+```
+
+3. Paste it into your site's HTML, before the closing `</body>` tag
+
+That's it. The bubble appears bottom-right and opens a chat panel on click. You can place it on one page or every page — the snippet is all that decides.
+
+## Restricting where the widget works
+
+The `data-widget-id` value is an **embed token**, and it is deliberately public: it ships in the HTML of every page the widget renders on. There is no way to hide it, which means anyone can copy it out of your page source and use it on their own site — putting your knowledge base and your AI spend behind it.
+
+**Settings → Widget → Allowed domains** is how you stop that. List the domains you embed on, one per line:
+
+```
+example.com
+docs.example.com
+```
+
+Subdomains of a listed domain are included, so `example.com` also covers `support.example.com`. Ports are ignored. Embeds on any other domain show a short message explaining that the widget is not enabled there, rather than failing silently.
+
+<Warning>
+  **The widget will not load anywhere until you list at least one domain.** This is deliberate: an allowlist that defaults to open protects only the people who already thought about it. Your own AnswerLoops domain is always permitted, so the **Preview widget** link in Settings works without any configuration.
+</Warning>
+
+### How to think about the allowlist
+
+The allowlist controls **where your widget renders**. If someone copies your embed snippet out of your page source and drops it on their own site, that embed is refused.
+
+Treat it as a scoping control rather than as authentication. Your embed token is a public identifier — it appears in your page HTML by design, the same as any embedded widget — so the allowlist is what keeps it useful only where you intend, not a secret that proves who is calling. Usage limits apply independently of it.
+
+Only workspace owners and admins can change the allowed domains or regenerate the token. Members can see the embed snippet but not alter where it works.
+
+### Documentation sites
+
+If your docs run on a platform that executes custom JavaScript on every page — Mintlify, Docusaurus, and most others do — you can mount the widget there without editing templates. Drop a small script that injects the snippet, and add the docs domain to your allowed domains.
+
+This is usually the highest-value place to put it: docs visitors are anonymous and arrive with support-shaped questions, which is exactly what the knowledge base answers.
+
+<Note>
+  On platforms with no build step, this means the embed token ends up committed to whatever repository holds your docs. The token is a public identifier rather than a secret — it appears in page HTML regardless — but committing it does mean rotating it requires a commit. If that matters for your setup, hold off until the hosted loader ships, which replaces the token in the snippet with a stable slug.
+</Note>
+
+## Rotating the token
+
+Tokens expire after **90 days**. Settings warns you as the date approaches, and **Regenerate token** issues a new one.
+
+<Warning>
+  Regenerating takes effect immediately and invalidates the old token. Every page still using the old snippet stops working until you update it. Rotate when you are able to update your site, not before.
+</Warning>
+
+## Rate limits & input caps
+
+The widget chat endpoint is public (no login required), so it enforces limits to protect your AI provider bill from abuse:
+
+- Up to **100 requests/minute per widget token** (caps total cost exposure for one site even if traffic comes from many IPs)
+- Up to **20 requests/minute per visitor** (token + IP combination)
+- Each message capped at **4,000 characters**; at most **50 messages** per request
+- Request bodies capped at **512KB**
+
+The lead-capture endpoint, used when a visitor leaves an email address, is limited separately at **30/minute per token** and **5/minute per visitor**, with a 64KB body cap and a validated address.
+
+Requests over these limits return `429 Too Many Requests`. Limits are enforced across every running instance rather than per process, so the numbers above are the real ceiling. They are not currently configurable.
+
+## What the widget can and cannot reach
+
+It answers from your **knowledge base** — published articles only. It does not read your ticket queue, and it has no access to settings, billing, or team data either; the embed token grants none of those.
+
+Treat knowledge base contents as visible to anyone who can use the widget. If you have ingested internal documentation, review it before making the widget public.

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm exec playwright test:*)",
+      "Bash(pnpm test:e2e:*)",
+      "Bash(lsof:*)",
+      "Bash(npx tsc:*)",
+      "Edit",
+      "Write"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Bash(cat *.env*)",
+      "Bash(head *.env*)",
+      "Bash(tail *.env*)",
+      "Bash(less *.env*)",
+      "Bash(more *.env*)",
+      "Bash(grep *.env*)",
+      "Bash(awk *.env*)",
+      "Bash(sed *.env*)",
+      "Bash(xxd *.env*)",
+      "Bash(od *.env*)",
+      "Bash(strings *.env*)",
+      "Bash(nl *.env*)",
+      "Bash(printenv:*)",
+      "Bash(env)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/check-gh-disclosure.mjs\""
+          }
+        ]
+      }
+    ]
+  }
+}

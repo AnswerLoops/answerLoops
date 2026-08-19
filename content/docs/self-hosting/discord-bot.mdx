@@ -1,0 +1,96 @@
+---
+title: Discord Bot Setup
+description: Connect AnswerLoops to your Discord server — one click on the hosted platform, or full self-hosted control.
+---
+
+## Hosted platform (one-click setup)
+
+On the AnswerLoops cloud platform, no Discord Developer Portal is required.
+
+1. Go to **Settings → Discord**
+2. Click **Add AnswerLoops to Discord**
+3. Pick your server in Discord's authorization screen
+4. Return to Settings — tick the channels you want monitored
+5. Save
+
+The platform bot is already running. Channel picks are saved instantly and hot-reloaded — no restart needed.
+
+---
+
+## Self-hosted setup
+
+### 1. Create a Discord Application
+
+1. Go to [discord.com/developers/applications](https://discord.com/developers/applications)
+2. Click **New Application** → name it (e.g. "AnswerLoops")
+3. Go to **Bot** tab → **Add Bot**
+4. Under **Token** → **Reset Token** → copy it
+
+```dotenv
+DISCORD_TOKEN=your_bot_token
+DISCORD_APPLICATION_ID=your_application_id  # from General Information tab
+```
+
+### 2. Set bot permissions
+
+Under **Bot** tab, enable these **Privileged Gateway Intents**:
+- Message Content Intent
+- Server Members Intent (optional, for role pings)
+
+### 3. Invite the bot to your server
+
+Go to **OAuth2 → URL Generator**:
+- Scopes: `bot`, `applications.commands`
+- Bot permissions: `Send Messages`, `Read Message History`, `View Channels`, `Use Slash Commands`
+
+Copy the generated URL and open it in your browser to invite the bot.
+
+### 4. Get channel IDs
+
+Enable Developer Mode: Discord → User Settings → Advanced → Developer Mode ✓
+
+Right-click a channel → **Copy Channel ID**
+
+### 5. Configure in AnswerLoops Settings
+
+Go to **Settings → Discord** and enter:
+- **Bot Token** — same as `DISCORD_TOKEN`
+- **Channel IDs** — channels to listen on (comma-separated)
+- **Escalation Role ID** (optional) — role to @mention when AI confidence is low
+- **Confidence threshold** — 0–1, default 0.8
+
+---
+
+## Platform OAuth env vars (self-hosted multi-tenant)
+
+To enable the one-click OAuth flow on your own deployment, add these env vars:
+
+```dotenv
+DISCORD_CLIENT_ID=your_application_client_id
+DISCORD_CLIENT_SECRET=your_application_client_secret  # OAuth2 → Client Secret
+DISCORD_TOKEN=your_platform_bot_token  # single bot shared across all orgs
+```
+
+The callback URL to register in Discord OAuth2 is:
+
+```
+https://your-domain.com/api/discord/callback
+```
+
+## Config hot-reload
+
+The bot uses Postgres `LISTEN/NOTIFY` to pick up config changes instantly — no restart needed.
+
+When you save changes in **Settings → Discord** (channel IDs, bot token, confidence threshold), the database fires a `pg_notify('config_changed')` event. The bot's dedicated listener connection receives it and reloads config within milliseconds.
+
+The bot also updates its channel→guild map automatically whenever it joins or leaves a server (`GuildCreate` / `GuildDelete` events) — no manual ID entry required.
+
+<Note>
+The bot maintains one dedicated Postgres connection for `LISTEN`. This is separate from the connection pool and is closed cleanly on `SIGTERM`/`SIGINT`.
+</Note>
+
+## Slash commands
+
+Once connected, AnswerLoops registers these slash commands:
+- `/ask [question]` — search the knowledge base and return the best match
+- `/summarize` — summarize the current thread as bullet points

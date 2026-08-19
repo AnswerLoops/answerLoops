@@ -1,0 +1,84 @@
+---
+title: Docker Setup
+description: Running AnswerLoops with Docker Compose.
+---
+
+Everything here assumes you've already cloned the repo and filled in a real `.env.local` — see the [self-host quickstart](/docs/quickstart-self-host) if you haven't done that part yet. Docker Compose reads that file; it doesn't generate secrets or register OAuth apps for you.
+
+## Start
+
+```bash
+docker compose up --build
+```
+
+On first run this:
+1. Builds the Next.js app image
+2. Starts Postgres with a named volume (`postgres-data`) for persistence
+3. Runs Drizzle migrations automatically
+4. Serves the app on `http://localhost:3000`
+
+## Stop (keep data)
+
+```bash
+docker compose down
+```
+
+<Warning>
+  Never run `docker compose down -v`. The `-v` flag deletes named volumes, which includes your Postgres data. All articles, tickets, and org settings will be lost.
+</Warning>
+
+## Rebuild after code changes
+
+```bash
+docker compose up --build
+```
+
+## View logs
+
+```bash
+# All services
+docker compose logs -f
+
+# App only
+docker compose logs app -f
+
+# Postgres only
+docker compose logs postgres -f
+```
+
+## Access the database
+
+```bash
+docker compose exec postgres psql -U community -d community
+```
+
+Common queries:
+```sql
+-- List all tables
+\dt
+
+-- Check org onboarding status
+SELECT id, name, onboarded_at FROM orgs;
+
+-- Check users
+SELECT id, email, provider FROM users;
+
+-- Exit
+\q
+```
+
+## Named volumes
+
+| Volume | Contents |
+|---|---|
+| `postgres-data` | All database data |
+| `pnpm-store` | pnpm package cache (speeds up rebuilds) |
+
+## Environment variables in Docker
+
+Docker Compose reads from your `.env` file automatically. Any variable set in `.env` is available inside the `app` container.
+
+To verify a variable is loaded:
+```bash
+docker compose exec app printenv OPENAI_API_KEY
+```

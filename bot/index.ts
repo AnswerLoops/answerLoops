@@ -1,0 +1,494 @@
+import postgres from 'postgres'
+import {
+  Client,
+  GatewayIntentBits,
+  Events,
+  Message,
+  Partials,
+  MessageReaction,
+  PartialMessageReaction,
+  PartialMessage,
+  User,
+  PartialUser,
+  ChatInputCommandInteraction,
+  AnyThreadChannel,
+} from 'discord.js'
+import {
+  forwardMessage,
+  forwardReaction,
+  type BotConfig,
+  type IncomingMessage,
+  type IncomingReaction,
+} from './handlers'
+import { registerSlashCommands, handleAsk, handleSummarize, type SlashConfig } from './slash'
+import { logger } from '../lib/logger'
+import { getIntegration, listActiveSlackIntegrations, parseChannelIds, saveGuildChannelMap } from '../lib/db/queries/integrations'
+import { getDiscordGuildByGuildId, parseDiscordGuildChannelIds } from '../lib/db/queries/discord-guilds'
+import { markDiscordDeleted, markThreadDiscordDeleted } from '../lib/db/queries/tickets'
+import { DEFAULT_ORG_ID } from '../lib/db/schema'
+import { startSlackPoller, reloadSlackPoller, stopSlackPoller } from '../lib/slack/poller'
+import { getOrgsPendingPurge, hardPurgeOrg } from '../lib/db/queries/orgs'
+import { getStuckPendingTickets } from '../lib/db/queries/tickets'
+import { getDirectDatabaseUrl } from '../lib/db/direct-url'
+import { getDeploymentMode } from '../lib/billing/plans'
+import { getOrgIdsWithFlag } from '../lib/db/queries/feature-flags'
+
+const MOD = 'bot'
+
+// How often to check for orgs whose 30-day deletion grace period has
+// elapsed. Deletion is rare and the check itself is a single indexed query,
+// so a coarse interval is plenty — this only needs to run at all, not fast.
+const ORG_PURGE_SWEEP_INTERVAL_MS = 6 * 60 * 60 * 1000
+
+function startOrgPurgeSweep(): void {
+  const sweep = async () => {
+    let orgIds: number[]
+    try {
+      orgIds = await getOrgsPendingPurge()
+    } catch (err) {
+      logger.error('org purge sweep: failed to list pending orgs', { module: MOD, error: err })
+      return
+    }
+    for (const orgId of orgIds) {
+      try {
+        await hardPurgeOrg(orgId)
+        logger.warn('org hard-purged after grace period elapsed', { module: MOD, orgId })
+      } catch (err) {
+        // One org's purge failing must not block the rest, and must not
+        // crash the bot process — it'll retry on the next sweep.
+        logger.error('org purge sweep: failed to purge org', { module: MOD, orgId, error: err })
+      }
+    }
+  }
+  sweep().catch(() => {})
+  setInterval(() => { sweep().catch(() => {}) }, ORG_PURGE_SWEEP_INTERVAL_MS)
+}
+
+// Safety net for GitHub issue #222: a ticket's after()-scheduled background
+// job (embedding, AI draft, notifications) has been observed to silently
+// never run for some messages under rapid concurrent ingestion — no error
+// logged anywhere, no way to detect it from inside the request that
+// scheduled it. Runs from the bot process, not the Next.js app, because
+// next/server's after() can only be scheduled from within a real Next.js
+// request — this deliberately forwards over HTTP to a dedicated app route
+// instead of importing the pipeline in-process, the same reason the Slack
+// poller forwards to /api/ingest rather than calling processCommunityMessage
+// directly (see lib/slack/poller.ts).
+const STUCK_TICKET_SWEEP_INTERVAL_MS = 5 * 60 * 1000
+const STUCK_TICKET_THRESHOLD_MINUTES = 5
+
+function startStuckTicketSweep(): void {
+  const targetUrl = process.env.BOT_TARGET_URL ?? 'http://localhost:3000'
+  const botSecret = process.env.BOT_SECRET
+
+  const sweep = async () => {
+    if (!botSecret) return // retry-stuck route requires BOT_SECRET; nothing to do without it
+
+    let candidates: { id: number; org_id: number }[]
+    try {
+      candidates = await getStuckPendingTickets(STUCK_TICKET_THRESHOLD_MINUTES)
+    } catch (err) {
+      logger.error('stuck ticket sweep: failed to list candidates', { module: MOD, error: err })
+      return
+    }
+
+    for (const { id, org_id } of candidates) {
+      try {
+        const res = await fetch(`${targetUrl}/api/ingest/retry-stuck`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${botSecret}` },
+          body: JSON.stringify({ ticket_id: id, org_id }),
+        })
+        if (!res.ok) {
+          logger.warn('stuck ticket sweep: retry request failed', { module: MOD, ticketId: id, status: res.status })
+        }
+      } catch (err) {
+        // One ticket's retry failing must not block the rest, and must not
+        // crash the bot process — it'll retry on the next sweep.
+        logger.error('stuck ticket sweep: failed to retry ticket', { module: MOD, ticketId: id, error: err })
+      }
+    }
+  }
+  sweep().catch(() => {})
+  setInterval(() => { sweep().catch(() => {}) }, STUCK_TICKET_SWEEP_INTERVAL_MS)
+}
+
+/**
+ * Opens a dedicated single connection for LISTEN/NOTIFY.
+ * Pooled connections cannot be used for LISTEN — the notification arrives on
+ * whichever connection Postgres chooses, so we need one stable connection.
+ * Returns a cleanup function that closes the connection on shutdown.
+ */
+function watchConfigChanges(onNotify: () => Promise<void>): () => Promise<void> {
+  const url = getDirectDatabaseUrl()
+  if (!url) {
+    logger.warn('DATABASE_URL not set — config hot-reload disabled', { module: MOD })
+    return () => Promise.resolve()
+  }
+
+  const listener = postgres(url, { max: 1 })
+
+  listener
+    .listen('config_changed', async () => {
+      logger.info('config_changed notification — reloading', { module: MOD })
+      await onNotify().catch((err) =>
+        logger.warn('config reload failed after notify', { module: MOD, error: err })
+      )
+    })
+    .catch((err) => logger.warn('LISTEN setup failed', { module: MOD, error: err }))
+
+  logger.info('LISTEN config_changed active', { module: MOD })
+  return () => listener.end()
+}
+
+/** Builds { channelId → guildId } from all guilds the bot is currently in. */
+function buildGuildChannelMap(guilds: Map<string, { channels: { cache: Map<string, unknown> } }>): Record<string, string> {
+  const map: Record<string, string> = {}
+  for (const [guildId, guild] of guilds) {
+    for (const channelId of guild.channels.cache.keys()) {
+      map[channelId] = guildId
+    }
+  }
+  return map
+}
+
+// Per-guild config cache for multi-tenant routing.
+// Maps guildId → per-org BotConfig (or null if no org has that guild connected).
+// Cleared whenever a config_changed LISTEN/NOTIFY fires so fresh DB values are
+// picked up without a bot restart.
+const guildConfigCache = new Map<string, { config: BotConfig; orgId: number } | null>()
+
+function clearGuildConfigCache() {
+  guildConfigCache.clear()
+  logger.info('per-guild config cache cleared', { module: MOD })
+}
+
+/** Resolve per-org config for a specific guildId. Falls back to null if unconfigured. */
+async function loadOrgConfigForGuild(guildId: string): Promise<{ config: BotConfig; orgId: number } | null> {
+  if (guildConfigCache.has(guildId)) return guildConfigCache.get(guildId)!
+
+  const targetUrl = process.env.BOT_TARGET_URL ?? 'http://localhost:3000'
+  const guildRow = await getDiscordGuildByGuildId(guildId).catch(() => null)
+
+  let result: { config: BotConfig; orgId: number } | null = null
+  if (guildRow) {
+    // botSecret is shared per org across every guild that org connects —
+    // resolve it from the org's integrations row, not the per-guild row.
+    const orgIntegration = await getIntegration(guildRow.org_id, 'discord').catch(() => null)
+    result = {
+      orgId: guildRow.org_id,
+      config: {
+        targetUrl,
+        botSecret: orgIntegration?.bot_secret ?? process.env.BOT_SECRET ?? '',
+        channelIds: parseDiscordGuildChannelIds(guildRow),
+      },
+    }
+  }
+
+  guildConfigCache.set(guildId, result)
+  return result
+}
+
+async function loadConfig(): Promise<{
+  discordToken: string
+  config: BotConfig
+  slashConfig: SlashConfig
+}> {
+  const targetUrl = process.env.BOT_TARGET_URL ?? 'http://localhost:3000'
+  const dbIntegration = await getIntegration(DEFAULT_ORG_ID, 'discord').catch(() => null)
+
+  const discordToken = (dbIntegration?.bot_token ?? process.env.DISCORD_TOKEN) || ''
+  const botSecret = (dbIntegration?.bot_secret ?? process.env.BOT_SECRET) || ''
+  const channelIds = dbIntegration
+    ? parseChannelIds(dbIntegration)
+    : (process.env.DISCORD_CHANNEL_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+
+  if (dbIntegration) {
+    logger.info('loaded Discord config from database', { module: MOD, channelCount: channelIds.length })
+  } else {
+    logger.info('loaded Discord config from environment variables', { module: MOD, channelCount: channelIds.length })
+  }
+
+  return {
+    discordToken,
+    config: { targetUrl, botSecret, channelIds },
+    slashConfig: { targetUrl, botSecret },
+  }
+}
+
+async function main() {
+  const initial = await loadConfig()
+
+  if (!initial.discordToken) {
+    logger.error('No Discord token found — set it in Settings → Integrations or DISCORD_TOKEN env var', { module: MOD })
+    process.exit(1)
+  }
+
+  if (!process.env.DISCORD_APPLICATION_ID) {
+    logger.warn('DISCORD_APPLICATION_ID not set — slash commands will not be registered', { module: MOD })
+  }
+
+  if (initial.config.channelIds.length === 0) {
+    logger.warn('No channel IDs configured — bot will not forward any messages. Set them in Settings → Integrations.', { module: MOD })
+  }
+
+  // Mutable ref — event handlers read from this on every invocation so
+  // config changes (channels, thresholds, bot secret) apply without restart.
+  // The Discord token cannot be hot-swapped (already logged in); a token
+  // change requires a bot restart.
+  const live = {
+    config: initial.config,
+    slashConfig: initial.slashConfig,
+  }
+
+  // client is declared below — capture via closure after it's assigned
+  let clientRef: Client | null = null
+
+  async function reloadConfig() {
+    const fresh = await loadConfig().catch(() => null)
+    if (!fresh) return
+    const prev = live.config.channelIds.join(',')
+    const next = fresh.config.channelIds.join(',')
+    live.config = fresh.config
+    live.slashConfig = fresh.slashConfig
+    // Invalidate per-guild cache so new channel/secret values are used immediately.
+    clearGuildConfigCache()
+    if (prev !== next) {
+      logger.info('config reloaded — channel list changed', {
+        module: MOD,
+        channelCount: fresh.config.channelIds.length,
+      })
+    }
+  }
+
+  async function refreshGuildMap() {
+    if (!clientRef?.isReady()) return
+    const guildMap = buildGuildChannelMap(
+      clientRef.guilds.cache as unknown as Map<string, { channels: { cache: Map<string, unknown> } }>
+    )
+    await saveGuildChannelMap(DEFAULT_ORG_ID, guildMap).catch(() => null)
+  }
+
+  // Self-hosted deployments poll every org unconditionally — we can't tell
+  // from our side whether a given self-hoster actually has their own Events
+  // API subscription live, so polling stays a safe universal fallback there
+  // (see the docs' reasoning on public-URL constraints). On cloud, every org
+  // already gets real-time delivery via the Events API webhook
+  // (app/api/slack/events, handled by the app service directly) — polling
+  // only runs for orgs with the 'slack_force_polling' flag set in
+  // org_feature_flags, a manual per-contract override (set internally, never
+  // self-serve) for enterprise Slack admins who require an outbound-only
+  // integration regardless of who hosts the webhook receiver.
+  async function loadSlackOrgIds(): Promise<number[]> {
+    try {
+      const all = await listActiveSlackIntegrations()
+      const allOrgIds = all.map((i) => i.org_id)
+      if (getDeploymentMode() === 'self-hosted') return allOrgIds
+      const flagged = await getOrgIdsWithFlag(allOrgIds, 'slack_force_polling')
+      return allOrgIds.filter((id) => flagged.has(id))
+    } catch {
+      return []
+    }
+  }
+
+  // Replace polling with Postgres LISTEN/NOTIFY — fires instantly when
+  // the integrations table is written from the settings UI.
+  // Do NOT call refreshGuildMap() here: saveGuildChannelMap() writes to
+  // integrations, which fires config_changed again → infinite loop.
+  // Guild map updates happen only on ClientReady and GuildCreate.
+  const stopListening = watchConfigChanges(async () => {
+    await reloadConfig()
+    // loadSlackOrgIds already returns the mode/flag-aware list — always
+    // safe to reload regardless of deployment mode.
+    const orgIds = await loadSlackOrgIds()
+    reloadSlackPoller(orgIds)
+  })
+
+  // Graceful shutdown
+  for (const sig of ['SIGINT', 'SIGTERM']) {
+    process.once(sig, async () => {
+      stopSlackPoller()
+      await stopListening()
+      process.exit(0)
+    })
+  }
+
+  const client = new Client({
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.MessageContent,
+      GatewayIntentBits.GuildMessageReactions,
+    ],
+    // Reactions arrive on messages the bot didn't cache (e.g. an AI answer posted
+    // via the REST API), so we must opt into partials to receive those events.
+    partials: [Partials.Message, Partials.Reaction],
+  })
+  clientRef = client
+
+  client.once(Events.ClientReady, async (c) => {
+    logger.info(`logged in as ${c.user.tag}`, {
+      module: MOD,
+      channelCount: live.config.channelIds.length,
+      targetUrl: live.config.targetUrl,
+    })
+
+    const applicationId = process.env.DISCORD_APPLICATION_ID
+    if (applicationId) {
+      await registerSlashCommands(
+        initial.discordToken,
+        applicationId,
+        process.env.DISCORD_GUILD_ID
+      )
+    }
+
+    // Auto-discover which guild owns each channel so source links work
+    // for old tickets (before per-message guild_id capture was added).
+    const guildMap = buildGuildChannelMap(c.guilds.cache as unknown as Map<string, { channels: { cache: Map<string, unknown> } }>)
+    await saveGuildChannelMap(DEFAULT_ORG_ID, guildMap).catch((err) =>
+      logger.warn('failed to save guild channel map', { module: MOD, error: err })
+    )
+    logger.info('guild channel map saved', { module: MOD, guildCount: c.guilds.cache.size })
+  })
+
+  client.on(Events.MessageCreate, async (message: Message) => {
+    // Multi-tenant: look up per-org config by guild. Falls back to live.config
+    // for single-org (env-var) deployments where no org has a connected guild.
+    const orgCfg = message.guildId
+      ? await loadOrgConfigForGuild(message.guildId).catch(() => null)
+      : null
+    const cfg = orgCfg?.config ?? live.config
+    const result = await forwardMessage(message as unknown as IncomingMessage, cfg)
+    if (result.data?.duplicate) {
+      logger.debug('duplicate message skipped', { module: MOD, messageId: message.id })
+    } else if (result.data?.appended) {
+      logger.info('thread reply appended to existing ticket', {
+        module: MOD,
+        ticketId: result.data.ticket_id,
+        messageId: message.id,
+        orgId: orgCfg?.orgId,
+      })
+    } else if (result.data?.ticket_id) {
+      logger.info('ticket created', {
+        module: MOD,
+        ticketId: result.data.ticket_id,
+        messageId: message.id,
+        orgId: orgCfg?.orgId,
+      })
+    }
+  })
+
+  // Forum posts fire ThreadCreate (not MessageCreate) — the starter message
+  // is the thread's initial post content. Replies inside the thread fire
+  // MessageCreate with channel.isThread() === true, which isMonitored() already handles.
+  client.on(Events.ThreadCreate, async (thread: AnyThreadChannel, newlyCreated: boolean) => {
+    if (!newlyCreated) return
+    if (!thread.parentId) return
+    const guildId = thread.guildId
+    const orgCfg = guildId ? await loadOrgConfigForGuild(guildId).catch(() => null) : null
+    const cfg = orgCfg?.config ?? live.config
+    if (!cfg.channelIds.includes(thread.parentId)) return
+
+    let starterMessage: Message | null = null
+    try {
+      starterMessage = await thread.fetchStarterMessage()
+    } catch (err) {
+      logger.warn('failed to fetch forum starter message', { module: MOD, threadId: thread.id, error: err })
+      return
+    }
+    if (!starterMessage) return
+
+    const incomingMsg: IncomingMessage = {
+      id: starterMessage.id,
+      content: starterMessage.content,
+      channelId: thread.id,
+      guildId: guildId ?? null,
+      author: { bot: starterMessage.author.bot, id: starterMessage.author.id, username: starterMessage.author.username },
+      channel: { isThread: () => true, parentId: thread.parentId },
+    }
+    const result = await forwardMessage(incomingMsg, cfg)
+    if (result.data?.duplicate) {
+      logger.debug('duplicate forum post skipped', { module: MOD, threadId: thread.id })
+    } else if (result.data?.ticket_id) {
+      logger.info('ticket created from forum post', {
+        module: MOD,
+        ticketId: result.data.ticket_id,
+        threadId: thread.id,
+        orgId: orgCfg?.orgId,
+      })
+    }
+  })
+
+  client.on(
+    Events.MessageReactionAdd,
+    async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => {
+      const guildId = (reaction.message as { guildId?: string | null }).guildId ?? null
+      const orgCfg = guildId
+        ? await loadOrgConfigForGuild(guildId).catch(() => null)
+        : null
+      const cfg = orgCfg?.config ?? live.config
+      const result = await forwardReaction(reaction as unknown as IncomingReaction, user, cfg)
+      if (result.data?.ticket_id) {
+        logger.info('feedback recorded', { module: MOD, ticketId: result.data.ticket_id, userId: user.id })
+      }
+    }
+  )
+
+  // Keep guild→channel map current when bot joins or leaves a server.
+  client.on(Events.GuildCreate, async () => {
+    await refreshGuildMap()
+    logger.info('joined new guild — guild channel map updated', { module: MOD })
+  })
+
+  client.on(Events.GuildDelete, async () => {
+    await refreshGuildMap()
+    logger.info('left guild — guild channel map updated', { module: MOD })
+  })
+
+  client.on(Events.MessageDelete, async (message: Message | PartialMessage) => {
+    if (!message.id) return
+    await markDiscordDeleted(message.id).catch((err) =>
+      logger.warn('failed to mark message deleted', { module: MOD, messageId: message.id, error: err })
+    )
+    logger.info('discord message deleted — ticket source marked', { module: MOD, messageId: message.id })
+  })
+
+  client.on(Events.ThreadDelete, async (thread) => {
+    await markThreadDiscordDeleted(thread.id).catch((err) =>
+      logger.warn('failed to mark thread deleted', { module: MOD, threadId: thread.id, error: err })
+    )
+    logger.info('discord thread deleted — ticket source marked', { module: MOD, threadId: thread.id })
+  })
+
+  client.on(Events.InteractionCreate, async (interaction) => {
+    if (!interaction.isChatInputCommand()) return
+    const cmd = interaction as ChatInputCommandInteraction
+
+    logger.info('slash command received', { module: MOD, command: cmd.commandName, userId: cmd.user.id })
+
+    if (cmd.commandName === 'ask') {
+      await handleAsk(cmd, live.slashConfig)
+    } else if (cmd.commandName === 'summarize') {
+      await handleSummarize(cmd, live.slashConfig)
+    }
+  })
+
+  // loadSlackOrgIds returns the mode/flag-aware org list — every org on
+  // self-hosted, and only orgs with the slack_force_polling flag on cloud
+  // (see its definition above). Always safe to start; the list is just
+  // empty on cloud unless an enterprise contract needs the override.
+  const slackOrgIds = await loadSlackOrgIds()
+  startSlackPoller(slackOrgIds)
+
+  // Independent of both Discord and Slack — runs regardless of which
+  // channels an org has configured.
+  startOrgPurgeSweep()
+  startStuckTicketSweep()
+
+  client.login(initial.discordToken)
+}
+
+main().catch((err) => {
+  logger.error('bot failed to start', { module: MOD, error: err })
+  process.exit(1)
+})

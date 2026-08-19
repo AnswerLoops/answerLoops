@@ -1,0 +1,42 @@
+---
+title: Billing
+description: Manage your plan, usage, and payment method from Settings → Billing.
+---
+
+## Overview
+
+**Settings → Billing** shows your current plan, deflection usage for the month, and lets you upgrade, downgrade, or manage payment through Stripe's customer portal.
+
+## Usage tracking
+
+The usage bar shows deflections used against your plan's monthly limit. Once you cross 80% of your limit, a warning banner appears with a one-click upgrade to the next tier — so you see it coming instead of hitting a hard stop mid-month.
+
+If you reach 100% of your limit, AI auto-answering pauses for the rest of the billing period and new questions route to your human queue instead. Nothing breaks and you're never silently overcharged.
+
+## Upgrading or downgrading
+
+Click **Upgrade to [plan]** on any plan card, or use the warning banner's upgrade shortcut. Upgrades take effect immediately — Stripe prorates the difference. Downgrades and cancellations go through **Manage subscription →**, which opens the Stripe customer portal; downgrades take effect at the end of your current billing period.
+
+## Trial
+
+New orgs get a 14-day free trial on signup (card required). The trial banner shows days remaining; your card is charged automatically when the trial ends unless you cancel first.
+
+## Free AI trial (no key required to start)
+
+You don't need to add your own AI provider key to see AnswerLoops work. Every new org gets **5 free tickets** fully AI-processed — triaged, drafted, and auto-answered — on AnswerLoops' own key, so you can see the full pipeline before deciding whether to bring your own key. This is separate from (and much smaller than) your plan's monthly deflection limit above, and it's a one-time allowance, not something that resets.
+
+Once you've used all 5, a banner appears across your dashboard asking you to add an AI provider key in **Settings → AI Model** — nothing stops working before that point, and nothing silently breaks after it: tickets keep getting created either way, they just stop being AI-triaged and drafted until a key is added. This doesn't apply to self-hosted deployments, which always use your own configured key (or your own environment's key) from the start.
+
+## Plans and pricing
+
+See [Billing Plans](/docs/reference/billing-plans) for the full tier breakdown, or the public [pricing page](https://answerloops.com/pricing) for the interactive comparison table and FAQ.
+
+## Deleting your account
+
+The workspace owner can delete the whole workspace from **Settings → Danger Zone**. You'll be asked to type the workspace name to confirm — this isn't a single click, since it's not reversible after the grace period below.
+
+Deleting immediately:
+- Cancels your Stripe subscription (no further charges)
+- Signs everyone out and revokes access to the workspace
+
+Your data (tickets, knowledge base, integrations, API keys) is kept for **30 days** in case this was a mistake. Logging back in during that window shows a **Restore my account** option instead of the normal dashboard. After 30 days, everything is permanently deleted and cannot be recovered.
