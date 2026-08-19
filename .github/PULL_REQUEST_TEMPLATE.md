@@ -20,5 +20,4 @@
 
 - [ ] `pnpm test` passes
 - [ ] `pnpm build` passes
-- [ ] Notion updated (Build Plan + Architecture + Production Setup Guide)
 - [ ] Docs updated in `/docs` if feature/architecture changed
