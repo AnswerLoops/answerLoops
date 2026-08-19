@@ -14,6 +14,7 @@
  */
 
 import fs from 'node:fs'
+import { spawnSync } from 'node:child_process'
 
 let raw = ''
 try {
@@ -33,18 +34,49 @@ try {
   process.exit(0)
 }
 
-const findings = []
+/**
+ * The scanner walks the working tree, which includes files git will never
+ * receive — `.env` above all. A credential sitting in a gitignored file is
+ * correct placement, not an incident, and blocking commits over it would make
+ * this hook fire constantly against normal local setup. A hook that cries wolf
+ * gets --no-verify'd, and --no-verify skips every other stage with it.
+ *
+ * So the question is not "is there a credential on disk" but "can this
+ * credential reach the repository". Only findings in files git tracks or has
+ * staged can, and only those block.
+ */
+function reachesGit(file) {
+  const q = (args) => spawnSync('git', args, { stdio: 'ignore' }).status === 0
+  if (q(['ls-files', '--error-unmatch', file])) return true
+  const staged = spawnSync('git', ['diff', '--cached', '--name-only', '--', file], {
+    encoding: 'utf-8',
+  })
+  return Boolean((staged.stdout ?? '').trim())
+}
+
+const blocking = []
+const ignorable = []
 for (const result of report.Results ?? []) {
   for (const secret of result.Secrets ?? []) {
-    findings.push({
+    const finding = {
       target: result.Target ?? '(unknown file)',
       line: secret.StartLine ?? '?',
       rule: secret.RuleID ?? 'unknown-rule',
       title: secret.Title ?? secret.Category ?? 'secret',
       severity: secret.Severity ?? 'UNKNOWN',
-    })
+    }
+    ;(reachesGit(finding.target) ? blocking : ignorable).push(finding)
   }
 }
+
+// Reported rather than hidden: the scanner saw them, and staying silent would
+// make a genuine mistake — the same file force-added — look identical to this.
+if (ignorable.length > 0) {
+  const where = [...new Set(ignorable.map((f) => f.target))].join(', ')
+  console.error(`  ${ignorable.length} credential(s) found in files git does not track (${where}) — not blocking.`)
+}
+
+const findings = blocking
 
 if (findings.length === 0) process.exit(0)
 
