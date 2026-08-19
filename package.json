@@ -21,7 +21,8 @@
     "docker:preview": "docker compose -f docker-compose.prod.yml down && docker compose -f docker-compose.prod.yml up -d --build app",
     "docs:generate-api": "node scripts/generate-api-reference.mjs",
     "load-test": "tsx scripts/load-test-mcp-agent.ts",
-    "lint:fix": "oxlint --fix"
+    "lint:fix": "oxlint --fix",
+    "verify:stripe-prices": "tsx scripts/verify-stripe-prices.ts"
   },
   "engines": {
     "node": ">=20.9"
