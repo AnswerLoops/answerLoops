@@ -105,9 +105,18 @@ STRIPE_WEBHOOK_SECRET=
 # Standard price, not another plan's. A mismatch bills the wrong amount
 # silently, since the displayed price comes from the code and the charged
 # amount comes from Stripe.
-STRIPE_PRICE_STANDARD=<standard plan price id>
-STRIPE_PRICE_PRO=<pro plan price id>
-STRIPE_PRICE_ENTERPRISE=<enterprise plan price id>
+STRIPE_PRICE_STANDARD=<standard plan monthly price id>
+STRIPE_PRICE_PRO=<pro plan monthly price id>
+STRIPE_PRICE_ENTERPRISE=<enterprise plan monthly price id>
+
+# Annual prices. Each is a yearly recurring price charging twelve times the
+# discounted monthly figure, and the pricing page bills against it directly
+# rather than displaying a rate it cannot sell. A plan missing its annual var
+# declines annual checkout rather than falling back to the monthly price —
+# charging a different amount than the one displayed is the worse failure.
+STRIPE_PRICE_STANDARD_ANNUAL=<standard plan annual price id>
+STRIPE_PRICE_PRO_ANNUAL=<pro plan annual price id>
+STRIPE_PRICE_ENTERPRISE_ANNUAL=<enterprise plan annual price id>
 ```
 
 ---

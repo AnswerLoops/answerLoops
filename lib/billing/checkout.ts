@@ -1,6 +1,6 @@
 import Stripe from 'stripe'
 import { getStripe, getOrCreateCustomer } from './stripe'
-import { getPlan, TRIAL_DAYS, type Plan } from './plans'
+import { getPlan, stripePriceFor, TRIAL_DAYS, type BillingInterval, type Plan } from './plans'
 import { getSubscription } from '@/lib/db/queries/billing'
 import { getDb } from '@/lib/db/drizzle'
 import { users, memberships } from '@/lib/db/schema'
@@ -40,10 +40,19 @@ export async function createCheckoutSession(
   planId: string,
   fallbackEmail: string,
   fallbackName: string,
+  // Defaults to monthly so every existing caller keeps its behaviour. An
+  // unrecognised value never reaches here — parseBillingInterval narrows it at
+  // the edge — but the default also means a missing one bills the lower amount
+  // rather than the higher.
+  interval: BillingInterval = 'monthly',
 ): Promise<CheckoutResult> {
   const plan: Plan | null = getPlan(planId)
   if (!plan) return { ok: false, error: 'Unknown plan', status: 400 }
-  if (!plan.stripePriceId) {
+
+  const priceId = stripePriceFor(plan, interval)
+  if (!priceId) {
+    // Deliberately not falling back to the other interval: charging a different
+    // amount than the page displayed is worse than declining to sell.
     return { ok: false, error: 'No Stripe price for this plan', status: 400 }
   }
 
@@ -82,7 +91,7 @@ export async function createCheckoutSession(
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
-      line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       // Back through /start-trial rather than straight to /billing. Stripe
       // redirects the browser independently of delivering the webhook that
       // writes the subscription row, and the browser frequently wins, so the

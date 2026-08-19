@@ -2,7 +2,7 @@
 
 import { headers } from 'next/headers'
 import { signIn, signOut } from '@/auth'
-import { getPlan } from '@/lib/billing/plans'
+import { getPlan, parseBillingInterval } from '@/lib/billing/plans'
 
 async function getCallbackUrl(): Promise<string> {
   const hdrs = await headers()
@@ -17,9 +17,14 @@ async function getCallbackUrl(): Promise<string> {
     //
     // Resolved through getPlan so only real plan ids are honoured: this value
     // ends up in a redirect target, so it must be one this codebase defines.
+    // The billing interval is narrowed the same way and for the same reason —
+    // it also lands in the redirect, and downstream it selects which Stripe
+    // price the person is charged.
     const requestedPlan = url.searchParams.get('plan')
     if (requestedPlan && getPlan(requestedPlan)) {
-      return `/start-trial?plan=${encodeURIComponent(requestedPlan)}`
+      const interval = parseBillingInterval(url.searchParams.get('interval'))
+      const target = `/start-trial?plan=${encodeURIComponent(requestedPlan)}`
+      return interval ? `${target}&interval=${interval}` : target
     }
 
     const cb = url.searchParams.get('callbackUrl')

@@ -2,19 +2,31 @@ export const TRIAL_DAYS = 14
 
 export type PlanId = 'standard' | 'pro' | 'enterprise'
 
-// Annual billing discount shown on the marketing pricing page. There is no
-// separate Stripe annual price configured yet — checkout always runs the
-// monthly price regardless of which toggle state the visitor was on. This
-// is a display-only rate until the product leaves waitlist mode and annual
-// Stripe prices exist to sell against.
+// Annual billing discount. Each plan now has a real annual price in Stripe
+// charging twelve times the discounted monthly figure, so this is the rate the
+// customer is actually billed at rather than a display-only number.
 export const ANNUAL_DISCOUNT_PCT = 20
+
+export type BillingInterval = 'monthly' | 'annual'
+
+/**
+ * Narrows an untrusted string to a billing interval, or null if it is not one.
+ *
+ * The value travels in a query string from the pricing page through sign-in, so
+ * it is caller-supplied by the time checkout sees it. Everything downstream
+ * chooses a Stripe price id from it, and that decides what somebody is charged.
+ */
+export function parseBillingInterval(value: string | null | undefined): BillingInterval | null {
+  return value === 'monthly' || value === 'annual' ? value : null
+}
 
 export interface Plan {
   id: PlanId
   name: string
   deflectionsPerMonth: number | null // null = unlimited
   priceMonthly: number               // USD cents, 0 = free
-  stripePriceId: string | null       // null = no Stripe product (free)
+  stripePriceId: string | null       // monthly price; null = not configured
+  stripePriceIdAnnual: string | null // annual price; null = not configured
 }
 
 // Effective monthly price if billed annually (priceMonthly minus the annual
@@ -44,6 +56,7 @@ export const PLANS: Record<PlanId, Plan> = {
     deflectionsPerMonth: 500,
     priceMonthly: 2900,
     stripePriceId: process.env.STRIPE_PRICE_STANDARD ?? null,
+    stripePriceIdAnnual: process.env.STRIPE_PRICE_STANDARD_ANNUAL ?? null,
   },
   pro: {
     id: 'pro',
@@ -54,6 +67,7 @@ export const PLANS: Record<PlanId, Plan> = {
     deflectionsPerMonth: 2000,
     priceMonthly: 7900,
     stripePriceId: process.env.STRIPE_PRICE_PRO ?? null,
+    stripePriceIdAnnual: process.env.STRIPE_PRICE_PRO_ANNUAL ?? null,
   },
   enterprise: {
     id: 'enterprise',
@@ -61,10 +75,33 @@ export const PLANS: Record<PlanId, Plan> = {
     deflectionsPerMonth: null,
     priceMonthly: 29900,
     stripePriceId: process.env.STRIPE_PRICE_ENTERPRISE ?? null,
+    stripePriceIdAnnual: process.env.STRIPE_PRICE_ENTERPRISE_ANNUAL ?? null,
   },
 }
 
 export const ORDERED_PLANS: Plan[] = [PLANS.standard, PLANS.pro, PLANS.enterprise]
+
+/**
+ * The one place a billing interval turns into a Stripe price id.
+ *
+ * Kept as a single function rather than letting call sites reach for the field
+ * they want: picking the wrong one is a silent billing error, charging monthly
+ * to somebody who chose annual or the reverse, and it surfaces on a customer's
+ * card rather than in a test.
+ *
+ * Returns null when that interval has no price configured, which callers must
+ * treat as "cannot sell this", not as a reason to fall back to the other
+ * interval — being charged a different amount than the one displayed is worse
+ * than being told checkout is unavailable.
+ */
+export function stripePriceFor(plan: Plan, interval: BillingInterval): string | null {
+  return interval === 'annual' ? plan.stripePriceIdAnnual : plan.stripePriceId
+}
+
+/** Total charged per year on the annual price, in cents. Display and tests. */
+export function annualTotalPrice(plan: Plan): number {
+  return annualMonthlyPrice(plan) * 12
+}
 
 // There is no free tier. Every subscription starts on one of the three paid
 // plans above with a 14-day Stripe trial attached to it (checkout.session.completed

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
-import { getPlan, stripeConfigured, TRIAL_DAYS } from '@/lib/billing/plans'
+import { getPlan, parseBillingInterval, stripeConfigured, TRIAL_DAYS } from '@/lib/billing/plans'
 import { createCheckoutSession } from '@/lib/billing/checkout'
 import { orgHasProductAccess } from '@/lib/billing/access'
 import { DEFAULT_ORG_ID } from '@/lib/db/schema'
@@ -43,14 +43,23 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 export default async function StartTrialPage({
   searchParams,
 }: {
-  searchParams: Promise<{ plan?: string; checkout?: string }>
+  searchParams: Promise<{ plan?: string; checkout?: string; interval?: string }>
 }) {
   const session = await auth()
-  const { plan: requestedPlan, checkout } = await searchParams
+  const { plan: requestedPlan, checkout, interval: requestedInterval } = await searchParams
+
+  // Narrowed here as well as in the sign-in callback: this page is reachable
+  // directly, so it cannot assume the value already passed through there.
+  const interval = parseBillingInterval(requestedInterval) ?? 'monthly'
 
   if (!session?.user) {
-    // Preserve the plan across sign-in so the choice survives the round trip.
-    redirect(requestedPlan ? `/login?plan=${encodeURIComponent(requestedPlan)}` : '/login')
+    // Preserve the plan and the billing period across sign-in so both survive
+    // the round trip — losing the interval would silently bill monthly to
+    // somebody who picked annual.
+    const resume = requestedPlan
+      ? `/login?plan=${encodeURIComponent(requestedPlan)}&interval=${interval}`
+      : '/login'
+    redirect(resume)
   }
 
   // Self-hosted has no billing, so there is nothing to start and the gate never
@@ -103,6 +112,7 @@ export default async function StartTrialPage({
     plan.id,
     session.user.email ?? '',
     session.user.name ?? '',
+    interval,
   )
 
   if (!result.ok) {

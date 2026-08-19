@@ -151,6 +151,7 @@ npx web-push generate-vapid-keys
 | `STRIPE_SECRET_KEY` | Stripe secret API key. Required when `DEPLOYMENT_MODE=cloud` — its absence there is treated as a misconfiguration (billing shows an error state) rather than falling back to self-hosted/unlimited |
 | `STRIPE_WEBHOOK_SECRET` | Signing secret for the Stripe webhook endpoint (`/api/billing/webhook`), used to verify subscription lifecycle events |
 | `STRIPE_PRICE_STANDARD` / `STRIPE_PRICE_PRO` / `STRIPE_PRICE_ENTERPRISE` | Stripe Price IDs used for each paid plan's checkout session. Each var must hold the price for the plan it names — the amount shown in the app comes from the code, while the amount charged comes from Stripe, so a mismatch bills the wrong figure without erroring |
+| `STRIPE_PRICE_STANDARD_ANNUAL` / `STRIPE_PRICE_PRO_ANNUAL` / `STRIPE_PRICE_ENTERPRISE_ANNUAL` | Yearly Stripe Price IDs for the same three plans. Selected when a visitor picks annual billing on the pricing page. A plan without one declines annual checkout rather than billing the monthly price. |
 
 <Note>
   `DEPLOYMENT_MODE` was introduced to stop deployment type from being inferred from whether `STRIPE_SECRET_KEY` happened to be set — a missing or rotated key on the cloud deployment used to silently degrade every paying org to unmetered/unlimited instead of surfacing as a misconfiguration.
