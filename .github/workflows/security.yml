@@ -24,11 +24,34 @@ jobs:
         with:
           persist-credentials: false
 
+      # Dedicated secret pass, deliberately unfiltered by severity. The combined
+      # scan below drops anything under HIGH, which is right for dependency
+      # findings and wrong for credentials: a leaked key is not less leaked for
+      # carrying a MEDIUM rule. This mirrors the dedicated pass the pre-commit
+      # hook runs, so CI is not weaker than a laptop on the one finding that
+      # cannot be walked back.
+      #
+      # Nothing gitignored exists in a CI checkout, so unlike the local hook
+      # this sees exactly the files the repository actually contains.
+      - name: Run Trivy (secrets)
+        uses: aquasecurity/trivy-action@df678dbccf677bc6937338d569ba0da18964a8cc  # master 2026-07-01
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: secret
+          format: table
+          exit-code: '1'
+          skip-dirs: .pnpm-store,node_modules/.cache
+
       - name: Run Trivy (filesystem scan)
         uses: aquasecurity/trivy-action@df678dbccf677bc6937338d569ba0da18964a8cc  # master 2026-07-01
         with:
           scan-type: fs
           scan-ref: .
+          # Named explicitly: the default scanner set for a filesystem scan is
+          # vuln and secret only, so misconfig was never running despite this
+          # job being named for it.
+          scanners: vuln,secret,misconfig
           format: table
           severity: CRITICAL,HIGH
           exit-code: '1'        # fail the job on CRITICAL or HIGH
