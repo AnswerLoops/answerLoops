@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ANNUAL_DISCOUNT_PCT, annualMonthlyPrice, type Plan } from '@/lib/billing/plans'
+import { ANNUAL_DISCOUNT_PCT, annualMonthlyPrice, TRIAL_DAYS, type Plan } from '@/lib/billing/plans'
 
 function CheckIcon({ inverted = false }: { inverted?: boolean }) {
   return (
@@ -135,16 +135,22 @@ export function PricingToggle({ plans }: { plans: Plan[] }) {
                 ))}
               </ul>
 
+              {/* Carries the chosen plan through sign-in so checkout opens on
+                  the plan that was actually clicked. /start-trial reads it
+                  after OAuth and redirects straight to Stripe. */}
               <Link
-                href="#waitlist"
+                href={`/login?plan=${plan.id}`}
                 className={`relative mt-8 w-full rounded-full py-3 text-center text-xs font-semibold transition ${
                   isHighlight
                     ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-600/20 hover:brightness-110'
                     : 'border border-slate-200 bg-slate-50 text-slate-800 hover:border-blue-200 hover:bg-blue-50'
                 }`}
               >
-                Join the waitlist
+                Start {TRIAL_DAYS}-day free trial
               </Link>
+              <p className={`mt-2 text-center text-[0.625rem] ${isHighlight ? 'text-slate-300/60' : 'text-slate-500'}`}>
+                Card required. Not charged for {TRIAL_DAYS} days.
+              </p>
             </div>
           )
         })}

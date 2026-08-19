@@ -24,18 +24,29 @@ function read(relPath: string): string {
   return fs.readFileSync(abs, 'utf-8')
 }
 
-describe('app/api/billing/checkout/route.ts — Stripe failures return a real JSON error', () => {
-  const src = read('app/api/billing/checkout/route.ts')
+// The checkout session creation moved into lib/billing/checkout.ts so the
+// signup path can call it server-side without a client round trip. The property
+// under test is unchanged — a Stripe failure must produce a readable JSON error
+// rather than an empty body — so these assertions now point at the file that
+// actually owns it. The route is asserted separately below to confirm it still
+// surfaces what the helper returns.
+describe('lib/billing/checkout.ts — Stripe failures return a real error, never an empty body', () => {
+  const src = read('lib/billing/checkout.ts')
 
   it('wraps the Stripe call in try/catch', () => {
     expect(src).toMatch(/try\s*{[\s\S]*stripe\.checkout\.sessions\.create[\s\S]*}\s*catch/)
   })
 
-  it('returns a JSON error with a non-500 status on failure, never an empty body', () => {
+  it('returns a structured error with a non-500 status on failure, never an empty body', () => {
     const catchIdx = src.indexOf('} catch (err) {')
     expect(catchIdx).toBeGreaterThan(-1)
-    const catchBlock = src.slice(catchIdx, catchIdx + 400)
-    expect(catchBlock).toContain('NextResponse.json({ error:')
+    // Wide enough to reach the return past the structured logger call.
+    const catchBlock = src.slice(catchIdx, catchIdx + 700)
+    // The helper returns a result object; the route turns it into the JSON
+    // response. Both halves matter, so both are asserted — here, and in the
+    // route describe below.
+    expect(catchBlock).toContain('ok: false')
+    expect(catchBlock).toContain('error:')
     expect(catchBlock).toMatch(/status:\s*502/)
   })
 
@@ -65,5 +76,21 @@ describe('app/api/billing/portal/route.ts — Stripe failures return a real JSON
     const catchIdx = src.indexOf('} catch (err) {')
     const catchBlock = src.slice(catchIdx, catchIdx + 400)
     expect(catchBlock).toContain('logger.error(')
+  })
+})
+
+// The route no longer creates the session itself, so this confirms it still
+// surfaces the helper's error and status rather than swallowing them.
+describe('app/api/billing/checkout/route.ts — surfaces the helper result', () => {
+  const routeSrc = read('app/api/billing/checkout/route.ts')
+
+  it('returns the helper error with its status', () => {
+    expect(routeSrc).toContain('createCheckoutSession')
+    expect(routeSrc).toContain('NextResponse.json({ error: result.error }, { status: result.status })')
+  })
+
+  it('still rejects unauthenticated callers and self-hosted deployments', () => {
+    expect(routeSrc).toContain("status: 401")
+    expect(routeSrc).toContain('stripeConfigured()')
   })
 })
