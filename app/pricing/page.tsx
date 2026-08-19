@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { auth } from '@/auth'
-import { ORDERED_PLANS } from '@/lib/billing/plans'
+import { ORDERED_PLANS, TRIAL_DAYS } from '@/lib/billing/plans'
 import { Nav, Footer } from '@/components/marketing/chrome'
 import { PricingToggle } from '@/components/marketing/pricing-toggle'
 import { PricingComparisonTable } from '@/components/marketing/pricing-comparison-table'
@@ -40,7 +40,14 @@ const PRICING_FAQ = [
   },
 ] as const
 
-export default async function PricingPage() {
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ resume?: string; checkout?: string }>
+}) {
+  // Two ways to arrive here mid-flow, and landing on a plain pricing page with
+  // no explanation in either case reads as the product losing your progress.
+  const { resume, checkout } = await searchParams
   const session = await auth()
 
   return (
@@ -78,6 +85,24 @@ export default async function PricingPage() {
 
       <section className="relative pb-24 sm:pb-32">
         <div className="relative mx-auto -mt-32 max-w-7xl px-5 sm:-mt-40 sm:px-8">
+          {checkout === 'failed' && (
+            <div className="mx-auto mb-6 max-w-2xl rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-center">
+              <p className="text-sm font-medium text-red-900">We couldn&apos;t start checkout.</p>
+              <p className="mt-1 text-xs text-red-700">
+                Nothing was charged. Try again below — if it keeps failing, email us and we&apos;ll sort it out.
+              </p>
+            </div>
+          )}
+
+          {resume === '1' && checkout !== 'failed' && (
+            <div className="mx-auto mb-6 max-w-2xl rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-center">
+              <p className="text-sm font-medium text-blue-900">You&apos;re signed in — pick a plan to finish setting up.</p>
+              <p className="mt-1 text-xs text-blue-700">
+                Your workspace is ready and waiting. Starting a trial takes a card, but nothing is charged for {TRIAL_DAYS} days.
+              </p>
+            </div>
+          )}
+
           <div className="rounded-[2.25rem] border border-slate-200/80 bg-white/95 p-4 shadow-[0_30px_100px_rgba(15,23,42,0.16)] backdrop-blur-xl sm:p-7">
             <PricingToggle plans={ORDERED_PLANS} />
           </div>

@@ -49,13 +49,37 @@ describe('PricingToggle', () => {
     expect(screen.queryByText(/billed annually/)).not.toBeInTheDocument()
   })
 
-  it('every plan CTA links to the waitlist, not a live checkout — the product is pre-launch', () => {
+  // This previously asserted every CTA pointed at the waitlist, on the grounds
+  // that the product was pre-launch. That was a deliberate product decision and
+  // it has been deliberately reversed: a visitor now picks a plan and starts a
+  // trial, because a card up front is the commitment signal the funnel depends
+  // on. The coverage is kept rather than dropped — it just pins the new
+  // behaviour, including that each CTA carries its own plan.
+  it('every plan CTA starts a trial for that specific plan', () => {
     render(<PricingToggle plans={ORDERED_PLANS} />)
-    const ctas = screen.getAllByRole('link', { name: 'Join the waitlist' })
+    const ctas = screen.getAllByRole('link', { name: /start .* free trial/i })
     expect(ctas.length).toBe(ORDERED_PLANS.length)
-    for (const cta of ctas) {
-      expect(cta).toHaveAttribute('href', '#waitlist')
+
+    const hrefs = ctas.map((c) => c.getAttribute('href'))
+    for (const plan of ORDERED_PLANS) {
+      expect(
+        hrefs,
+        `no CTA carries plan "${plan.id}" — a visitor clicking it would lose their choice`,
+      ).toContain(`/login?plan=${plan.id}`)
     }
+  })
+
+  it('no CTA points at the waitlist any more', () => {
+    render(<PricingToggle plans={ORDERED_PLANS} />)
+    expect(screen.queryByRole('link', { name: 'Join the waitlist' })).toBeNull()
+  })
+
+  it('tells the visitor a card is needed and will not be charged', () => {
+    // The two facts that decide whether someone clicks through: yes it wants a
+    // card, no it will not charge you yet.
+    render(<PricingToggle plans={ORDERED_PLANS} />)
+    const notes = screen.getAllByText(/card required.*not charged/i)
+    expect(notes.length).toBe(ORDERED_PLANS.length)
   })
 
   it('marks the Pro plan as most popular', () => {

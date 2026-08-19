@@ -6,11 +6,13 @@ import { getDb } from '@/lib/db/drizzle'
 import { users, memberships, orgs } from '@/lib/db/schema'
 import { DEFAULT_ORG_ID } from '@/lib/db/schema'
 import { resolveOrgIdForSessionUpdate, resolveOrgAccess } from '@/lib/auth/membership'
+import { orgHasProductAccess, isAccessExempt } from '@/lib/billing/access'
 
 const PUBLIC_PATHS = ['/', '/login', '/api/auth', '/api/ingest', '/api/feedback', '/api/slack', '/api/widget', '/widget', '/api/billing/webhook', '/api/waitlist', '/api/health', '/api/github/webhook', '/api/email/ingest', '/api/mcp', '/api/agent', '/api/google-chat', '/vs', '/pricing', '/docs', '/privacy', '/robots.txt', '/sitemap.xml', '/llms.txt']
 const ONBOARDING_PATH = '/onboarding'
 const ACCOUNT_DELETED_PATH = '/account-deleted'
 const INVITE_PREFIX = '/invite/'
+const START_TRIAL_PATH = '/start-trial'
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
@@ -154,10 +156,8 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
       // exempt so a deleted org's owner can still reach the restore action.
       // See lib/auth/membership.ts for the check itself.
       if (pathname !== ACCOUNT_DELETED_PATH) {
-        const access = await resolveOrgAccess(
-          session.user?.id,
-          (session as { orgId?: number }).orgId
-        )
+        const sessionOrgId = (session as { orgId?: number }).orgId
+        const access = await resolveOrgAccess(session.user?.id, sessionOrgId)
 
         // A session that can't be scoped to an org the user still belongs to is
         // ended rather than downgraded. Signing out is the same response this
@@ -177,6 +177,26 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
             return NextResponse.json({ error: 'This account has been deleted' }, { status: 403 })
           }
           return NextResponse.redirect(new URL(ACCOUNT_DELETED_PATH, request.nextUrl))
+        }
+
+        // Checked before onboarding on purpose. A trial requires a card up
+        // front, so authenticating is not the same as having started one —
+        // someone who signs in and abandons checkout has an account and
+        // nothing else, and must not reach the product. Onboarding counts as
+        // the product: it connects real channels and seeds a real knowledge
+        // base.
+        //
+        // Anyone without access is sent to /start-trial, which either resumes
+        // checkout for a chosen plan or returns them to the pricing page. See
+        // lib/billing/access.ts for why each exempt path is exempt.
+        if (!isAccessExempt(pathname)) {
+          const hasAccess = await orgHasProductAccess(sessionOrgId as number)
+          if (!hasAccess) {
+            if (pathname.startsWith('/api/')) {
+              return NextResponse.json({ error: 'No active subscription' }, { status: 402 })
+            }
+            return NextResponse.redirect(new URL(START_TRIAL_PATH, request.nextUrl))
+          }
         }
 
         if (

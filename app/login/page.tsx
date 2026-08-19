@@ -17,15 +17,18 @@ const ERROR_MESSAGES: Record<string, string> = {
 }
 
 interface Props {
-  searchParams: Promise<{ error?: string; callbackUrl?: string }>
+  searchParams: Promise<{ error?: string; callbackUrl?: string; plan?: string }>
 }
 
 export default async function LoginPage({ searchParams }: Props) {
-  if (await auth()) {
-    redirect('/dashboard')
-  }
+  const { error, plan } = await searchParams
 
-  const { error } = await searchParams
+  if (await auth()) {
+    // An already-signed-in visitor clicking a pricing CTA lands here with a
+    // plan. Sending them to /dashboard would drop the choice and then bounce
+    // them off the access gate straight back to pricing, losing the click.
+    redirect(plan ? `/start-trial?plan=${encodeURIComponent(plan)}` : '/dashboard')
+  }
   const errorMessage = error ? (ERROR_MESSAGES[error] ?? ERROR_MESSAGES.Default) : null
 
   return (

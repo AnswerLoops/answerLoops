@@ -2,12 +2,26 @@
 
 import { headers } from 'next/headers'
 import { signIn, signOut } from '@/auth'
+import { getPlan } from '@/lib/billing/plans'
 
 async function getCallbackUrl(): Promise<string> {
   const hdrs = await headers()
   const referer = hdrs.get('referer') ?? ''
   try {
     const url = new URL(referer)
+
+    // A plan chosen on the pricing page arrives as /login?plan=<id>. Signing in
+    // is only step one of starting a trial, so send them on to checkout for the
+    // plan they actually clicked rather than dropping them at the dashboard —
+    // which the access gate would bounce anyway, losing the choice.
+    //
+    // Resolved through getPlan so only real plan ids are honoured: this value
+    // ends up in a redirect target, so it must be one this codebase defines.
+    const requestedPlan = url.searchParams.get('plan')
+    if (requestedPlan && getPlan(requestedPlan)) {
+      return `/start-trial?plan=${encodeURIComponent(requestedPlan)}`
+    }
+
     const cb = url.searchParams.get('callbackUrl')
     // Only allow same-origin relative paths to prevent open-redirect
     if (cb && cb.startsWith('/') && !cb.startsWith('//')) return cb
