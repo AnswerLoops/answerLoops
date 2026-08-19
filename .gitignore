@@ -66,3 +66,9 @@ next-env.d.ts
 # Local-only sibling checkout, not part of this repo
 .internal-tools/
 .env
+
+# Owner-only working instructions and the sync command they drive. Both refer to
+# a private workspace and are useful to one person, so they stay off the public
+# tree while remaining loadable on the machine that has them.
+CLAUDE.local.md
+.claude/commands/pr-sync.md

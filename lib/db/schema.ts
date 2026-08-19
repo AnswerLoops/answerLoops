@@ -362,7 +362,7 @@ export const integrations = pgTable(
 )
 
 // Verified custom-domain sending for the email channel (Phase 1 of the email
-// integration redesign — Notion "Email setup and plan"). An org registers a
+// integration redesign). An org registers a
 // domain, we hand back Resend's DKIM + return-path (SPF) DNS records to
 // paste at their DNS host, then poll status until Resend confirms
 // ownership. Once verified, lib/email/reply.ts sends from this domain
