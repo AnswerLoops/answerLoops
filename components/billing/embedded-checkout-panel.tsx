@@ -136,7 +136,10 @@ export function EmbeddedCheckoutPanel({ plans, initialPlanId, initialInterval }:
 
       {/* Plan selection and reassurance */}
       <div className="order-1 lg:order-2">
-        <div className="flex items-center justify-between gap-4">
+        {/* Wraps rather than overflowing: the heading and the toggle only just
+            fit on one line at 375px, so anything that widens either — a longer
+            label, a fallback font — would otherwise push the toggle off-screen. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
             Choose a plan
           </h2>
@@ -145,7 +148,7 @@ export function EmbeddedCheckoutPanel({ plans, initialPlanId, initialInterval }:
               type="button"
               onClick={() => setInterval('monthly')}
               aria-pressed={!annual}
-              className={`rounded-full px-3 py-1.5 transition-colors ${!annual ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              className={`rounded-full px-3.5 py-2.5 transition-colors sm:py-1.5 ${!annual ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
             >
               Monthly
             </button>
@@ -153,7 +156,7 @@ export function EmbeddedCheckoutPanel({ plans, initialPlanId, initialInterval }:
               type="button"
               onClick={() => setInterval('annual')}
               aria-pressed={annual}
-              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${annual ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+              className={`flex items-center gap-1.5 rounded-full px-3.5 py-2.5 transition-colors sm:py-1.5 ${annual ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
             >
               Annual
               <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[0.625rem] text-emerald-700">
