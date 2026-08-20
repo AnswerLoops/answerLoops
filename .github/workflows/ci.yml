@@ -1,0 +1,52 @@
+name: CI
+
+# The one thing every other check in this repo assumes already happened:
+# `pnpm test` and `pnpm build` pass. AGENTS.md makes that a hard gate for any
+# PR opened through Claude, but nothing enforced it for a PR opened any other
+# way — a contributor pushing directly, or editing through the GitHub web UI,
+# had no check catching a broken build or a failing test before merge. Now
+# that the repo is public, that gap is a real path for the default branch to
+# go red on someone else's PR.
+#
+# Neither script needs a database or any secret — both were verified to pass
+# with an empty environment, since the schema-level DATABASE_URL/ENCRYPTION_KEY
+# checks in lib/db/drizzle.ts and lib/crypto/tokens.ts are lazy (evaluated on
+# first call, not at import), and every route Next.js touches during `next
+# build` is server-rendered on demand rather than statically generated.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    name: Test + build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1  # v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm test
+
+      - run: pnpm build
