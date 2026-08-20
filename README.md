@@ -7,10 +7,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/AnswerLoops/answerLoops/ci.yml?branch=main&label=CI&logo=github&style=flat-square)](https://github.com/AnswerLoops/answerLoops/actions/workflows/ci.yml)
 [![Security](https://img.shields.io/github/actions/workflow/status/AnswerLoops/answerLoops/security.yml?branch=main&label=security&logo=github&style=flat-square)](https://github.com/AnswerLoops/answerLoops/actions/workflows/security.yml)
 [![License](https://img.shields.io/github/license/AnswerLoops/answerLoops?style=flat-square&label=license&color=2563eb)](./LICENSE)
-[![Next.js 16](https://img.shields.io/badge/Next.js-16-030712?style=flat-square&logo=nextdotjs)](https://nextjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-2563eb?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org)
-[![Docker](https://img.shields.io/badge/self--host-Docker-2496ed?style=flat-square&logo=docker&logoColor=white)](#run-it-locally)
 
 [Website](https://answerloops.com) · [Documentation](https://answerloops.com/docs) · [Hosted app](https://app.answerloops.com) · [Quickstart](#run-it-locally) · [Architecture](#how-the-loop-works)
 
