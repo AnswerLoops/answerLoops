@@ -7,6 +7,7 @@ import { users, memberships, orgs } from '@/lib/db/schema'
 import { DEFAULT_ORG_ID } from '@/lib/db/schema'
 import { resolveOrgIdForSessionUpdate, resolveOrgAccess } from '@/lib/auth/membership'
 import { orgHasProductAccess, isAccessExempt } from '@/lib/billing/access'
+import { sendWelcomeEmail } from '@/lib/email/send'
 
 const PUBLIC_PATHS = ['/', '/login', '/api/auth', '/api/ingest', '/api/feedback', '/api/slack', '/api/widget', '/widget', '/api/billing/webhook', '/api/waitlist', '/api/health', '/api/github/webhook', '/api/email/ingest', '/api/mcp', '/api/agent', '/api/google-chat', '/vs', '/pricing', '/docs', '/privacy', '/robots.txt', '/sitemap.xml', '/llms.txt']
 const ONBOARDING_PATH = '/onboarding'
@@ -70,6 +71,20 @@ async function provisionUser(
     .insert(memberships)
     .values({ userId: user.id, orgId: newOrg.id, role: 'owner' })
     .onConflictDoNothing()
+
+  // Only new workspaces reach here — a returning user returns above, at the
+  // existing-membership branch — so this sends exactly once per signup.
+  //
+  // Not awaited for its result and unable to throw: a mail provider having a
+  // bad minute must not turn into a failed sign-in, which would leave someone
+  // holding an account they cannot get into. sendWelcomeEmail swallows and logs
+  // its own errors; the catch here is belt and braces for anything thrown
+  // before it gets that far.
+  try {
+    await sendWelcomeEmail(email, name)
+  } catch {
+    // deliberately ignored — provisioning has already succeeded
+  }
 
   return { userId: user.id, orgId: newOrg.id }
 }
