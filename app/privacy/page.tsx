@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
-import { auth } from '@/auth'
 import { Nav, Footer } from '@/components/marketing/chrome'
+import { resolveNavState } from '@/lib/marketing/nav-state'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,11 +22,10 @@ function Section({ id, title, children }: { id: string; title: string; children:
 }
 
 export default async function PrivacyPolicyPage() {
-  const session = await auth()
-
+  const navState = await resolveNavState()
   return (
     <div className="min-h-screen bg-[#f5f8fd]">
-      <Nav loggedIn={!!session?.user} />
+      <Nav state={navState} />
 
       <section className="bg-[#030611] py-16 sm:py-20">
         <div className="mx-auto max-w-3xl px-5 sm:px-8">

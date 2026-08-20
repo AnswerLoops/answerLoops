@@ -30,9 +30,28 @@ export function NavWordmark() {
 // Points marketing-site CTAs at the dedicated app subdomain when one's
 // configured (cloud); self-hosted deployments never set this and keep the
 // relative link, since there's only ever one domain to begin with.
+const CTA_CLASS =
+  'flex items-center gap-1.5 whitespace-nowrap rounded-full border border-blue-300/20 bg-gradient-to-r from-blue-600 to-blue-500 px-3 py-2 text-[0.7875rem] font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:brightness-110 sm:px-4'
+
 const DASHBOARD_HREF = process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard` : '/dashboard'
 
-export function Nav({ loggedIn }: { loggedIn: boolean }) {
+/**
+ * What the header CTA should offer.
+ *
+ * Signing in and being able to use the product are different things now that
+ * access is scoped to a subscription. A header that knows only the first sends
+ * someone who has signed in but not chosen a plan to a dashboard the access
+ * gate immediately bounces back to this page — a loop with no indication of
+ * what went wrong or what to do about it.
+ */
+export type NavState = 'anonymous' | 'no-plan' | 'active'
+
+export function navState(loggedIn: boolean, hasAccess: boolean): NavState {
+  if (!loggedIn) return 'anonymous'
+  return hasAccess ? 'active' : 'no-plan'
+}
+
+export function Nav({ state }: { state: NavState }) {
   return (
     <header className="sticky top-0 z-30 border-b border-white/8 bg-[#030611]/88 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 sm:px-8">
@@ -58,14 +77,23 @@ export function Nav({ loggedIn }: { loggedIn: boolean }) {
             <GithubIcon />
             GitHub
           </Link>
-          {loggedIn ? (
-            <Link href={DASHBOARD_HREF} className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-blue-300/20 bg-gradient-to-r from-blue-600 to-blue-500 px-3 py-2 text-[0.7875rem] font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:brightness-110 sm:px-4">
+          {state === 'active' && (
+            <Link href={DASHBOARD_HREF} className={CTA_CLASS}>
               Go to dashboard →
             </Link>
-          ) : (
-            <span className="whitespace-nowrap rounded-full border border-blue-300/15 bg-blue-400/[0.07] px-3 py-1.5 text-[0.65625rem] font-semibold text-blue-200 sm:px-3.5">
-              Early access
-            </span>
+          )}
+          {/* Signed in without a plan. Pointing at the dashboard here is what
+              produced a loop: the gate sends them back to /pricing, and the
+              header offers the same door again. */}
+          {state === 'no-plan' && (
+            <Link href="/pricing" className={CTA_CLASS}>
+              Finish setting up →
+            </Link>
+          )}
+          {state === 'anonymous' && (
+            <Link href="/login" className={CTA_CLASS}>
+              Sign in
+            </Link>
           )}
           <MobileDrawer triggerLabel="Open navigation" triggerClassName="md:hidden">
             <nav className="flex flex-col p-4 gap-1">

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Nav, Footer, GITHUB_URL } from '@/components/marketing/chrome'
+import type { NavState } from '@/components/marketing/chrome'
 
 export interface ComparisonRow {
   feature: string
@@ -8,7 +9,7 @@ export interface ComparisonRow {
 }
 
 export interface ComparisonPageProps {
-  loggedIn: boolean
+  navState: NavState
   competitor: string
   competitorSummary: string
   intro: string
@@ -16,10 +17,10 @@ export interface ComparisonPageProps {
   bestFor: { us: string; them: string }
 }
 
-export function ComparisonPage({ loggedIn, competitor, competitorSummary, intro, rows, bestFor }: ComparisonPageProps) {
+export function ComparisonPage({ navState, competitor, competitorSummary, intro, rows, bestFor }: ComparisonPageProps) {
   return (
     <div className="min-h-screen bg-white">
-      <Nav loggedIn={loggedIn} />
+      <Nav state={navState} />
 
       <section className="bg-ink-950 py-20">
         <div className="mx-auto max-w-4xl px-6 text-center">
