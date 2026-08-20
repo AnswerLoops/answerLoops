@@ -130,7 +130,7 @@ The fastest complete development environment uses Docker Compose. It starts the 
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/AnswerLoops/AnswerLoops.git
+git clone https://github.com/AnswerLoops/answerLoops.git
 cd AnswerLoops
 cp .env.example .env
 ```
@@ -259,6 +259,6 @@ AnswerLoops is licensed under [AGPL-3.0](./LICENSE). You can inspect, modify, an
 
 **Make the next repeat question the last one.**
 
-[Explore the docs](https://answerloops.com/docs) · [Run it locally](#run-it-locally) · [Open an issue](https://github.com/AnswerLoops/AnswerLoops/issues)
+[Explore the docs](https://answerloops.com/docs) · [Run it locally](#run-it-locally) · [Open an issue](https://github.com/AnswerLoops/answerLoops/issues)
 
 </div>

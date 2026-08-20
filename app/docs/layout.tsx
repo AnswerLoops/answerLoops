@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { RootProvider } from 'fumadocs-ui/provider/next'
 import { DocsLayout } from 'fumadocs-ui/layouts/docs'
 import { docsSource } from '@/lib/docs/source'
+import { GITHUB_URL } from '@/lib/site'
 import './docs.css'
 
 // Docs are intentionally outside the dashboard's session — this layout
@@ -39,7 +40,7 @@ export default function DocsRootLayout({ children }: { children: ReactNode }) {
           // introduction' does exactly that when clicked from within docs).
           url: 'https://answerloops.com',
         }}
-        githubUrl="https://github.com/AnswerLoops/AnswerLoops"
+        githubUrl={GITHUB_URL}
         // RootProvider's theme.enabled: false above stops next-themes from
         // tracking a mode at all, but DocsLayout renders its own toggle
         // button regardless of that — a separate prop. Without this, the

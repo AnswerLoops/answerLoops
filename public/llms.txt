@@ -22,7 +22,7 @@ Open-source maintainers, developer-tool companies, and community teams who get r
 
 ## Pricing
 
-Self-hosted: free forever (AGPL-3.0). Hosted (managed SaaS): Pro $29/mo, Scale $79/mo, Enterprise $299/mo — all with a 14-day free trial, tiered by monthly deflection volume.
+Self-hosted: free forever (AGPL-3.0). Hosted (managed SaaS): Standard $29/mo (500 deflections), Pro $79/mo (2,000), Enterprise $299/mo (unlimited) — all with a 14-day free trial, tiered by monthly deflection volume. Annual billing takes 20% off every tier.
 
 ## Integrations
 
@@ -39,7 +39,7 @@ Self-hosted: free forever (AGPL-3.0). Hosted (managed SaaS): Pro $29/mo, Scale $
 
 - Marketing site: https://answerloops.com
 - Documentation: https://answerloops.com/docs
-- Source code (self-hosted): https://github.com/AnswerLoops/AnswerLoops
+- Source code (self-hosted): https://github.com/AnswerLoops/answerLoops
 - API/MCP endpoint: https://answerloops.com/api/mcp
 
 ## Full documentation

@@ -15,7 +15,7 @@ Pricing is deflection-based, not per-seat. Every hosted plan includes the full A
 
 There is no free tier. Every plan starts with a 14-day trial — see below.
 
-Annual billing saves 20% off the monthly rate, shown as an Annual/Monthly toggle on the public [pricing page](https://answerloops.com/pricing). There is no separate Stripe annual price configured yet — annual is a display-only rate on the marketing page until the product leaves waitlist mode.
+Annual billing saves 20% off the monthly rate, shown as an Annual/Monthly toggle on the public [pricing page](https://answerloops.com/pricing). Each plan has its own annual price in Stripe (`STRIPE_PRICE_<PLAN>_ANNUAL`), and the interval you pick on the toggle is carried through sign-in into checkout, so the rate you clicked is the rate you're charged. If a plan's annual price env var is unset, checkout for that interval is declined rather than quietly billed at the monthly price — see [environment variables](/docs/reference/environment-variables).
 
 ## What counts as a deflection
 
