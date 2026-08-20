@@ -10,5 +10,41 @@ test-results
 playwright-report
 .gitignore
 README.md
-.env.local
-.env.*.local
+# Every real env file. `COPY . .` copies the whole build context, so anything
+# matched here is the difference between a config file on disk and a credential
+# baked into a published image layer — where deleting it later does not remove
+# it from the layer it was added in.
+#
+# Only .env.local was excluded before, which left .env itself being copied in.
+.env
+.env.*
+!.env.example
+!.env.staging.example
+
+# Local database dumps and backups, which contain customer data.
+*.sql
+*.dump
+
+# Internal engineering instructions. CLAUDE.local.md is gitignored, so it never
+# reaches a CI build — but `COPY . .` takes it from a local build context, which
+# is how a file deliberately kept out of the repository ends up in a published
+# image layer.
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+ARCHITECTURE.md
+TESTING-GUIDE.md
+ENV-VARS.md
+
+# Tests and fixtures. The runtime never loads them, and their placeholder
+# credentials trip every secret scanner a self-hoster points at the image.
+tests
+e2e
+playwright.config.ts
+vitest.config.ts
+
+# Compose files and CI config describe how to run the image; they are not part
+# of it.
+docker-compose*.yml
+.github
+
