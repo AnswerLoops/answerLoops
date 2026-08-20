@@ -107,9 +107,14 @@ export function Nav({ state }: { state: NavState }) {
               Choose a plan →
             </Link>
           )}
+          {/* Anonymous covers both a brand-new visitor and a returning one whose
+              session expired, and there is no way to tell them apart before
+              they authenticate. "Create account" is the honest default: it is
+              what the button does for someone with no account, and /login
+              offers returning users a sign-in path from there. */}
           {state === 'anonymous' && (
             <Link href="/login" className={CTA_CLASS}>
-              Sign in
+              Create account
             </Link>
           )}
           <MobileDrawer triggerLabel="Open navigation" triggerClassName="md:hidden">

@@ -33,7 +33,15 @@ async function getCallbackUrl(): Promise<string> {
   } catch {
     // ignore
   }
-  return '/dashboard'
+  // No plan and nowhere they were headed: someone who clicked a bare "Create
+  // account" or "Sign in". Pricing, not the dashboard.
+  //
+  // Signing in does not grant access on its own — a trial needs a card — so
+  // /dashboard would only bounce off the gate to /start-trial, which has no
+  // plan to resume and forwards to this same page. Three server round trips to
+  // arrive where this sends them directly. Anyone who already has a plan is
+  // sent on by the gate from here, so this costs a returning user nothing.
+  return '/pricing?resume=1'
 }
 
 export async function loginWithGoogle(): Promise<void> {
