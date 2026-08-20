@@ -4,7 +4,9 @@
 
 <br />
 
-[![AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-2563eb?style=flat-square)](./LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/AnswerLoops/answerLoops/ci.yml?branch=main&label=CI&logo=github&style=flat-square)](https://github.com/AnswerLoops/answerLoops/actions/workflows/ci.yml)
+[![Security](https://img.shields.io/github/actions/workflow/status/AnswerLoops/answerLoops/security.yml?branch=main&label=security&logo=github&style=flat-square)](https://github.com/AnswerLoops/answerLoops/actions/workflows/security.yml)
+[![License](https://img.shields.io/github/license/AnswerLoops/answerLoops?style=flat-square&label=license&color=2563eb)](./LICENSE)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-030712?style=flat-square&logo=nextdotjs)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-2563eb?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org)
