@@ -4,6 +4,7 @@ import { auth } from '@/auth'
 import { parseBillingInterval } from '@/lib/billing/plans'
 import { LoginForm } from '@/components/login-form'
 import { Logo } from '@/components/logo'
+import { TRIAL_DAYS } from '@/lib/billing/plans'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,11 +19,17 @@ const ERROR_MESSAGES: Record<string, string> = {
 }
 
 interface Props {
-  searchParams: Promise<{ error?: string; callbackUrl?: string; plan?: string; interval?: string }>
+  searchParams: Promise<{
+    error?: string
+    callbackUrl?: string
+    plan?: string
+    interval?: string
+    mode?: string
+  }>
 }
 
 export default async function LoginPage({ searchParams }: Props) {
-  const { error, plan, interval } = await searchParams
+  const { error, plan, interval, callbackUrl, mode } = await searchParams
 
   if (await auth()) {
     // An already-signed-in visitor clicking a pricing CTA lands here with a
@@ -40,6 +47,24 @@ export default async function LoginPage({ searchParams }: Props) {
   }
   const errorMessage = error ? (ERROR_MESSAGES[error] ?? ERROR_MESSAGES.Default) : null
 
+  // Sign-up is the default because that is who arrives here cold. Google is the
+  // only provider, so both modes run the identical OAuth flow — Google creates
+  // or reuses the account on its side either way. What differs is what the page
+  // claims to be, and a returning user told only "create an account" reasonably
+  // wonders whether they are about to make a second one.
+  const signingIn = mode === 'signin'
+
+  // The plan, interval and callbackUrl are the whole reason this page can send
+  // someone into checkout instead of dropping them at pricing. Toggling between
+  // the two modes must not quietly discard them.
+  const carried = new URLSearchParams()
+  if (plan) carried.set('plan', plan)
+  if (interval) carried.set('interval', interval)
+  if (callbackUrl) carried.set('callbackUrl', callbackUrl)
+  const toggleParams = new URLSearchParams(carried)
+  if (!signingIn) toggleParams.set('mode', 'signin')
+  const toggleHref = `/login${toggleParams.size ? `?${toggleParams}` : ''}`
+
   return (
     <div className="flex min-h-screen items-center justify-center relative overflow-hidden px-4">
       <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-brand-50 to-brand-100/60" />
@@ -53,7 +78,14 @@ export default async function LoginPage({ searchParams }: Props) {
                 <Logo width={120} />
               </Link>
             </div>
-            <p className="mt-1 text-sm text-ink-500">Create a free workspace or sign in</p>
+            <h1 className="text-lg font-semibold tracking-tight text-ink-900">
+              {signingIn ? 'Welcome back' : 'Create your account'}
+            </h1>
+            <p className="mt-1.5 text-sm text-ink-500">
+              {signingIn
+                ? 'Sign in to your workspace.'
+                : `Start your ${TRIAL_DAYS}-day trial. No charge today.`}
+            </p>
           </div>
 
           {errorMessage && (
@@ -62,7 +94,14 @@ export default async function LoginPage({ searchParams }: Props) {
             </div>
           )}
 
-          <LoginForm />
+          <LoginForm signingIn={signingIn} />
+
+          <p className="mt-5 text-center text-sm text-ink-500">
+            {signingIn ? "Don't have an account? " : 'Already have an account? '}
+            <Link href={toggleHref} className="font-medium text-brand-600 underline-offset-2 hover:underline">
+              {signingIn ? 'Create one' : 'Sign in'}
+            </Link>
+          </p>
 
           <p className="mt-6 text-center text-xs text-ink-400">
             By continuing, you agree to our terms of service.

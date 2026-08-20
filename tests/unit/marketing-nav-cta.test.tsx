@@ -71,9 +71,13 @@ describe('the header CTA matches what the visitor can actually do', () => {
     expect(screen.queryByRole('link', { name: /finish setting up/i })).toBeNull()
   })
 
-  it('offers sign-in to a signed-out visitor', () => {
+  it('offers to create an account to a signed-out visitor', () => {
+    // "Sign in" until it was pointed out that this state covers a brand-new
+    // visitor as much as a returning one with an expired session, and only the
+    // new visitor is misled by it — they have no account to sign in to. /login
+    // offers returning users a sign-in mode from there.
     render(<Nav state="anonymous" />)
-    const cta = screen.getByRole('link', { name: /sign in/i })
+    const cta = screen.getByRole('link', { name: /create account/i })
     expect(cta.getAttribute('href')).toBe('/login')
     expect(screen.queryByRole('link', { name: /go to dashboard/i })).toBeNull()
   })

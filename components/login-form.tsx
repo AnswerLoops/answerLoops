@@ -14,7 +14,7 @@ function GoogleIcon() {
   )
 }
 
-export function LoginForm() {
+export function LoginForm({ signingIn = false }: { signingIn?: boolean }) {
   const [googlePending, startGoogle] = useTransition()
 
   return (
@@ -26,7 +26,7 @@ export function LoginForm() {
           className="flex w-full items-center justify-center gap-3 rounded-lg border border-border-strong bg-surface px-4 py-2.5 text-sm font-medium text-ink-700 shadow-sm transition-all hover:bg-gray-50 hover:border-brand-200 disabled:opacity-60"
         >
           <GoogleIcon />
-          {googlePending ? 'Redirecting…' : 'Continue with Google'}
+          {googlePending ? 'Redirecting…' : signingIn ? 'Sign in with Google' : 'Sign up with Google'}
         </button>
       </form>
     </div>
