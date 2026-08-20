@@ -2,7 +2,10 @@ import Link from 'next/link'
 import { LogoMark } from '@/components/logo'
 import { MobileDrawer } from '@/components/ui/mobile-drawer'
 
-export const GITHUB_URL = 'https://github.com/NathanTarbert/community-platform'
+// Re-exported so the many marketing pages that already import it from here keep
+// working, while lib/site.ts stays the single definition.
+export { GITHUB_URL } from '@/lib/site'
+import { GITHUB_URL } from '@/lib/site'
 
 export const GithubIcon = ({ className = 'h-4 w-4' }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -35,6 +38,11 @@ const CTA_CLASS =
 
 const DASHBOARD_HREF = process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard` : '/dashboard'
 
+// Deep link to the plan cards, not to /pricing itself: a header button whose
+// only effect is re-rendering the page the visitor is already on reads as
+// broken, and choosing a plan is the action they are actually here for.
+export const PLANS_HREF = '/pricing#plans'
+
 /**
  * What the header CTA should offer.
  *
@@ -59,7 +67,11 @@ export function Nav({ state }: { state: NavState }) {
           <Link href="/">
             <span className="flex items-center gap-2.5">
               <LogoMark size={32} />
-              <span className="text-[1.18125rem] font-semibold tracking-tight">
+              {/* The wordmark does not wrap or truncate, so on the narrowest
+                  phones it ran underneath the CTA button. Below ~394px there is
+                  not room for mark + wordmark + CTA + menu, and the mark alone
+                  still identifies the site. */}
+              <span className="hidden text-[1.18125rem] font-semibold tracking-tight min-[394px]:inline">
                 <span className="text-white">answer</span>
                 <span className="bg-gradient-to-r from-brand-400 to-indigo-400 bg-clip-text text-transparent">Loops</span>
               </span>
@@ -84,10 +96,15 @@ export function Nav({ state }: { state: NavState }) {
           )}
           {/* Signed in without a plan. Pointing at the dashboard here is what
               produced a loop: the gate sends them back to /pricing, and the
-              header offers the same door again. */}
+              header offers the same door again.
+
+              The label names the one thing left to do, and the link lands on
+              the plan cards rather than the top of the page — so the button
+              still moves them forward when they are already reading /pricing,
+              which is exactly where the gate puts them. */}
           {state === 'no-plan' && (
-            <Link href="/pricing" className={CTA_CLASS}>
-              Finish setting up →
+            <Link href={PLANS_HREF} className={CTA_CLASS}>
+              Choose a plan →
             </Link>
           )}
           {state === 'anonymous' && (

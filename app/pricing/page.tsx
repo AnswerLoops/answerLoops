@@ -82,7 +82,9 @@ export default async function PricingPage({
         </div>
       </section>
 
-      <section className="relative pb-24 sm:pb-32">
+      {/* Anchor target for the header CTA (PLANS_HREF). scroll-mt clears the
+          sticky header so the cards are not hidden underneath it. */}
+      <section id="plans" className="relative scroll-mt-20 pb-24 sm:pb-32">
         <div className="relative mx-auto -mt-32 max-w-7xl px-5 sm:-mt-40 sm:px-8">
           {checkout === 'failed' && (
             <div className="mx-auto mb-6 max-w-2xl rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-center">

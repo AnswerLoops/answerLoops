@@ -3,6 +3,7 @@ import { getOrgMembers } from '@/lib/db/queries/members'
 import { MOCK_EXTERNALS } from '@/lib/mock-mode'
 import type { Ticket } from '@/types'
 import { parseAttachmentLines } from '@/lib/slack/attachment-lines'
+import { GITHUB_URL } from '@/lib/site'
 
 function client() {
   return new Resend(process.env.RESEND_API_KEY)
@@ -135,7 +136,7 @@ export async function sendWaitlistConfirmation(email: string): Promise<void> {
         <p style="${MUTED};margin-bottom:24px">
           In the meantime, you can self-host the open-source version right now:
         </p>
-        <a href="https://github.com/AnswerLoops/AnswerLoops"
+        <a href="${GITHUB_URL}"
            style="display:inline-block;background:#111827;color:#fff;font-size:14px;font-weight:500;padding:10px 20px;border-radius:8px;text-decoration:none">
           View on GitHub
         </a>

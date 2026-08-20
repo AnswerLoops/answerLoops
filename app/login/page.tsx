@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
+import { parseBillingInterval } from '@/lib/billing/plans'
 import { LoginForm } from '@/components/login-form'
 import { Logo } from '@/components/logo'
 
@@ -17,17 +18,25 @@ const ERROR_MESSAGES: Record<string, string> = {
 }
 
 interface Props {
-  searchParams: Promise<{ error?: string; callbackUrl?: string; plan?: string }>
+  searchParams: Promise<{ error?: string; callbackUrl?: string; plan?: string; interval?: string }>
 }
 
 export default async function LoginPage({ searchParams }: Props) {
-  const { error, plan } = await searchParams
+  const { error, plan, interval } = await searchParams
 
   if (await auth()) {
     // An already-signed-in visitor clicking a pricing CTA lands here with a
     // plan. Sending them to /dashboard would drop the choice and then bounce
     // them off the access gate straight back to pricing, losing the click.
-    redirect(plan ? `/start-trial?plan=${encodeURIComponent(plan)}` : '/dashboard')
+    //
+    // The billing period travels with the plan. /start-trial defaults to
+    // monthly when it is missing, so dropping it here would charge the monthly
+    // price to somebody who clicked an annual card.
+    const parsed = parseBillingInterval(interval)
+    const resume = plan
+      ? `/start-trial?plan=${encodeURIComponent(plan)}${parsed ? `&interval=${parsed}` : ''}`
+      : '/dashboard'
+    redirect(resume)
   }
   const errorMessage = error ? (ERROR_MESSAGES[error] ?? ERROR_MESSAGES.Default) : null
 
