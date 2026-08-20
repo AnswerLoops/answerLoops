@@ -7,7 +7,6 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/AnswerLoops/answerLoops/ci.yml?branch=main&label=CI&logo=github&style=flat-square)](https://github.com/AnswerLoops/answerLoops/actions/workflows/ci.yml)
 [![Security](https://img.shields.io/github/actions/workflow/status/AnswerLoops/answerLoops/security.yml?branch=main&label=security&logo=github&style=flat-square)](https://github.com/AnswerLoops/answerLoops/actions/workflows/security.yml)
 [![License](https://img.shields.io/github/license/AnswerLoops/answerLoops?style=flat-square&label=license&color=2563eb)](./LICENSE)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 
 [Website](https://answerloops.com) · [Documentation](https://answerloops.com/docs) · [Hosted app](https://app.answerloops.com) · [Quickstart](#run-it-locally) · [Architecture](#how-the-loop-works)
 
