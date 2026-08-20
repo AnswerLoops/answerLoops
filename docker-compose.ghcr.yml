@@ -1,0 +1,56 @@
+name: answerloops
+
+# Self-hosting without a local build. Identical to docker-compose.prod.yml
+# except that both services pull a published image instead of building one:
+#
+#   docker compose -f docker-compose.ghcr.yml up -d
+#
+# Requires a .env file with, at minimum, DATABASE_URL pointing at a Postgres
+# instance. See content/docs/self-hosting for the full variable list.
+#
+# Pin a version rather than tracking latest for anything you care about staying
+# up:
+#
+#   ANSWERLOOPS_IMAGE=ghcr.io/answerloops/answerloops:1.4.0 \
+#     docker compose -f docker-compose.ghcr.yml up -d
+#
+# One image serves both services. app and bot run the same build and differ only
+# in their command, so there is nothing to keep in step between them.
+
+x-image: &image ${ANSWERLOOPS_IMAGE:-ghcr.io/answerloops/answerloops:latest}
+
+services:
+  app:
+    image: *image
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+    command: ["pnpm", "start"]
+
+  bot:
+    image: *image
+    pull_policy: always
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - NODE_ENV=production
+      # Set BOT_TARGET_URL to the app's public URL when services are separate.
+      # Use http://app:3000 only when both run in the same Docker network.
+      - BOT_TARGET_URL=http://app:3000
+    command: ["pnpm", "bot:start"]
+    depends_on:
+      - app
+    # The image's HEALTHCHECK probes :3000/api/health, and the bot serves no
+    # HTTP at all, so that probe would fail forever here. Its liveness is the
+    # Discord gateway connection and the Slack poller, both visible in logs.
+    healthcheck:
+      disable: true
