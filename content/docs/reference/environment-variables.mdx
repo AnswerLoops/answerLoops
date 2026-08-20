@@ -33,24 +33,20 @@ All variables are set in your `.env` file (local) or in your hosting provider's 
 | `NEXT_PUBLIC_APP_URL` | Optional. Base URL of a dedicated dashboard subdomain (e.g. `https://app.example.com`) that shares the same deployment as your root domain. When set, marketing-page CTAs link there instead of a relative `/dashboard` path. Unset by default — most deployments serve everything from one domain |
 | `AUTH_COOKIE_DOMAIN` | Optional. Shares the Auth.js session cookie across every subdomain of your apex (e.g. `.example.com`). Required alongside `NEXT_PUBLIC_APP_URL`, since a session cookie is host-only by default — without it, a user signed in on the root domain appears logged out on the app subdomain |
 
-## OAuth providers
+## OAuth provider
 
-At least one OAuth provider must be configured so users can sign in.
+Google is the only sign-in provider AnswerLoops configures. Both variables are required.
 
 | Variable | Description |
 |---|---|
-| `AUTH_GITHUB_ID` | GitHub OAuth App client ID |
-| `AUTH_GITHUB_SECRET` | GitHub OAuth App client secret |
-| `AUTH_DISCORD_ID` | Discord OAuth2 client ID |
-| `AUTH_DISCORD_SECRET` | Discord OAuth2 client secret |
 | `AUTH_GOOGLE_ID` | Google OAuth client ID |
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
 
-Callback URLs to register with each provider:
+Callback URL to register: `https://<your-domain>/api/auth/callback/google`
 
-- GitHub: `https://<your-domain>/api/auth/callback/github`
-- Discord: `https://<your-domain>/api/auth/callback/discord`
-- Google: `https://<your-domain>/api/auth/callback/google`
+<Note>
+  `DISCORD_CLIENT_ID` below is a separate thing — the "connect a Discord server" flow inside the product, not a sign-in method. There is no Discord or GitHub OAuth provider for dashboard sign-in.
+</Note>
 
 ## AI providers
 
@@ -73,9 +69,8 @@ These are platform-wide defaults. Individual orgs can override the AI model in *
 | Variable | Description |
 |---|---|
 | `DISCORD_TOKEN` | Bot token from the Discord Developer Portal. Required on both the app service (for the channel picker UI) and the bot service |
-| `DISCORD_CLIENT_ID` | Discord application client ID. Must be from the same application as `DISCORD_TOKEN` |
-| `DISCORD_CLIENT_SECRET` | Discord application client secret (used for OAuth) |
-| `DISCORD_APPLICATION_ID` | Discord application ID (same value as `DISCORD_CLIENT_ID` in most setups) |
+| `DISCORD_CLIENT_ID` | Discord application client ID. Optional — when set, onboarding offers a 1-click "Add to Discord" flow instead of asking for a manually-created bot token and channel IDs |
+| `DISCORD_APPLICATION_ID` | Discord application ID (same value as `DISCORD_CLIENT_ID` in most setups). Required to register the `/ask` and `/summarize` slash commands |
 | `DISCORD_GUILD_ID` | ID of the Discord server to monitor |
 | `BOT_SECRET` | Shared secret between the bot and the app for authenticating ingest requests |
 | `BOT_TARGET_URL` | Base URL the bot posts ingested messages to, e.g. `https://answerloops.com` — no trailing slash |
@@ -129,6 +124,14 @@ These are platform-wide defaults. Individual orgs can override the AI model in *
 | Variable | Description |
 |---|---|
 | `FIRECRAWL_API_KEY` | Firecrawl API key — required for KB URL crawl imports |
+| `FIRECRAWL_API_URL` | Optional. Point at a self-hosted Firecrawl instance instead of the managed service |
+
+## Analytics tuning
+
+| Variable | Description |
+|---|---|
+| `ROI_MINUTES_PER_TICKET` | Optional. Minutes assumed saved per deflected ticket, used in the ROI-hours-saved calculation. Defaults to a reasonable estimate — see `lib/analytics/roi.ts` |
+| `ROI_STAFF_HOURLY_RATE` | Optional. Hourly staff rate used to convert hours saved into a dollar figure. Same defaulting behaviour |
 
 ## Web Push (VAPID)
 

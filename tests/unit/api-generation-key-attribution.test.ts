@@ -302,7 +302,6 @@ describe('TRUST_PROXY_HOPS is documented everywhere env vars are listed', () => 
   })
 
   it.each([
-    'ENV-VARS.md',
     'content/docs/reference/environment-variables.mdx',
     'content/docs/self-hosting/environment-variables.mdx',
   ])('appears in %s with its default called out', (file) => {
@@ -315,7 +314,7 @@ describe('TRUST_PROXY_HOPS is documented everywhere env vars are listed', () => 
     expect(near, `${file} does not state the default`).toMatch(/defaults? to/i)
   })
 
-  it('is not a secret, so it belongs in the committed example env docs unredacted', () => {
-    expect(readFileAt('ENV-VARS.md')).toMatch(/TRUST_PROXY_HOPS=\d+/)
+  it('is not a secret, so it belongs in the committed example env unredacted', () => {
+    expect(readFileAt('.env.example')).toMatch(/TRUST_PROXY_HOPS=\d+/)
   })
 })
