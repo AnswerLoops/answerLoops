@@ -51,6 +51,10 @@ export const ACCESS_EXEMPT_PATHS: readonly string[] = [
   '/invite/',
   // Reachable while an org is soft-deleted so its owner can still restore it.
   '/account-deleted',
+  // The branded checkout page. Same reason as /start-trial: an org reaches it
+  // precisely because it has no subscription yet, so gating it on having one
+  // would make the page unreachable by everyone it exists for.
+  '/checkout',
 ]
 
 export function isAccessExempt(pathname: string): boolean {
