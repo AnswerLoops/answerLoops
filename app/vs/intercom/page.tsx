@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import { auth } from '@/auth'
 import { ComparisonPage } from '@/components/marketing/comparison-page'
+import { resolveNavState } from '@/lib/marketing/nav-state'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,10 +20,10 @@ const ROWS = [
 ]
 
 export default async function VsIntercomPage() {
-  const session = await auth()
+  const navState = await resolveNavState()
   return (
     <ComparisonPage
-      loggedIn={!!session?.user}
+      navState={navState}
       competitor="Intercom"
       competitorSummary="a widely-used customer support platform — a human-first helpdesk (inbox, help center, ticketing) with an AI agent (Fin) layered on top."
       intro="Intercom is a mature, enterprise-grade helpdesk built for support teams who work primarily in email and a shared inbox. AnswerLoops is built for developer communities that live in Discord and GitHub, where the AI answer — not a human inbox — is the default first response."

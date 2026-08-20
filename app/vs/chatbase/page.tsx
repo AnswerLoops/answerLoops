@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import { auth } from '@/auth'
 import { ComparisonPage } from '@/components/marketing/comparison-page'
+import { resolveNavState } from '@/lib/marketing/nav-state'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,10 +20,10 @@ const ROWS = [
 ]
 
 export default async function VsChatbasePage() {
-  const session = await auth()
+  const navState = await resolveNavState()
   return (
     <ComparisonPage
-      loggedIn={!!session?.user}
+      navState={navState}
       competitor="Chatbase"
       competitorSummary="a widely-used tool for adding an AI chat widget to a website, trained on your uploaded docs and URLs."
       intro="Chatbase is built around one surface: a chatbot on your website. AnswerLoops is built around the ticket — Discord, Slack, GitHub, email, and your website all feed the same confidence-gated triage pipeline, with resolved answers feeding back into a self-improving knowledge base."

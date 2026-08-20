@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
-import { auth } from '@/auth'
 import { ORDERED_PLANS, TRIAL_DAYS } from '@/lib/billing/plans'
 import { Nav, Footer } from '@/components/marketing/chrome'
 import { PricingToggle } from '@/components/marketing/pricing-toggle'
 import { PricingComparisonTable } from '@/components/marketing/pricing-comparison-table'
 import { WaitlistForm } from '@/components/waitlist-form'
+import { resolveNavState } from '@/lib/marketing/nav-state'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,11 +48,10 @@ export default async function PricingPage({
   // Two ways to arrive here mid-flow, and landing on a plain pricing page with
   // no explanation in either case reads as the product losing your progress.
   const { resume, checkout } = await searchParams
-  const session = await auth()
-
+  const navState = await resolveNavState()
   return (
     <div className="min-h-screen bg-[#f5f8fd]">
-      <Nav loggedIn={!!session?.user} />
+      <Nav state={navState} />
 
       <section className="relative isolate overflow-hidden bg-[#030611] pb-48 pt-20 sm:pb-56 sm:pt-28">
         <div className="landing-grid pointer-events-none absolute inset-0 opacity-55" />

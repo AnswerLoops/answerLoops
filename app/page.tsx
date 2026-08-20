@@ -1,9 +1,8 @@
 import Link from 'next/link'
-import { auth } from '@/auth'
 import { ORDERED_PLANS } from '@/lib/billing/plans'
 import { AnimatedChat } from '@/components/animated-chat'
-import { WaitlistForm } from '@/components/waitlist-form'
 import { Nav, Footer, GithubIcon, GITHUB_URL } from '@/components/marketing/chrome'
+import { resolveNavState } from '@/lib/marketing/nav-state'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,7 +66,14 @@ function Hero() {
           </p>
 
           <div className="landing-hero-rise [animation-delay:240ms] mx-auto mt-9 max-w-xl">
-            <WaitlistForm dark className="landing-waitlist" />
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link href="/pricing" className="w-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:brightness-110 sm:w-auto">
+                Start your 14-day trial
+              </Link>
+              <Link href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="w-full rounded-full border border-white/15 px-6 py-3 text-center text-sm font-semibold text-white/80 transition hover:border-white/30 hover:text-white sm:w-auto">
+                Self-host it free
+              </Link>
+            </div>
             <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[0.6875rem] font-medium text-white/55">
               <span className="flex items-center gap-1.5"><CheckIcon className="h-3 w-3 text-emerald-400" /> 14-day hosted trial</span>
               <span className="flex items-center gap-1.5"><CheckIcon className="h-3 w-3 text-emerald-400" /> Open-source core</span>
@@ -539,10 +545,17 @@ function CTA() {
           <SparkIcon />
         </div>
         <h2 className="landing-reveal mt-7 text-balance text-4xl font-semibold leading-[1.02] tracking-[-0.05em] text-white sm:text-6xl">Make the next repeat question the last one.</h2>
-        <p className="landing-reveal mx-auto mt-5 max-w-xl text-sm leading-relaxed text-slate-300/60 sm:text-base">Join the waitlist for hosted access, or explore the source and run AnswerLoops on your own infrastructure today.</p>
+        <p className="landing-reveal mx-auto mt-5 max-w-xl text-sm leading-relaxed text-slate-300/60 sm:text-base">Start a hosted trial in a couple of minutes, or take the source and run AnswerLoops on your own infrastructure. Both are the same product.</p>
         <div className="landing-reveal mx-auto mt-9 max-w-xl">
-          <WaitlistForm dark className="landing-waitlist" />
-          <p className="mt-3 text-[0.625rem] text-white/25">Product updates only. Unsubscribe whenever you want.</p>
+          <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link href="/pricing" className="w-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:brightness-110 sm:w-auto">
+              Start your 14-day trial
+            </Link>
+            <Link href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="w-full rounded-full border border-white/15 px-6 py-3 text-center text-sm font-semibold text-white/80 transition hover:border-white/30 hover:text-white sm:w-auto">
+              Self-host it free
+            </Link>
+          </div>
+          <p className="mt-3 text-[0.625rem] text-white/25">A card is required to start the trial. Nothing is charged for 14 days.</p>
         </div>
       </div>
     </section>
@@ -606,12 +619,11 @@ function StructuredData() {
 }
 
 export default async function LandingPage() {
-  const session = await auth()
-
+  const navState = await resolveNavState()
   return (
     <div className="min-h-screen bg-white">
       <StructuredData />
-      <Nav loggedIn={!!session?.user} />
+      <Nav state={navState} />
       <main>
         <Hero />
         <ChannelRail />
