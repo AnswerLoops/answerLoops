@@ -30,7 +30,9 @@ export interface Plan {
 }
 
 // Effective monthly price if billed annually (priceMonthly minus the annual
-// discount), rounded to the nearest cent. Display-only — see note above.
+// discount), rounded to the nearest cent. This is the rate the customer is
+// actually billed at — annualTotalPrice below is twelve times it, and the
+// annual Stripe price charges that total.
 export function annualMonthlyPrice(plan: Plan): number {
   return Math.round(plan.priceMonthly * (1 - ANNUAL_DISCOUNT_PCT / 100))
 }
@@ -128,8 +130,25 @@ export function hasActiveAccess(status: string | null | undefined): boolean {
   return !!status && ACTIVE_SUBSCRIPTION_STATUSES.has(status)
 }
 
+/**
+ * Resolves a Stripe price id back to the plan that sells it.
+ *
+ * Both intervals count. The webhook reads whichever price id Stripe put on the
+ * subscription item, and for an annual customer that is the annual id — so
+ * matching only the monthly id leaves every annual subscription unresolvable,
+ * which surfaces as a subscription.updated event that cannot name a plan.
+ *
+ * Unconfigured price ids are null, and a null price id must never match: an org
+ * whose plan has no annual price configured would otherwise resolve to that
+ * plan on any event carrying no price at all.
+ */
 export function priceIdToPlan(priceId: string): Plan | null {
-  return Object.values(PLANS).find((p) => p.stripePriceId === priceId) ?? null
+  if (!priceId) return null
+  return (
+    Object.values(PLANS).find(
+      (p) => p.stripePriceId === priceId || p.stripePriceIdAnnual === priceId,
+    ) ?? null
+  )
 }
 
 export function isOverLimit(deflections: number, plan: Plan): boolean {
