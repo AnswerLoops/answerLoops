@@ -5,6 +5,53 @@ description: Running AnswerLoops with Docker Compose.
 
 Everything here assumes you've already cloned the repo and filled in a real `.env.local` — see the [self-host quickstart](/docs/quickstart-self-host) if you haven't done that part yet. Docker Compose reads that file; it doesn't generate secrets or register OAuth apps for you.
 
+## Run a published image (no build)
+
+Official images are published to the GitHub Container Registry, so you can run
+AnswerLoops without building anything:
+
+```bash
+docker compose -f docker-compose.ghcr.yml up -d
+```
+
+That pulls `ghcr.io/answerloops/answerloops:latest` and starts both the app and
+the bot from it. First run takes as long as the download rather than as long as
+a Next.js build, which on a modest machine is the difference between a minute
+and quarter of an hour.
+
+Images are built for `linux/amd64` and `linux/arm64`, so Apple Silicon runs
+natively rather than under emulation.
+
+### Pinning a version
+
+`latest` moves when a new release is published. For anything you rely on staying
+put, pin a version instead:
+
+```bash
+ANSWERLOOPS_IMAGE=ghcr.io/answerloops/answerloops:1.4.0 \
+  docker compose -f docker-compose.ghcr.yml up -d
+```
+
+Available tags are listed on the [package page](https://github.com/AnswerLoops/answerLoops/pkgs/container/answerloops).
+Alongside each release there is a `main` tag built from the tip of the default
+branch, and a `sha-<commit>` tag for pinning to an exact commit.
+
+### Which file to use
+
+| | |
+|---|---|
+| `docker-compose.yml` | local development — builds from source, includes Postgres |
+| `docker-compose.ghcr.yml` | self-hosting — pulls a published image, brings your own Postgres |
+| `docker-compose.prod.yml` | self-hosting from source — builds locally, brings your own Postgres |
+
+The published-image path expects `DATABASE_URL` in `.env` to point at a Postgres
+you run: the compose file deliberately does not start one, because a database
+inside the same compose project is convenient for development and the wrong
+default for anything holding real data.
+
+Both services run the same image and differ only in their command, so there is
+no second image to keep in step.
+
 ## Start
 
 ```bash
