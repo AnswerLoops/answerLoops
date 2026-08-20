@@ -55,6 +55,45 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Built and loaded locally first so it can be scanned before anything
+      # reaches the registry. A published layer cannot be unpublished: deleting
+      # a tag leaves the digest pullable, and a credential in a layer survives
+      # being deleted in a later one. The push below is a cache hit, so this
+      # costs a scan rather than a second build.
+      - name: Build for scanning
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          target: runner
+          platforms: ${{ matrix.platform }}
+          load: true
+          tags: scan-candidate:${{ matrix.suffix }}
+          cache-from: type=gha,scope=${{ matrix.suffix }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.suffix }}
+
+      # Unfiltered by severity, unlike the dependency scan: a credential in an
+      # image is not less serious for carrying a lower rule severity, and this
+      # is the last point at which it can still be caught.
+      - name: Refuse to publish an image containing secrets
+        uses: aquasecurity/trivy-action@df678dbccf677bc6937338d569ba0da18964a8cc # master 2026-07-01
+        with:
+          scan-type: image
+          image-ref: scan-candidate:${{ matrix.suffix }}
+          scanners: secret
+          format: table
+          exit-code: '1'
+
+      - name: Refuse to publish known-vulnerable dependencies
+        uses: aquasecurity/trivy-action@df678dbccf677bc6937338d569ba0da18964a8cc # master 2026-07-01
+        with:
+          scan-type: image
+          image-ref: scan-candidate:${{ matrix.suffix }}
+          scanners: vuln
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: table
+          exit-code: '1'
+
       # Pushed by digest rather than tag: the tags belong on the manifest that
       # merges both architectures, not on either half of it.
       - name: Build and push by digest
