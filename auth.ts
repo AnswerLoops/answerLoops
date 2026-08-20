@@ -12,7 +12,6 @@ import { sendWelcomeEmail } from '@/lib/email/send'
 const PUBLIC_PATHS = ['/', '/login', '/api/auth', '/api/ingest', '/api/feedback', '/api/slack', '/api/widget', '/widget', '/api/billing/webhook', '/api/waitlist', '/api/health', '/api/github/webhook', '/api/email/ingest', '/api/mcp', '/api/agent', '/api/google-chat', '/vs', '/pricing', '/docs', '/privacy', '/robots.txt', '/sitemap.xml', '/llms.txt']
 const ONBOARDING_PATH = '/onboarding'
 const ACCOUNT_DELETED_PATH = '/account-deleted'
-const INVITE_PREFIX = '/invite/'
 const START_TRIAL_PATH = '/start-trial'
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
@@ -214,9 +213,18 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           }
         }
 
+        // Every access-exempt path must also be onboarding-exempt, or the two
+        // checks fight each other. /start-trial is access-exempt (the whole point of
+        // the gate is to send an unsubscribed user there) but was not
+        // onboarding-exempt, so a brand-new account — unsubscribed and
+        // unonboarded, which is every brand-new account — got redirected
+        // /start-trial → /onboarding (not onboarded) → /start-trial (still no
+        // subscription) forever. Onboarding requires access the same as
+        // everything else in the product; a path that is exempt from needing
+        // access cannot also demand onboarding, which itself requires access.
         if (
           pathname !== ONBOARDING_PATH &&
-          !pathname.startsWith(INVITE_PREFIX) &&
+          !isAccessExempt(pathname) &&
           !pathname.startsWith('/api/') &&
           !(session as { onboarded?: boolean }).onboarded &&
           !access.onboardedAt

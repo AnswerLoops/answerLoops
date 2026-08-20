@@ -132,11 +132,55 @@ describe('auth.ts wires the gate into every request', () => {
   })
 
   it('checks access before the onboarding redirect', () => {
-    // Reversed, an unsubscribed user would be sent to onboarding and start
-    // connecting real channels before ever reaching a card.
+    // Textual order only. An unsubscribed user reaching /onboarding this way
+    // (rather than via the loop below) would start connecting real channels
+    // before ever reaching a card — but order alone does not protect a path
+    // that skips the access-check block entirely. See the next test.
     const s = src()
     const gate = s.slice(s.indexOf('async authorized('), s.indexOf('async jwt('))
     expect(gate.indexOf('orgHasProductAccess')).toBeLessThan(gate.indexOf('ONBOARDING_PATH'))
+  })
+
+  it('never sends an access-exempt path to onboarding, which would bounce it straight back', async () => {
+    // The bug this guards: /start-trial is access-exempt (skips the
+    // "has a subscription?" check above), but the onboarding-redirect check
+    // used to test its own, separate exemption list (INVITE_PREFIX only) —
+    // so a brand-new account, unsubscribed and unonboarded (every brand-new
+    // account), hit /start-trial → redirected to /onboarding for being
+    // unonboarded → /onboarding is NOT access-exempt, so its own access check
+    // redirected straight back to /start-trial → forever. ERR_TOO_MANY_REDIRECTS
+    // for every first-time signup, plan-chosen or not.
+    //
+    // The fix makes the onboarding check reuse isAccessExempt directly rather
+    // than keeping a second, independently-maintained exemption list — so a
+    // future addition to ACCESS_EXEMPT_PATHS is automatically onboarding-exempt
+    // too, instead of needing the same fix applied twice.
+    const { isAccessExempt, ACCESS_EXEMPT_PATHS } = await import('@/lib/billing/access')
+
+    const s = src()
+    const gate = s.slice(s.indexOf('async authorized('), s.indexOf('async jwt('))
+    const onboardingCheck = gate.slice(
+      gate.indexOf('pathname !== ONBOARDING_PATH'),
+      gate.indexOf('return NextResponse.redirect(new URL(ONBOARDING_PATH'),
+    )
+
+    expect(
+      onboardingCheck,
+      'the onboarding redirect must reuse isAccessExempt, not a separate hand-maintained list',
+    ).toContain('isAccessExempt(pathname)')
+    expect(
+      onboardingCheck,
+      'INVITE_PREFIX was the narrower, incomplete exemption that caused the loop — it must not come back',
+    ).not.toContain('INVITE_PREFIX')
+
+    // Every current access-exempt path is real ground truth for the guarantee
+    // above: each one must actually satisfy isAccessExempt, or the onboarding
+    // check's reuse of it would silently fail to exempt that path.
+    for (const path of ACCESS_EXEMPT_PATHS) {
+      expect(isAccessExempt(path), `${path} is in ACCESS_EXEMPT_PATHS but isAccessExempt(${path}) is false`).toBe(
+        true,
+      )
+    }
   })
 })
 
