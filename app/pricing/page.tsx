@@ -3,8 +3,9 @@ import { ORDERED_PLANS, TRIAL_DAYS } from '@/lib/billing/plans'
 import { Nav, Footer } from '@/components/marketing/chrome'
 import { PricingToggle } from '@/components/marketing/pricing-toggle'
 import { PricingComparisonTable } from '@/components/marketing/pricing-comparison-table'
-import { WaitlistForm } from '@/components/waitlist-form'
 import { resolveNavState } from '@/lib/marketing/nav-state'
+import { GITHUB_URL } from '@/lib/site'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -158,16 +159,27 @@ export default async function PricingPage({
         </div>
       </section>
 
-      <section id="waitlist" className="relative overflow-hidden bg-[#030611]">
+      {/* Checkout works from the plan cards above, so this closing section
+          offers the same live actions rather than an email signup — a
+          "waitlist" CTA here would be asking someone who could already
+          start a trial to wait for one instead. */}
+      <section className="relative overflow-hidden bg-[#030611]">
         <div className="landing-grid pointer-events-none absolute inset-0 opacity-35" />
         <div className="pointer-events-none absolute left-1/2 top-0 h-[28rem] w-[52rem] -translate-x-1/2 rounded-[50%] bg-blue-600/25 blur-[120px]" />
         <div className="relative mx-auto max-w-5xl px-5 py-24 text-center sm:px-8 sm:py-32">
           <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border border-white/12 bg-white/[0.07] text-lg text-cyan-300">↗</div>
           <h2 className="mt-7 text-balance text-4xl font-semibold leading-[1.02] tracking-[-0.05em] text-white sm:text-6xl">Start with the questions you already answer twice.</h2>
-          <p className="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-slate-200/70 sm:text-base">Join the hosted waitlist, or deploy the open-source edition on your infrastructure today.</p>
-          <div className="landing-waitlist mx-auto mt-9 max-w-xl">
-            <WaitlistForm dark />
-            <p className="mt-3 text-[0.625rem] text-white/45">Product updates only. Unsubscribe whenever you want.</p>
+          <p className="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-slate-200/70 sm:text-base">Start a hosted trial in a couple of minutes, or take the source and run AnswerLoops on your own infrastructure. Both are the same product.</p>
+          <div className="mx-auto mt-9 max-w-xl">
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Link href="#plans" className="w-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:brightness-110 sm:w-auto">
+                Start your 14-day trial
+              </Link>
+              <Link href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="w-full rounded-full border border-white/15 px-6 py-3 text-center text-sm font-semibold text-white/80 transition hover:border-white/30 hover:text-white sm:w-auto">
+                Self-host it free
+              </Link>
+            </div>
+            <p className="mt-3 text-[0.625rem] text-white/25">A card is required to start the trial. Nothing is charged for 14 days.</p>
           </div>
         </div>
       </section>

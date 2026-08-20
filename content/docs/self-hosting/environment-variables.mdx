@@ -3,7 +3,7 @@ title: Environment Variables
 description: Every environment variable AnswerLoops uses, with defaults and requirements.
 ---
 
-Copy `.env.local.example` to `.env.local` and fill in the values below.
+Copy `.env.example` to `.env` and fill in the values below.
 
 <Note>
   AnswerLoops uses **Auth.js v5**. The required env vars are `AUTH_URL` and `AUTH_SECRET`. If you see `NEXTAUTH_URL` or `NEXTAUTH_SECRET` in older docs or guides, those are the v4 names — they will not work here.
@@ -59,23 +59,20 @@ To close this:
   Until this is configured, the proxy-supplied client-IP header is trusted unconditionally — the app has no way to tell an edge-routed request from a direct one. Set `ORIGIN_VERIFY_SECRET` on any deployment sitting behind a CDN or edge proxy.
 </Warning>
 
-## OAuth (at least one required)
+## OAuth (required)
 
-Login uses GitHub, Discord, or Google OAuth. Configure at least one.
+Login is Google OAuth only.
 
 | Variable | Description |
 |---|---|
-| `AUTH_GITHUB_ID` | GitHub OAuth App client ID |
-| `AUTH_GITHUB_SECRET` | GitHub OAuth App client secret |
-| `AUTH_DISCORD_ID` | Discord OAuth2 client ID |
-| `AUTH_DISCORD_SECRET` | Discord OAuth2 client secret |
 | `AUTH_GOOGLE_ID` | Google OAuth client ID |
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
 
-Callback URLs to register:
-- GitHub: `{AUTH_URL}/api/auth/callback/github`
-- Discord: `{AUTH_URL}/api/auth/callback/discord`
-- Google: `{AUTH_URL}/api/auth/callback/google`
+Callback URL to register: `{AUTH_URL}/api/auth/callback/google`
+
+<Note>
+  `DISCORD_CLIENT_ID` and `GITHUB_APP_ID` below are unrelated to sign-in — they're the "connect a Discord server" and "install the GitHub App" flows inside the product, available once you're already logged in with Google.
+</Note>
 
 ## AI providers (optional — at least one recommended)
 
@@ -94,8 +91,7 @@ Per-org AI keys set in **Settings → AI Model** override these env vars for tha
 | Variable | Description |
 |---|---|
 | `DISCORD_TOKEN` | Platform shared bot token. Required for 1-click OAuth mode and for the channel picker in Settings. |
-| `DISCORD_CLIENT_ID` | Application ID — enables the "Add to Discord" OAuth flow. Register callback: `{AUTH_URL}/api/discord/callback` |
-| `DISCORD_CLIENT_SECRET` | OAuth2 client secret from Discord Developer Portal → OAuth2 tab |
+| `DISCORD_CLIENT_ID` | Application ID — enables the "Add to Discord" 1-click flow from onboarding. Register callback: `{AUTH_URL}/api/discord/callback`. Without it, onboarding falls back to a manual bot-token + channel-ID flow |
 | `DISCORD_APPLICATION_ID` | Application ID for slash command registration (same value as `DISCORD_CLIENT_ID`) |
 | `DISCORD_GUILD_ID` | Guild ID for guild-scoped slash command registration during dev (instant vs. global's 1-hour delay) |
 | `BOT_SECRET` | Shared secret between the bot service and `/api/ingest`. Auto-generated per-org via Settings; this is the env fallback. |
@@ -189,6 +185,9 @@ pnpm dlx web-push generate-vapid-keys
 |---|---|---|
 | `DEPLOYMENT_MODE` | Set to `cloud` only on AnswerLoops' own managed SaaS. Leave unset (or anything other than `cloud`) on a self-hosted deployment. | `cloud` |
 | `STRIPE_SECRET_KEY` | Only relevant when `DEPLOYMENT_MODE=cloud`. Not needed for self-hosting. | — |
+| `STRIPE_WEBHOOK_SECRET` | Only relevant when `DEPLOYMENT_MODE=cloud`. Signing secret for `/api/billing/webhook`. | — |
+| `STRIPE_PRICE_STANDARD` / `STRIPE_PRICE_PRO` / `STRIPE_PRICE_ENTERPRISE` | Only relevant when `DEPLOYMENT_MODE=cloud`. Monthly Stripe Price ID per plan — must match the plan it names, since the displayed price and the charged price come from different places. | — |
+| `STRIPE_PRICE_STANDARD_ANNUAL` / `STRIPE_PRICE_PRO_ANNUAL` / `STRIPE_PRICE_ENTERPRISE_ANNUAL` | Only relevant when `DEPLOYMENT_MODE=cloud`. Annual Stripe Price ID per plan. A plan missing its annual price declines annual checkout rather than billing the monthly rate. | — |
 
 Self-hosted deployments (the default — `DEPLOYMENT_MODE` unset) are never metered and every plan-gated feature (Discord/Slack integrations, CSAT scoring, simulation/dry-run mode, knowledge gap dashboard, custom AI model config, etc.) is unlocked unconditionally. You're already bringing your own AI provider, database, and hosting — there's no usage of yours for AnswerLoops to meter or restrict.
 

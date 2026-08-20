@@ -348,8 +348,9 @@ export const integrations = pgTable(
     autoDeflectEnabled: integer('auto_deflect_enabled').notNull().default(0),
     // Discriminates how outbound email replies choose their From address.
     // 'platform' (default) = platform-hosted RESEND_FROM address. 'oauth' =
-    // future phase, not implemented yet. 'domain' = use the verified row in
-    // emailDomains for this org as the From address (see lib/email/reply.ts).
+    // send through the org's connected Gmail or Outlook mailbox (see
+    // emailOauthConnections below and lib/email/reply.ts). 'domain' = use the
+    // verified row in emailDomains for this org as the From address.
     emailSendMethod: text('email_send_method').notNull().default('platform'),
     createdAt: text('created_at').notNull().default(now),
     updatedAt: text('updated_at').notNull().default(now),
@@ -402,7 +403,7 @@ export const emailOauthConnections = pgTable(
   {
     id: serial('id').primaryKey(),
     orgId: integer('org_id').notNull().unique().references(() => orgs.id), // one connection per org for v1
-    provider: text('provider').notNull(), // 'gmail' | 'outlook' (only gmail implemented this phase)
+    provider: text('provider').notNull(), // 'gmail' | 'outlook' — both implemented, see lib/email/gmail.ts and lib/email/outlook.ts
     mailboxAddress: text('mailbox_address').notNull(), // shown in UI, from the token response
     accessToken: text('access_token'), // encrypted, short-lived cache — refreshed on demand
     accessTokenExpiresAt: text('access_token_expires_at'),

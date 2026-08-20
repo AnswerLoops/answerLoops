@@ -94,8 +94,11 @@ describe('each plan resolves the env var matching its own id', () => {
 describe('documented env vars match what the code reads', () => {
   // The docs are how a deployment gets configured, so a var named in the code
   // but absent from the docs produces exactly this bug in the next environment.
+  // .env.example is the canonical local reference (README's setup flow is
+  // literally `cp .env.example .env`); ENV-VARS.md was a hand-maintained
+  // duplicate of it that drifted and was retired rather than kept in sync.
   const docs = [
-    'ENV-VARS.md',
+    '.env.example',
     'content/docs/reference/environment-variables.mdx',
   ]
 
@@ -109,5 +112,22 @@ describe('documented env vars match what the code reads', () => {
     expect(doc, `${docPath} still documents the retired STRIPE_PRICE_SCALE`).not.toContain(
       'STRIPE_PRICE_SCALE',
     )
+  })
+
+  it('.env.example never lists a variable that no code path reads', () => {
+    // The inverse of the check above: a var here that nothing reads doesn't
+    // just rot, it invites a self-hoster to fill in a working credential (a
+    // real GitHub OAuth app, say) for a provider that quietly does nothing.
+    const example = fs.readFileSync(path.join(process.cwd(), '.env.example'), 'utf-8')
+    const names = [...example.matchAll(/^([A-Z][A-Z0-9_]+)=/gm)].map((m) => m[1])
+    expect(names.length).toBeGreaterThan(20)
+
+    // Not an exhaustive reverse-check of every source file — that belongs to
+    // a wider repo-scan test, if one is ever written. This guards the two
+    // failure modes already seen once each: a dead OAuth provider var, and a
+    // renamed-but-not-removed Stripe price var.
+    for (const name of ['AUTH_GITHUB_ID', 'AUTH_GITHUB_SECRET', 'AUTH_DISCORD_ID', 'AUTH_DISCORD_SECRET', 'DISCORD_CLIENT_SECRET', 'STRIPE_PRICE_SCALE']) {
+      expect(names, `${name} is listed but no sign-in provider or billing path reads it`).not.toContain(name)
+    }
   })
 })
