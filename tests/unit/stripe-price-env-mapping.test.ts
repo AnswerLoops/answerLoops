@@ -63,16 +63,30 @@ describe('each plan resolves the env var matching its own id', () => {
     // 'scale' and the old 'pro'-means-Standard mapping are both gone. A
     // reference to a retired name is how this broke: the var was simply never
     // set in any environment, so the plan silently had no price.
+    //
+    // Each plan now reads two vars, STRIPE_PRICE_<ID> and STRIPE_PRICE_<ID>_ANNUAL.
+    // The suffix is stripped before checking, so the guarantee is unchanged:
+    // every price var names a plan that currently exists.
     const src = fs.readFileSync(path.join(process.cwd(), 'lib/billing/plans.ts'), 'utf-8')
     const referenced = [...src.matchAll(/process\.env\.STRIPE_PRICE_([A-Z_]+)/g)].map((m) =>
       m[1].toLowerCase(),
     )
-    expect(referenced.length).toBe(PLAN_IDS.length)
+
+    // Two per plan, and no more: an extra var means a price nothing resolves.
+    expect(referenced.length).toBe(PLAN_IDS.length * 2)
+
     for (const name of referenced) {
+      const planId = name.replace(/_annual$/, '')
       expect(
         PLAN_IDS as readonly string[],
         `plans.ts reads STRIPE_PRICE_${name.toUpperCase()}, which is not a current plan id`,
-      ).toContain(name)
+      ).toContain(planId)
+    }
+
+    // Every plan has both, so neither interval can be silently unconfigured.
+    for (const id of PLAN_IDS) {
+      expect(referenced, `${id} is missing a monthly price var`).toContain(id)
+      expect(referenced, `${id} is missing an annual price var`).toContain(`${id}_annual`)
     }
   })
 })

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ANNUAL_DISCOUNT_PCT, annualMonthlyPrice, TRIAL_DAYS, type Plan } from '@/lib/billing/plans'
+import { ANNUAL_DISCOUNT_PCT, annualMonthlyPrice, annualTotalPrice, TRIAL_DAYS, type Plan } from '@/lib/billing/plans'
 
 function CheckIcon({ inverted = false }: { inverted?: boolean }) {
   return (
@@ -52,11 +52,10 @@ const PLAN_DESCRIPTIONS: Record<string, string> = {
 }
 
 export function PricingToggle({ plans }: { plans: Plan[] }) {
-  // Defaults to monthly because monthly is what checkout charges. Annual is a
-  // real offer, but it is arranged by hand rather than sold self-serve, so
-  // anchoring the page on it would put a price in front of every visitor that
-  // the Start-trial button does not honour.
-  const [annual, setAnnual] = useState(false)
+  // Defaults to annual now that annual is a real Stripe price rather than a
+  // display rate, so the page can anchor on the lower figure and the button
+  // beneath it charges exactly that.
+  const [annual, setAnnual] = useState(true)
 
   return (
     <>
@@ -144,33 +143,17 @@ export function PricingToggle({ plans }: { plans: Plan[] }) {
                 ))}
               </ul>
 
-              {/* Monthly carries the chosen plan through sign-in so checkout opens
-                  on the plan that was actually clicked; /start-trial reads it
-                  after OAuth and redirects straight to Stripe.
-
-                  Annual deliberately does not. Stripe holds one price per plan
-                  and it is the monthly one, so a Start-trial button under the
-                  annual figures would charge the monthly rate — a different
-                  number from either the per-month or the yearly total shown
-                  directly above it. Until annual prices exist in Stripe, the
-                  honest control is one that starts a conversation rather than a
-                  subscription. */}
-              {annual ? (
-                <a
-                  href={`mailto:hello@answerloops.com?subject=${encodeURIComponent(`Annual billing — ${plan.name}`)}`}
-                  className={ctaClass}
-                >
-                  Talk to us about annual billing
-                </a>
-              ) : (
-                <Link href={`/login?plan=${plan.id}`} className={ctaClass}>
-                  Start {TRIAL_DAYS}-day free trial
-                </Link>
-              )}
+              {/* Carries both the plan and the billing period through sign-in, so
+                  the choice made here survives the round trip and checkout opens
+                  on exactly what was clicked. Dropping the interval would bill
+                  monthly to somebody looking at annual figures — the two are one
+                  decision, not a plan plus a default. */}
+              <Link href={`/login?plan=${plan.id}&interval=${annual ? 'annual' : 'monthly'}`} className={ctaClass}>
+                Start {TRIAL_DAYS}-day free trial
+              </Link>
               <p className={`mt-2 text-center text-[0.625rem] ${isHighlight ? 'text-slate-300/60' : 'text-slate-500'}`}>
-                {annual
-                  ? 'Annual plans are invoiced directly — we set them up with you.'
-                  : `Card required. Not charged for ${TRIAL_DAYS} days.`}
+                Card required. Not charged for {TRIAL_DAYS} days.
+                {annual ? ` Then $${(annualTotalPrice(plan) / 100).toFixed(2)} for the year.` : ''}
               </p>
             </div>
           )

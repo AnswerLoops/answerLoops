@@ -7,13 +7,12 @@ import { ORDERED_PLANS, ANNUAL_DISCOUNT_PCT, annualMonthlyPrice } from '@/lib/bi
 
 // New standalone /pricing page (Roadmap "Pricing page — Managed SaaS" item).
 //
-// There is still no separate Stripe annual price: the plan carries one price id
-// and it is the monthly one. That was harmless while every CTA pointed at a
-// waitlist, and stopped being harmless when the CTAs became a real checkout —
-// the annual figures stayed on screen above a button that charges the monthly
-// rate. These tests pin the two halves that keep the page honest: monthly is
-// the default because monthly is what can be bought, and the annual CTA opens a
-// conversation rather than a subscription.
+// Each plan now has a real annual Stripe price, so the toggle sells rather than
+// merely displays. What these tests guard is that the two halves of the choice
+// travel together: a CTA carries the billing period as well as the plan. They
+// have been rewritten twice, once when the CTAs stopped pointing at a waitlist
+// and again here, because both times the annual figures and the button beneath
+// them came apart — which is invisible on the page and shows up on a card.
 
 describe('lib/billing/plans.ts — annualMonthlyPrice', () => {
   it('discounts by ANNUAL_DISCOUNT_PCT off the monthly price', () => {
@@ -29,50 +28,53 @@ describe('lib/billing/plans.ts — annualMonthlyPrice', () => {
 })
 
 describe('PricingToggle', () => {
-  it('defaults to monthly, the period checkout can actually charge', () => {
+  it('defaults to annual and shows the discounted price for every plan', () => {
     render(<PricingToggle plans={ORDERED_PLANS} />)
+    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
+    for (const plan of ORDERED_PLANS) {
+      expect(screen.getAllByText(`$${(annualMonthlyPrice(plan) / 100).toFixed(0)}`).length).toBeGreaterThan(0)
+    }
+  })
+
+  it('shows full monthly pricing when toggled off', async () => {
+    const user = userEvent.setup()
+    render(<PricingToggle plans={ORDERED_PLANS} />)
+    await user.click(screen.getByRole('switch'))
     expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false')
     const standard = ORDERED_PLANS.find((p) => p.id === 'standard')!
     expect(screen.getAllByText(`$${(standard.priceMonthly / 100).toFixed(0)}`).length).toBeGreaterThan(0)
     expect(screen.queryByText(/billed annually/)).not.toBeInTheDocument()
   })
 
-  it('shows the discounted annual price for every plan once toggled on', async () => {
-    const user = userEvent.setup()
-    render(<PricingToggle plans={ORDERED_PLANS} />)
-    await user.click(screen.getByRole('switch'))
-    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
-    for (const plan of ORDERED_PLANS) {
-      const expected = `$${(annualMonthlyPrice(plan) / 100).toFixed(0)}`
-      expect(screen.getAllByText(expected).length).toBeGreaterThan(0)
-    }
-  })
-
-  it('offers no trial-start link while annual is selected', async () => {
+  it('carries interval=annual on every CTA while annual is selected', () => {
     // The regression this guards: annual figures on screen above a button that
-    // charges the monthly rate.
+    // starts a monthly subscription.
+    render(<PricingToggle plans={ORDERED_PLANS} />)
+    const ctas = screen.getAllByRole('link', { name: /start .* free trial/i })
+    expect(ctas).toHaveLength(ORDERED_PLANS.length)
+    for (const cta of ctas) expect(cta.getAttribute('href')).toContain('interval=annual')
+  })
+
+  it('carries interval=monthly once toggled off', async () => {
     const user = userEvent.setup()
     render(<PricingToggle plans={ORDERED_PLANS} />)
     await user.click(screen.getByRole('switch'))
-    expect(screen.queryAllByRole('link', { name: /start .* free trial/i })).toHaveLength(0)
-    for (const link of screen.getAllByRole('link')) {
-      expect(link.getAttribute('href') ?? '').not.toMatch(/^\/login\?plan=/)
+    for (const cta of screen.getAllByRole('link', { name: /start .* free trial/i })) {
+      expect(cta.getAttribute('href')).toContain('interval=monthly')
     }
   })
 
-  it('routes annual to a conversation, one per plan', async () => {
+  it('pairs each plan with its own interval, never a bare plan link', async () => {
     const user = userEvent.setup()
     render(<PricingToggle plans={ORDERED_PLANS} />)
-    await user.click(screen.getByRole('switch'))
-    const ctas = screen.getAllByRole('link', { name: /annual billing/i })
-    expect(ctas).toHaveLength(ORDERED_PLANS.length)
-    for (const plan of ORDERED_PLANS) {
-      expect(
-        ctas.some((c) => {
-          const href = c.getAttribute('href') ?? ''
-          return href.startsWith('mailto:') && decodeURIComponent(href).includes(plan.name)
-        }),
-      ).toBe(true)
+    for (const expected of ['annual', 'monthly'] as const) {
+      if (expected === 'monthly') await user.click(screen.getByRole('switch'))
+      const hrefs = screen
+        .getAllByRole('link', { name: /start .* free trial/i })
+        .map((c) => c.getAttribute('href') ?? '')
+      for (const plan of ORDERED_PLANS) {
+        expect(hrefs).toContain(`/login?plan=${plan.id}&interval=${expected}`)
+      }
     }
   })
 
@@ -87,12 +89,15 @@ describe('PricingToggle', () => {
     const ctas = screen.getAllByRole('link', { name: /start .* free trial/i })
     expect(ctas.length).toBe(ORDERED_PLANS.length)
 
-    const hrefs = ctas.map((c) => c.getAttribute('href'))
+    // Asserts the plan is carried rather than pinning the whole query string:
+    // the interval rides alongside it now, and the case above already pins the
+    // exact pairing.
+    const hrefs = ctas.map((c) => c.getAttribute('href') ?? '')
     for (const plan of ORDERED_PLANS) {
       expect(
-        hrefs,
+        hrefs.some((h) => h.startsWith(`/login?plan=${plan.id}&`)),
         `no CTA carries plan "${plan.id}" — a visitor clicking it would lose their choice`,
-      ).toContain(`/login?plan=${plan.id}`)
+      ).toBe(true)
     }
   })
 
