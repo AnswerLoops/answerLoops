@@ -5,6 +5,7 @@
   "scripts": {
     "prepare": "test -f scripts/install-hooks.sh && sh scripts/install-hooks.sh || true",
     "dev": "next dev",
+    "prebuild": "fumadocs-mdx",
     "build": "next build",
     "start": "next start",
     "lint": "oxlint",
