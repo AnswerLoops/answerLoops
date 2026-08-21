@@ -7,7 +7,6 @@ import { users, memberships, orgs } from '@/lib/db/schema'
 import { DEFAULT_ORG_ID } from '@/lib/db/schema'
 import { resolveOrgIdForSessionUpdate, resolveOrgAccess } from '@/lib/auth/membership'
 import { orgHasProductAccess, isAccessExempt } from '@/lib/billing/access'
-import { sendWelcomeEmail } from '@/lib/email/send'
 
 const PUBLIC_PATHS = ['/', '/login', '/api/auth', '/api/ingest', '/api/feedback', '/api/slack', '/api/widget', '/widget', '/api/billing/webhook', '/api/waitlist', '/api/health', '/api/github/webhook', '/api/email/ingest', '/api/mcp', '/api/agent', '/api/google-chat', '/vs', '/pricing', '/docs', '/privacy', '/robots.txt', '/sitemap.xml', '/llms.txt']
 const ONBOARDING_PATH = '/onboarding'
@@ -71,20 +70,19 @@ async function provisionUser(
     .values({ userId: user.id, orgId: newOrg.id, role: 'owner' })
     .onConflictDoNothing()
 
-  // Only new workspaces reach here — a returning user returns above, at the
-  // existing-membership branch — so this sends exactly once per signup.
+  // No welcome email here. Creating an account is not the same as becoming a
+  // customer: under the auth-first signup flow the account exists from the
+  // moment someone finishes OAuth, before they have seen a plan or entered a
+  // card. Sending "Welcome to AnswerLoops" at this point greets everyone who
+  // abandons checkout with a message about a product they never started, and
+  // it also meant an account created before its subscription — the ordinary
+  // shape of an abandoned-then-resumed signup — got its one welcome at the
+  // wrong moment and never again.
   //
-  // Not awaited for its result and unable to throw: a mail provider having a
-  // bad minute must not turn into a failed sign-in, which would leave someone
-  // holding an account they cannot get into. sendWelcomeEmail swallows and logs
-  // its own errors; the catch here is belt and braces for anything thrown
-  // before it gets that far.
-  try {
-    await sendWelcomeEmail(email, name)
-  } catch {
-    // deliberately ignored — provisioning has already succeeded
-  }
-
+  // It is sent from the Stripe checkout.session.completed handler instead, on
+  // the org's first subscription, which is the point at which someone is
+  // actually a customer with a dashboard to be welcomed into. See
+  // app/api/billing/webhook/route.ts.
   return { userId: user.id, orgId: newOrg.id }
 }
 
