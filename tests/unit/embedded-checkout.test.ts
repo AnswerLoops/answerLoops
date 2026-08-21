@@ -103,6 +103,42 @@ describe('the checkout page guards match the ones on /start-trial', () => {
   })
 })
 
+describe('a cloud deployment with no Stripe key fails visibly, not in a loop', () => {
+  // The live failure: the access gate answers /dashboard for an org with no
+  // subscription by redirecting to /start-trial. Both signup pages answered a
+  // missing Stripe key by redirecting to /dashboard. On cloud those two point
+  // at each other, so one absent environment variable produced
+  // ERR_TOO_MANY_REDIRECTS on the path every paying customer walks.
+  //
+  // isCloudMisconfigured already existed for this, and its own docblock says
+  // callers must surface it loudly rather than fall through to the self-hosted
+  // branch. Both callers did exactly that.
+  it.each(['app/start-trial/page.tsx', 'app/checkout/page.tsx'])(
+    '%s renders the misconfiguration instead of redirecting',
+    (file) => {
+      const s = read(file)
+      expect(s).toContain('isCloudMisconfigured()')
+      expect(s).toContain('<BillingMisconfigured />')
+
+      // Order matters as much as presence: the self-hosted /dashboard redirect
+      // still exists and is still correct, but it has to come second or it
+      // catches the cloud case first and the loop returns.
+      expect(
+        s.indexOf('isCloudMisconfigured()'),
+        'the cloud check must run before the self-hosted redirect',
+      ).toBeLessThan(s.indexOf("redirect('/dashboard')"))
+    },
+  )
+
+  it('still sends a genuinely self-hosted visitor to the dashboard', () => {
+    // Self-hosted has unconditional access, so the gate never redirects and
+    // /dashboard is a real destination rather than half a loop.
+    for (const file of ['app/start-trial/page.tsx', 'app/checkout/page.tsx']) {
+      expect(read(file)).toContain("if (!stripeConfigured()) redirect('/dashboard')")
+    }
+  })
+})
+
 describe('the page is reachable by the people it exists for', () => {
   it('is exempt from the subscription gate, like /start-trial', async () => {
     // Someone reaches /checkout precisely because they have no subscription.
