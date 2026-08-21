@@ -148,6 +148,17 @@ describe('switching plan cannot mount a stale session', () => {
     expect(s).toContain('if (!stripePromise)')
     expect(s).toContain('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY')
   })
+
+  it('refuses a key that is not publishable, instead of failing silently', () => {
+    // Found by rendering the page: with a restricted key configured, Stripe.js
+    // throws inside a promise it owns. Nothing here catches it, no error state
+    // renders, and the payment step is an empty box — indistinguishable from a
+    // slow network, on the one page where that matters most. Checking the
+    // prefix turns a silent failure into a message naming the variable.
+    const s = src()
+    expect(s).toContain("startsWith('pk_')")
+    expect(s, 'the message has to name the fix, not just report a failure').toMatch(/rk_|restricted/)
+  })
 })
 
 describe('the publishable key is documented wherever env vars are listed', () => {
