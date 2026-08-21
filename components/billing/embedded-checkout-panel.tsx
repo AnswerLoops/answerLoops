@@ -32,11 +32,19 @@ import {
  * payment attempts, never read or move money. Read once at module scope so a
  * missing one surfaces as a clear disabled state rather than a null deref
  * inside Stripe's loader.
+ *
+ * The prefix is checked, not just presence. Stripe.js rejects a secret
+ * (`sk_`) or restricted (`rk_`) key by throwing inside a promise it owns — so
+ * nothing here catches it, no error state renders, and the page shows an empty
+ * box where the card form should be. A blank payment step that reports nothing
+ * is the worst outcome available, and it is indistinguishable from a slow
+ * network. Checking three characters turns it into a message.
  */
 const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-const stripePromise = publishableKey ? loadStripe(publishableKey) : null
+const keyLooksPublishable = publishableKey?.startsWith('pk_') ?? false
+const stripePromise = keyLooksPublishable ? loadStripe(publishableKey!) : null
 
-const money = (cents: number) => `$${(cents / 100).toFixed(0)}`
+const money = (cents: number) => `$${Math.round(cents / 100).toLocaleString('en-US')}`
 
 interface Props {
   plans: Plan[]
@@ -91,15 +99,25 @@ export function EmbeddedCheckoutPanel({ plans, initialPlanId, initialInterval }:
   if (!stripePromise) {
     return (
       <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-        Checkout is unavailable: this deployment has no Stripe publishable key configured.
+        <p className="font-medium">Checkout is unavailable.</p>
+        <p className="mt-1 text-amber-800">
+          {publishableKey
+            ? 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not a publishable key. Stripe.js only accepts a key beginning "pk_" — a secret ("sk_") or restricted ("rk_") key fails silently, leaving this box empty.'
+            : 'This deployment has no NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY configured.'}
+        </p>
       </div>
     )
   }
 
+  // Ordering is the whole point of this grid. On mobile the sequence is choose
+  // a plan, then pay, then read the reassurance — payment sits second because
+  // someone who already knows what they want should not scroll past the feature
+  // list and four FAQ entries to reach the card form. On desktop payment moves
+  // to its own column beside the other two.
   return (
-    <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+    <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-x-14 lg:gap-y-10">
       {/* Payment — Stripe's iframe, our surroundings */}
-      <div className="order-2 lg:order-1">
+      <div className="order-2 lg:order-1 lg:col-start-1 lg:row-span-2 lg:row-start-1">
         <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">Payment</h2>
 
         {error ? (
@@ -134,8 +152,8 @@ export function EmbeddedCheckoutPanel({ plans, initialPlanId, initialInterval }:
         </p>
       </div>
 
-      {/* Plan selection and reassurance */}
-      <div className="order-1 lg:order-2">
+      {/* Plan selection */}
+      <div className="order-1 lg:col-start-2 lg:row-start-1">
         {/* Wraps rather than overflowing: the heading and the toggle only just
             fit on one line at 375px, so anything that widens either — a longer
             label, a fallback font — would otherwise push the toggle off-screen. */}
@@ -204,7 +222,11 @@ export function EmbeddedCheckoutPanel({ plans, initialPlanId, initialInterval }:
           })}
         </div>
 
-        <ul className="mt-7 space-y-2.5 text-sm text-slate-700">
+      </div>
+
+      {/* Reassurance — last on mobile, under the picker on desktop */}
+      <div className="order-3 lg:col-start-2 lg:row-start-2">
+        <ul className="space-y-2.5 text-sm text-slate-700">
           {[
             `${TRIAL_DAYS}-day free trial — pay nothing today`,
             'Cancel any time from Settings, no email required',
