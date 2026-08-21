@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
-import { getPlan, parseBillingInterval, stripeConfigured, TRIAL_DAYS } from '@/lib/billing/plans'
+import { getPlan, isCloudMisconfigured, parseBillingInterval, stripeConfigured, TRIAL_DAYS } from '@/lib/billing/plans'
 import { orgHasProductAccess } from '@/lib/billing/access'
+import { BillingMisconfigured } from '@/components/billing/billing-misconfigured'
 import { DEFAULT_ORG_ID } from '@/lib/db/schema'
 import { logger } from '@/lib/logger'
 import { Logo } from '@/components/logo'
@@ -61,8 +62,15 @@ export default async function StartTrialPage({
     redirect(resume)
   }
 
-  // Self-hosted has no billing, so there is nothing to start and the gate never
-  // sends anyone here. Reaching it by hand should not dead-end.
+  // A cloud deployment with no Stripe key is a misconfiguration, and it must
+  // not be answered with a redirect. The access gate sends an org with no
+  // subscription here, so bouncing back to /dashboard bounces straight back —
+  // an infinite redirect on the signup path, caused by one missing variable.
+  if (isCloudMisconfigured()) return <BillingMisconfigured />
+
+  // Genuinely self-hosted: no billing to run, and the gate never sends anyone
+  // here because access is unconditional. Reaching it by hand should not
+  // dead-end.
   if (!stripeConfigured()) redirect('/dashboard')
 
   const orgId = session.orgId ?? DEFAULT_ORG_ID
