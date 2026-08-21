@@ -84,6 +84,17 @@ export const PLANS: Record<PlanId, Plan> = {
 export const ORDERED_PLANS: Plan[] = [PLANS.standard, PLANS.pro, PLANS.enterprise]
 
 /**
+ * The plan the product recommends: the "Most popular" pricing card, and what
+ * /checkout preselects for someone who arrives without having chosen.
+ *
+ * One constant rather than the string repeated in both places. They are the
+ * same decision — the card a visitor is steered toward and the plan waiting for
+ * them at checkout — and letting them drift apart would highlight one plan on
+ * the way in and preselect a different one at the till.
+ */
+export const HIGHLIGHTED_PLAN_ID = 'pro'
+
+/**
  * The one place a billing interval turns into a Stripe price id.
  *
  * Kept as a single function rather than letting call sites reach for the field

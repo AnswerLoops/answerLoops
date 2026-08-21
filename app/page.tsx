@@ -67,11 +67,17 @@ function Hero() {
 
           <div className="landing-hero-rise [animation-delay:240ms] mx-auto mt-9 max-w-xl">
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link href="/pricing" className="w-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:brightness-110 sm:w-auto">
+              {/* One action in the fold, and it goes straight to auth. The
+                  self-host link that used to sit beside this competed with it
+                  at the moment of decision and sent the clicks it won out of
+                  the funnel; self-hosting is still offered on the FAQ and
+                  comparison pages, just not here. Sending this to /pricing
+                  first asked for a plan decision before anyone was invested —
+                  a small decision, since the trial is free and the plan can be
+                  switched on the checkout screen, but one more thing to do
+                  before signing up. */}
+              <Link href="/login" className="w-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:brightness-110 sm:w-auto">
                 Start your 14-day trial
-              </Link>
-              <Link href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="w-full rounded-full border border-white/15 px-6 py-3 text-center text-sm font-semibold text-white/80 transition hover:border-white/30 hover:text-white sm:w-auto">
-                Self-host it free
               </Link>
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[0.6875rem] font-medium text-white/55">
@@ -545,14 +551,11 @@ function CTA() {
           <SparkIcon />
         </div>
         <h2 className="landing-reveal mt-7 text-balance text-4xl font-semibold leading-[1.02] tracking-[-0.05em] text-white sm:text-6xl">Make the next repeat question the last one.</h2>
-        <p className="landing-reveal mx-auto mt-5 max-w-xl text-sm leading-relaxed text-slate-300/60 sm:text-base">Start a hosted trial in a couple of minutes, or take the source and run AnswerLoops on your own infrastructure. Both are the same product.</p>
+        <p className="landing-reveal mx-auto mt-5 max-w-xl text-sm leading-relaxed text-slate-300/60 sm:text-base">Connect a channel, point AnswerLoops at what your team already knows, and let it handle the questions you have answered a hundred times.</p>
         <div className="landing-reveal mx-auto mt-9 max-w-xl">
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/pricing" className="w-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:brightness-110 sm:w-auto">
+            <Link href="/login" className="w-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:brightness-110 sm:w-auto">
               Start your 14-day trial
-            </Link>
-            <Link href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="w-full rounded-full border border-white/15 px-6 py-3 text-center text-sm font-semibold text-white/80 transition hover:border-white/30 hover:text-white sm:w-auto">
-              Self-host it free
             </Link>
           </div>
           <p className="mt-3 text-[0.625rem] text-white/25">A card is required to start the trial. Nothing is charged for 14 days.</p>

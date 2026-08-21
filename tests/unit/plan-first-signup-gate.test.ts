@@ -213,7 +213,10 @@ describe('the signup entry point carries the chosen plan', () => {
     // redirect.
     const src = fs.readFileSync(path.join(process.cwd(), 'app/actions/auth.ts'), 'utf-8')
     expect(src).toContain('getPlan(requestedPlan)')
-    expect(src).toContain('/start-trial?plan=')
+    // The destination moved from /start-trial to /checkout when plan choice
+    // moved after auth. What must not change is that the id is validated
+    // before it lands in a redirect target.
+    expect(src).toContain('/checkout?plan=')
   })
 
   it('sends an abandoned checkout back to the website, not into the product', () => {
@@ -246,11 +249,13 @@ describe('the signup entry point carries the chosen plan', () => {
   })
 
   it('keeps the chosen plan when an already-signed-in visitor clicks a CTA', () => {
-    // Otherwise /login sends them to /dashboard, the gate bounces them to
-    // /start-trial with no plan, and they land back on pricing having lost the
-    // click they just made.
+    // Otherwise /login sends them to /dashboard and the gate bounces them,
+    // losing the click they just made. The destination moved from
+    // /start-trial to /checkout when plan choice moved after auth: that page
+    // would only have forwarded here anyway, and it exists for the
+    // post-checkout webhook wait rather than as a step on the way in.
     const src = fs.readFileSync(path.join(process.cwd(), 'app/login/page.tsx'), 'utf-8')
-    expect(src).toContain('/start-trial?plan=')
+    expect(src).toContain('/checkout?plan=')
   })
 
   it('explains itself when it sends someone back to pricing', () => {

@@ -111,8 +111,12 @@ export default async function StartTrialPage({
 
   const plan = requestedPlan ? getPlan(requestedPlan) : null
 
-  // No plan chosen, or an unrecognised one: back to the website to pick.
-  if (!plan) redirect('/pricing?resume=1')
+  // No plan chosen, or an unrecognised one. This used to go back out to the
+  // pricing page, which asked a visitor who had already signed in to make the
+  // plan decision on a marketing page and then travel back. /checkout now
+  // preselects a plan and offers the picker beside the card, so the choice
+  // happens once, in the place that can act on it.
+  if (!plan) redirect('/checkout')
 
   // On to the branded checkout page rather than creating a hosted session and
   // redirecting to checkout.stripe.com. The session itself is created there,

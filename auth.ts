@@ -211,8 +211,10 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
         // base.
         //
         // Anyone without access is sent to /start-trial, which either resumes
-        // checkout for a chosen plan or returns them to the pricing page. See
-        // lib/billing/access.ts for why each exempt path is exempt.
+        // checkout for a chosen plan or, with no plan to resume, forwards to
+        // /checkout — where a plan is preselected and the card is taken on the
+        // same screen. See lib/billing/access.ts for why each exempt path is
+        // exempt.
         if (!isAccessExempt(pathname)) {
           const hasAccess = await orgHasProductAccess(sessionOrgId as number)
           if (!hasAccess) {

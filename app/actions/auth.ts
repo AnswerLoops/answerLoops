@@ -23,7 +23,7 @@ async function getCallbackUrl(): Promise<string> {
     const requestedPlan = url.searchParams.get('plan')
     if (requestedPlan && getPlan(requestedPlan)) {
       const interval = parseBillingInterval(url.searchParams.get('interval'))
-      const target = `/start-trial?plan=${encodeURIComponent(requestedPlan)}`
+      const target = `/checkout?plan=${encodeURIComponent(requestedPlan)}`
       return interval ? `${target}&interval=${interval}` : target
     }
 
@@ -33,15 +33,19 @@ async function getCallbackUrl(): Promise<string> {
   } catch {
     // ignore
   }
-  // No plan and nowhere they were headed: someone who clicked a bare "Create
-  // account" or "Sign in". Pricing, not the dashboard.
+  // No plan and nowhere they were headed: someone who clicked a bare "Start
+  // free trial" or "Sign in". Checkout, not the dashboard and not pricing.
   //
   // Signing in does not grant access on its own — a trial needs a card — so
-  // /dashboard would only bounce off the gate to /start-trial, which has no
-  // plan to resume and forwards to this same page. Three server round trips to
-  // arrive where this sends them directly. Anyone who already has a plan is
-  // sent on by the gate from here, so this costs a returning user nothing.
-  return '/pricing?resume=1'
+  // /dashboard would only bounce off the gate. Pricing was the previous answer
+  // and it asked for the plan decision a second time, after the visitor had
+  // already committed by signing in. /checkout is the one screen that finishes
+  // the job: it preselects a plan, allows switching, and takes the card.
+  //
+  // Safe for a returning subscriber too: /checkout sends anyone who already
+  // has access straight to the dashboard rather than selling them a second
+  // subscription.
+  return '/checkout'
 }
 
 export async function loginWithGoogle(): Promise<void> {

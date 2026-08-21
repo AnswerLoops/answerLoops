@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ANNUAL_DISCOUNT_PCT, annualMonthlyPrice, annualTotalPrice, TRIAL_DAYS, type Plan } from '@/lib/billing/plans'
+import { ANNUAL_DISCOUNT_PCT, annualMonthlyPrice, annualTotalPrice, HIGHLIGHTED_PLAN_ID, TRIAL_DAYS, type Plan } from '@/lib/billing/plans'
 
 function CheckIcon({ inverted = false }: { inverted?: boolean }) {
   return (
@@ -85,7 +85,7 @@ export function PricingToggle({ plans }: { plans: Plan[] }) {
 
       <div className="grid gap-4 lg:grid-cols-3">
         {plans.map((plan) => {
-          const isHighlight = plan.id === 'pro'
+          const isHighlight = plan.id === HIGHLIGHTED_PLAN_ID
           const ctaClass = `relative mt-8 block w-full rounded-full py-3 text-center text-xs font-semibold transition ${
             isHighlight
               ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-600/20 hover:brightness-110'

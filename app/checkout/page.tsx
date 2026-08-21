@@ -7,6 +7,7 @@ import { EmbeddedCheckoutPanel } from '@/components/billing/embedded-checkout-pa
 import {
   ORDERED_PLANS,
   TRIAL_DAYS,
+  HIGHLIGHTED_PLAN_ID,
   getPlan,
   parseBillingInterval,
   stripeConfigured,
@@ -68,10 +69,20 @@ export default async function CheckoutPage({
   // subscription for an org that has one.
   if (await orgHasProductAccess(orgId)) redirect('/dashboard')
 
-  // An unrecognised plan is not an error worth a page — pricing is where the
-  // choice is made.
-  const plan = requestedPlan ? getPlan(requestedPlan) : null
-  if (!plan) redirect('/pricing?resume=1')
+  // Arriving with no plan is the normal path now, not an error: every "start"
+  // button goes to auth, and auth lands here. The plan is chosen on this page,
+  // beside the card, because a free trial makes it a small decision and asking
+  // for it first cost a step before anyone was invested.
+  //
+  // An unrecognised id falls back the same way rather than redirecting. It can
+  // only come from a hand-edited URL or a stale link after a plan rename, and
+  // showing the picker with a sensible default is a better answer than bouncing
+  // someone who is trying to pay to a page that asks them to start over.
+  //
+  // The default is the highlighted plan, matching the card the pricing page
+  // marks "Most popular" — the picker is right there, so this is a starting
+  // point rather than a commitment.
+  const plan = (requestedPlan ? getPlan(requestedPlan) : null) ?? getPlan(HIGHLIGHTED_PLAN_ID) ?? ORDERED_PLANS[0]
 
   const interval = parseBillingInterval(requestedInterval) ?? 'monthly'
 
