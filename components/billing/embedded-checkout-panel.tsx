@@ -27,36 +27,54 @@ import {
  * re-render against a stale one.
  */
 
-/**
- * The publishable key is safe in client code by design — it can only create
- * payment attempts, never read or move money. Read once at module scope so a
- * missing one surfaces as a clear disabled state rather than a null deref
- * inside Stripe's loader.
- *
- * The prefix is checked, not just presence. Stripe.js rejects a secret
- * (`sk_`) or restricted (`rk_`) key by throwing inside a promise it owns — so
- * nothing here catches it, no error state renders, and the page shows an empty
- * box where the card form should be. A blank payment step that reports nothing
- * is the worst outcome available, and it is indistinguishable from a slow
- * network. Checking three characters turns it into a message.
- */
-const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-const keyLooksPublishable = publishableKey?.startsWith('pk_') ?? false
-const stripePromise = keyLooksPublishable ? loadStripe(publishableKey!) : null
-
 const money = (cents: number) => `$${Math.round(cents / 100).toLocaleString('en-US')}`
 
 interface Props {
   plans: Plan[]
   initialPlanId: string
   initialInterval: BillingInterval
+  /**
+   * Passed in from the server rather than read here as
+   * process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.
+   *
+   * NEXT_PUBLIC_* is substituted at build time, which makes it the wrong
+   * mechanism for this value twice over. A hosted deployment that sets the
+   * variable after its last build keeps serving a bundle with `undefined`
+   * baked in, and setting it again changes nothing until something forces a
+   * rebuild. Worse, the published container image is built by CI, which has no
+   * Stripe account at all — so every self-hoster running that image would
+   * receive `undefined` permanently, with no way to override it.
+   *
+   * A server component reads the environment per request, so the same variable
+   * name works in both cases with nothing rebuilt.
+   *
+   * The key is safe to send to the browser by design: it can only create
+   * payment attempts, never read or move money.
+   */
+  publishableKey: string | null
 }
 
-export function EmbeddedCheckoutPanel({ plans, initialPlanId, initialInterval }: Props) {
+export function EmbeddedCheckoutPanel({
+  plans,
+  initialPlanId,
+  initialInterval,
+  publishableKey,
+}: Props) {
   const [planId, setPlanId] = useState(initialPlanId)
   const [interval, setInterval] = useState<BillingInterval>(initialInterval)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // The prefix is checked, not just presence. Stripe.js rejects a secret
+  // (`sk_`) or restricted (`rk_`) key by throwing inside a promise it owns — so
+  // nothing here catches it, no error state renders, and the page shows an
+  // empty box where the card form should be. A blank payment step that reports
+  // nothing is indistinguishable from a slow network. Three characters turn it
+  // into a message.
+  const stripePromise = useMemo(
+    () => (publishableKey?.startsWith('pk_') ? loadStripe(publishableKey) : null),
+    [publishableKey],
+  )
 
   const plan = useMemo(() => plans.find((p) => p.id === planId) ?? plans[0], [plans, planId])
   const annual = interval === 'annual'
@@ -102,8 +120,8 @@ export function EmbeddedCheckoutPanel({ plans, initialPlanId, initialInterval }:
         <p className="font-medium">Checkout is unavailable.</p>
         <p className="mt-1 text-amber-800">
           {publishableKey
-            ? 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not a publishable key. Stripe.js only accepts a key beginning "pk_" — a secret ("sk_") or restricted ("rk_") key fails silently, leaving this box empty.'
-            : 'This deployment has no NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY configured.'}
+            ? 'STRIPE_PUBLISHABLE_KEY is not a publishable key. Stripe.js only accepts a key beginning "pk_" — a secret ("sk_") or restricted ("rk_") key fails silently, leaving this box empty.'
+            : 'This deployment has no STRIPE_PUBLISHABLE_KEY configured.'}
         </p>
       </div>
     )

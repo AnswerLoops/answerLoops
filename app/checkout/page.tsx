@@ -110,6 +110,24 @@ export default async function CheckoutPage({
             plans={ORDERED_PLANS}
             initialPlanId={plan.id}
             initialInterval={interval}
+            // STRIPE_PUBLISHABLE_KEY first, and note the missing NEXT_PUBLIC_
+            // prefix — that is the entire point. Next substitutes every
+            // NEXT_PUBLIC_* read at build time, in server components too, not
+            // only in client bundles. So reading the prefixed name here would
+            // still return whatever the build machine had: nothing for the
+            // container image CI builds, and a stale value for a deployment
+            // that set the variable after its last build. An unprefixed name is
+            // read from the real environment on each request, which is what
+            // makes this work without a rebuild and makes the published image
+            // configurable by whoever runs it.
+            //
+            // The prefixed name stays as a fallback so existing deployments
+            // keep working; it is inlined, with all the caveats above.
+            publishableKey={
+              process.env.STRIPE_PUBLISHABLE_KEY ??
+              process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ??
+              null
+            }
           />
         </div>
       </main>

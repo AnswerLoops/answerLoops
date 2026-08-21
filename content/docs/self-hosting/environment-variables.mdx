@@ -186,7 +186,7 @@ pnpm dlx web-push generate-vapid-keys
 | `DEPLOYMENT_MODE` | Set to `cloud` only on AnswerLoops' own managed SaaS. Leave unset (or anything other than `cloud`) on a self-hosted deployment. | `cloud` |
 | `STRIPE_SECRET_KEY` | Only relevant when `DEPLOYMENT_MODE=cloud`. Not needed for self-hosting. | — |
 | `STRIPE_WEBHOOK_SECRET` | Only relevant when `DEPLOYMENT_MODE=cloud`. Signing secret for `/api/billing/webhook`. | — |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Only relevant when `DEPLOYMENT_MODE=cloud`. Publishable key for the embedded checkout form. Safe in client code — it can only create payment attempts. | `pk_live_...` |
+| `STRIPE_PUBLISHABLE_KEY` | Only relevant when `DEPLOYMENT_MODE=cloud`. Publishable key for the embedded checkout form, read at request time. Not `NEXT_PUBLIC_`-prefixed on purpose: that prefix is baked in at build time. Safe in client code — it can only create payment attempts. | `pk_live_...` |
 | `STRIPE_PRICE_STANDARD` / `STRIPE_PRICE_PRO` / `STRIPE_PRICE_ENTERPRISE` | Only relevant when `DEPLOYMENT_MODE=cloud`. Monthly Stripe Price ID per plan — must match the plan it names, since the displayed price and the charged price come from different places. | — |
 | `STRIPE_PRICE_STANDARD_ANNUAL` / `STRIPE_PRICE_PRO_ANNUAL` / `STRIPE_PRICE_ENTERPRISE_ANNUAL` | Only relevant when `DEPLOYMENT_MODE=cloud`. Annual Stripe Price ID per plan. A plan missing its annual price declines annual checkout rather than billing the monthly rate. | — |
 

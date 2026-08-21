@@ -185,6 +185,34 @@ describe('switching plan cannot mount a stale session', () => {
     expect(s).toContain('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY')
   })
 
+  it('takes the publishable key from the server instead of reading it at build time', () => {
+    // NEXT_PUBLIC_* is substituted when the bundle is built, which breaks this
+    // value in two ways that both look like "the variable is set and nothing
+    // happened": a deployment that sets it after its last build keeps serving
+    // `undefined`, and the published container image is built by CI with no
+    // Stripe account, so every self-hoster running that image gets `undefined`
+    // permanently with no way to override it. A server component reads the
+    // environment per request.
+    const panel = src()
+    // Assignment, not any mention — the docblock explains why the build-time
+    // read is wrong and would otherwise trip a looser pattern.
+    expect(panel, 'the client must not read the key from the build-time env').not.toMatch(
+      /=\s*process\.env\.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY/,
+    )
+    expect(panel).toContain('publishableKey: string | null')
+
+    // Unprefixed name first. NEXT_PUBLIC_* is substituted at build time in
+    // server components too, not only client bundles, so the prefixed name
+    // cannot deliver a runtime value however it is read. It stays as a
+    // fallback for deployments already using it.
+    const page = read('app/checkout/page.tsx')
+    expect(page).toContain('process.env.STRIPE_PUBLISHABLE_KEY')
+    expect(
+      page.indexOf('process.env.STRIPE_PUBLISHABLE_KEY'),
+      'the runtime-readable name has to be tried first, or the inlined one wins',
+    ).toBeLessThan(page.indexOf('process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY'))
+  })
+
   it('refuses a key that is not publishable, instead of failing silently', () => {
     // Found by rendering the page: with a restricted key configured, Stripe.js
     // throws inside a promise it owns. Nothing here catches it, no error state
@@ -202,10 +230,10 @@ describe('the publishable key is documented wherever env vars are listed', () =>
     '.env.example',
     'content/docs/reference/environment-variables.mdx',
     'content/docs/self-hosting/environment-variables.mdx',
-  ])('%s names NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', (file) => {
-    // It was previously documented while nothing read it, and got removed for
-    // exactly that reason. The embedded form made it real, so it has to go
-    // back — a self-hoster without it gets a checkout page with no card form.
-    expect(read(file)).toContain('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY')
+  ])('%s names STRIPE_PUBLISHABLE_KEY', (file) => {
+    // A self-hoster without it gets a checkout page with no card form. It has
+    // to be the unprefixed name: the prefixed one is baked in when the image
+    // is built, so it can never be set by whoever runs that image.
+    expect(read(file)).toContain('STRIPE_PUBLISHABLE_KEY')
   })
 })
