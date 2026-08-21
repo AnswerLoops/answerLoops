@@ -80,10 +80,16 @@ describe('the checkout page guards match the ones on /start-trial', () => {
     expect(src()).toContain('if (await orgHasProductAccess(orgId)) redirect')
   })
 
-  it('sends an unrecognised plan back to pricing rather than erroring', () => {
+  it('falls back to the recommended plan rather than erroring or bouncing', () => {
+    // Arriving with no plan is the normal path: every "start" button goes to
+    // auth, and auth lands here. An unrecognised id — a hand-edited URL, or a
+    // stale link after a plan rename — resolves the same way. Redirecting
+    // someone who is trying to pay back to a page that asks them to start over
+    // is the worst available answer at the highest-intent moment.
     const s = src()
     expect(s).toContain('getPlan(requestedPlan)')
-    expect(s).toContain("redirect('/pricing?resume=1')")
+    expect(s).toContain('getPlan(HIGHLIGHTED_PLAN_ID)')
+    expect(s, 'no plan must not bounce the visitor out of checkout').not.toContain("redirect('/pricing?resume=1')")
   })
 
   it('narrows the interval rather than trusting the query string', () => {

@@ -52,15 +52,17 @@ export default async function PricingPage({
   const { resume, checkout } = await searchParams
   const navState = await resolveNavState()
 
-  // A returning subscriber who clicked a bare "Sign in" arrives here, not at
-  // the dashboard: getCallbackUrl() picks the post-OAuth destination before
-  // anyone has authenticated, so it cannot know whether this person already
-  // has a plan and sends everyone to /pricing?resume=1. It assumed the access
-  // gate would forward the entitled onward from here, but /pricing is in
-  // PUBLIC_PATHS, so `authorized()` returns early and the gate never runs.
-  // Nothing moved them on, leaving a paying customer parked on the pricing
-  // page being told to buy what they already have. This page is the only
-  // place left that can complete that redirect.
+  // Kept as a guard, not as the main path. getCallbackUrl() chooses the
+  // post-OAuth destination before authentication has happened, so it has no
+  // way to tell a subscriber from a new visitor and once sent both here.
+  // /pricing is in PUBLIC_PATHS, so `authorized()` returns before the access
+  // gate runs and nothing forwarded the subscriber onward — they sat on the
+  // pricing page being told to buy what they already had.
+  //
+  // Sign-in now goes to /checkout instead, which sends a subscriber straight
+  // to the dashboard. But ?resume=1 outlives that change: it survives in
+  // bookmarks, shared links, and anywhere else the old URL was captured, and
+  // this page still cannot rely on the gate to rescue it.
   if (resume === '1' && navState === 'active') redirect('/dashboard')
 
   return (

@@ -34,14 +34,18 @@ export default async function LoginPage({ searchParams }: Props) {
   if (await auth()) {
     // An already-signed-in visitor clicking a pricing CTA lands here with a
     // plan. Sending them to /dashboard would drop the choice and then bounce
-    // them off the access gate straight back to pricing, losing the click.
+    // them off the access gate, losing the click.
     //
-    // The billing period travels with the plan. /start-trial defaults to
-    // monthly when it is missing, so dropping it here would charge the monthly
-    // price to somebody who clicked an annual card.
+    // Straight to /checkout rather than via /start-trial: that page would only
+    // forward here anyway, and it exists for the post-checkout webhook wait
+    // rather than as a step on the way in.
+    //
+    // The billing period travels with the plan. /checkout defaults to monthly
+    // when it is missing, so dropping it here would charge the monthly price
+    // to somebody who clicked an annual card.
     const parsed = parseBillingInterval(interval)
     const resume = plan
-      ? `/start-trial?plan=${encodeURIComponent(plan)}${parsed ? `&interval=${parsed}` : ''}`
+      ? `/checkout?plan=${encodeURIComponent(plan)}${parsed ? `&interval=${parsed}` : ''}`
       : '/dashboard'
     redirect(resume)
   }

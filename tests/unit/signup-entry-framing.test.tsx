@@ -24,13 +24,17 @@ import { LoginForm } from '@/components/login-form'
 const read = (rel: string) => readFileSync(path.join(process.cwd(), rel), 'utf-8')
 
 describe('the marketing header speaks to someone with no account', () => {
-  it('offers to create an account rather than to sign in', () => {
+  it('offers a way to start and a way back in, not just one of them', () => {
     // "anonymous" covers a brand-new visitor and a returning one whose session
-    // expired, and nothing can tell them apart before they authenticate. The
-    // new visitor is the one with something to lose from the wrong label.
+    // expired, and nothing can tell them apart before they authenticate. A
+    // single button therefore has to guess, and misleads whichever half it
+    // guessed wrong about. The header offers both instead.
     const src = read('components/marketing/chrome.tsx')
-    const anonBlock = src.slice(src.indexOf("state === 'anonymous'"), src.indexOf("state === 'anonymous'") + 300)
-    expect(anonBlock).toContain('Create account')
+    const start = src.indexOf("state === 'anonymous' && (")
+    const anonBlock = src.slice(start, start + 400)
+
+    expect(anonBlock, 'the new visitor needs the trial').toContain('Start free trial')
+    expect(anonBlock, 'the returning visitor needs the way back in').toContain('Sign in')
   })
 })
 
@@ -83,25 +87,31 @@ describe('the login page offers both modes without losing the plan', () => {
   })
 })
 
-describe('signing in with no plan goes straight to pricing', () => {
-  it('does not route through the dashboard, which the gate would only bounce', () => {
-    // Signing in does not grant access — a trial needs a card. /dashboard
-    // therefore bounced to /start-trial, which had no plan to resume and
-    // forwarded to /pricing: three server round trips to reach the page this
-    // now returns directly.
+describe('signing in with no plan goes straight to checkout', () => {
+  it('does not route through the dashboard or back out to pricing', () => {
+    // Signing in does not grant access — a trial needs a card — so /dashboard
+    // only bounces off the gate. Pricing was the previous answer and it asked
+    // for the plan decision a second time, on a marketing page, after the
+    // visitor had already committed by signing in. /checkout is the one screen
+    // that can finish the job: it preselects a plan, allows switching, and
+    // takes the card.
     const src = read('app/actions/auth.ts')
     const fallback = src.slice(src.indexOf('const cb = url.searchParams'))
-    expect(fallback).toContain("return '/pricing?resume=1'")
-    expect(fallback, 'the dashboard fallback is what caused the detour').not.toContain(
+    expect(fallback).toContain("return '/checkout'")
+    expect(fallback, 'the dashboard fallback is what caused the original detour').not.toContain(
       "return '/dashboard'",
+    )
+    expect(fallback, 'pricing after auth is the extra step this removed').not.toContain(
+      "return '/pricing?resume=1'",
     )
   })
 
-  it('still sends someone who picked a plan straight into checkout', () => {
-    // The direct-to-pricing default must not swallow the plan-first path,
-    // which is the one that actually converts.
+  it('still carries a chosen plan straight through to checkout', () => {
+    // Plan choice moved after auth, but the pricing cards still link with
+    // ?plan=, and that choice must survive the round trip — landing on the
+    // default plan after clicking a specific card is a silent downgrade.
     const src = read('app/actions/auth.ts')
-    expect(src).toContain('/start-trial?plan=')
+    expect(src).toContain('/checkout?plan=')
     expect(src).toContain('getPlan(requestedPlan)')
   })
 })

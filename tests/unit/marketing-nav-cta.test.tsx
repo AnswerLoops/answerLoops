@@ -40,28 +40,29 @@ describe('the header CTA matches what the visitor can actually do', () => {
     expect(cta.getAttribute('href')).toMatch(/\/dashboard$/)
   })
 
-  it('sends a signed-in visitor with no plan to pricing, never to the dashboard', () => {
+  it('sends a signed-in visitor with no plan to checkout, never to the dashboard', () => {
     render(<Nav state="no-plan" />)
 
     expect(screen.queryByRole('link', { name: /go to dashboard/i })).toBeNull()
     for (const link of screen.getAllByRole('link')) {
       expect(
         link.getAttribute('href') ?? '',
-        'a dashboard link here sends them straight back to /pricing',
+        'a dashboard link here is a door the access gate immediately closes',
       ).not.toMatch(/\/dashboard$/)
     }
 
     const cta = screen.getByRole('link', { name: /choose a plan/i })
-    expect(cta.getAttribute('href')).toBe('/pricing#plans')
+    expect(cta.getAttribute('href')).toBe('/checkout')
   })
 
-  it('lands the no-plan CTA on the plan cards, not the top of /pricing', () => {
-    // The gate already puts this visitor on /pricing, so a bare /pricing link
-    // is a button that does nothing on the one page they are most likely to be
-    // reading. The hash keeps it an action wherever it is clicked from.
+  it('lands the no-plan CTA on checkout, not back out on a marketing page', () => {
+    // This visitor is already authenticated, so the journey resumes one step
+    // further along than an anonymous one: the only thing between them and the
+    // product is a card. /pricing sent them to read about plans again and then
+    // travel back; /checkout preselects one and takes the card on the spot.
     render(<Nav state="no-plan" />)
     const cta = screen.getByRole('link', { name: /choose a plan/i })
-    expect(cta.getAttribute('href'), 'CTA must move the visitor somewhere').toMatch(/#plans$/)
+    expect(cta.getAttribute('href'), 'CTA must move the visitor forward').toBe('/checkout')
   })
 
   it('names the action instead of describing a state', () => {
@@ -71,15 +72,49 @@ describe('the header CTA matches what the visitor can actually do', () => {
     expect(screen.queryByRole('link', { name: /finish setting up/i })).toBeNull()
   })
 
-  it('offers to create an account to a signed-out visitor', () => {
-    // "Sign in" until it was pointed out that this state covers a brand-new
-    // visitor as much as a returning one with an expired session, and only the
-    // new visitor is misled by it — they have no account to sign in to. /login
-    // offers returning users a sign-in mode from there.
+  it('serves both the new visitor and the returning one, since it cannot tell them apart', () => {
+    // This state covers a brand-new visitor and a returning one whose session
+    // expired, and nothing distinguishes them before they authenticate. A
+    // single button had to pick a side and mislead the other: "Sign in" tells
+    // a new visitor they need an account first, "Create account" tells a
+    // returning one they are about to make a second.
+    //
+    // Two buttons answer both. What must not regress is either one going
+    // missing, or the trial button pointing somewhere that cannot start one.
     render(<Nav state="anonymous" />)
-    const cta = screen.getByRole('link', { name: /create account/i })
-    expect(cta.getAttribute('href')).toBe('/login')
+
+    const trial = screen.getByRole('link', { name: /start free trial/i })
+    expect(
+      trial.getAttribute('href'),
+      'the trial is free, so the plan is a small decision and belongs after auth, not before it',
+    ).toBe('/login')
+
+    const signIn = screen.getByRole('link', { name: /^sign in$/i })
+    expect(
+      signIn.getAttribute('href'),
+      'returning users must land on the sign-in framing, not "Create your account"',
+    ).toBe('/login?mode=signin')
+
     expect(screen.queryByRole('link', { name: /go to dashboard/i })).toBeNull()
+  })
+
+  it('never leaves a signed-out visitor with only one of the two doors', () => {
+    // The regression this guards is subtle: removing either button still
+    // renders a perfectly reasonable-looking header, and the loss only shows
+    // up as the half of visitors who quietly leave.
+    render(<Nav state="anonymous" />)
+    expect(screen.queryByRole('link', { name: /start free trial/i })).not.toBeNull()
+    expect(screen.queryByRole('link', { name: /^sign in$/i })).not.toBeNull()
+  })
+
+  it('does not send a signed-out visitor to a source repository from the header', () => {
+    // The header's job is to get someone into the product. A GitHub link beside
+    // the CTA competed with it at the point of decision and sent the clicks it
+    // won out of the funnel entirely.
+    render(<Nav state="anonymous" />)
+    for (const link of screen.getAllByRole('link')) {
+      expect(link.getAttribute('href') ?? '').not.toMatch(/github\.com/i)
+    }
   })
 
   it('no longer advertises early access, which closed when signup opened', () => {
