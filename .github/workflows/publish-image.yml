@@ -18,7 +18,12 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # Lowercased, not ${{ github.repository }} directly. This repository's name is
+  # mixed case (AnswerLoops/answerLoops) and container registries only accept
+  # lowercase references, so the raw value is rejected by buildx before it even
+  # reaches the registry. Hardcoded rather than lowercased at runtime so the
+  # value is visible here and identical in every job that builds a tag from it.
+  IMAGE_NAME: answerloops/answerloops
 
 concurrency:
   group: publish-image-${{ github.ref }}
