@@ -12,7 +12,9 @@
 
 </div>
 
-## Support automation you can inspect, extend, and own
+# AnswerLoops — open-source AI support agent for Discord, Slack, and GitHub
+
+**Support automation you can inspect, extend, and own.**
 
 AnswerLoops is an open-source AI support platform for developer communities. It turns questions from Discord, Slack, Google Chat, GitHub, Telegram, email, and an embeddable web widget into one structured support pipeline.
 
