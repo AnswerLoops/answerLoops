@@ -92,16 +92,63 @@ describe('sendWelcomeEmail — what it sends', () => {
   })
 })
 
-describe('the sign-in path only welcomes new workspaces', () => {
-  it('calls the send after creating the org, not on the returning-user branch', async () => {
-    // provisionUser returns early for anyone with an existing membership. This
-    // pins that the call sits below that return, so a returning user is not
-    // welcomed again on every sign-in.
-    const fs = await import('node:fs')
-    const src = fs.readFileSync('auth.ts', 'utf-8')
-    const returningBranch = src.indexOf('return { userId: user.id, orgId: existing.orgId }')
-    const welcomeCall = src.indexOf('sendWelcomeEmail(email, name)')
-    expect(returningBranch).toBeGreaterThan(-1)
-    expect(welcomeCall).toBeGreaterThan(returningBranch)
+describe('the welcome email is sent to a customer, not to an account', () => {
+  const read = async (rel: string) => (await import('node:fs')).readFileSync(rel, 'utf-8')
+
+  it('is no longer sent from the sign-in path at all', async () => {
+    // Finishing OAuth makes someone a user, not a customer. Under the
+    // auth-first signup flow the account exists before a plan has been seen or
+    // a card entered, so welcoming here greets everyone who abandons checkout
+    // with a message about a product they never started.
+    const src = await read('auth.ts')
+    expect(src, 'auth.ts must not send the welcome email').not.toContain('sendWelcomeEmail')
+  })
+
+  it('is sent from the checkout handler instead', async () => {
+    const src = await read('app/api/billing/webhook/route.ts')
+    const checkoutCase = src.slice(
+      src.indexOf("case 'checkout.session.completed'"),
+      src.indexOf("case 'customer.subscription.updated'"),
+    )
+    expect(checkoutCase).toContain('sendWelcomeEmail(')
+  })
+
+  it('only welcomes an org that had no subscription before this one', async () => {
+    // A cancel-and-resubscribe is the same org coming back, not a new customer.
+    // The check has to read before the upsert writes the row, or it can never
+    // be false.
+    const src = await read('app/api/billing/webhook/route.ts')
+    const checkoutCase = src.slice(
+      src.indexOf("case 'checkout.session.completed'"),
+      src.indexOf("case 'customer.subscription.updated'"),
+    )
+    const readAt = checkoutCase.indexOf('hadSubscriptionBefore = (await getSubscription(orgId))')
+    const upsertAt = checkoutCase.indexOf('await upsertSubscription(')
+    const guardAt = checkoutCase.indexOf('if (!hadSubscriptionBefore)')
+
+    expect(readAt, 'the pre-existing-subscription read').toBeGreaterThan(-1)
+    expect(readAt, 'must read before the upsert, or it always sees a row').toBeLessThan(upsertAt)
+    expect(guardAt, 'the send must be gated on it').toBeGreaterThan(upsertAt)
+  })
+
+  it('cannot fail the webhook when the mail provider is down', async () => {
+    // A non-2xx makes Stripe retry an event whose subscription is already
+    // written. The send is wrapped so a provider outage stays a logged error.
+    const src = await read('app/api/billing/webhook/route.ts')
+    const guarded = src.slice(src.indexOf('if (!hadSubscriptionBefore)'), src.indexOf("case 'customer.subscription.updated'"))
+    expect(guarded).toContain('try {')
+    expect(guarded).toContain('catch')
+    expect(guarded, 'a throw here would cost a retry, not just an email').not.toMatch(/throw\s/)
+  })
+
+  it('addresses the org owner rather than whatever Stripe collected', async () => {
+    // Someone may pay with a different address than they signed up with. The
+    // account is the one they will sign back into.
+    const src = await read('app/api/billing/webhook/route.ts')
+    expect(src).toContain('getOrgOwner(orgId)')
+    const line = src.slice(src.indexOf('const to = '), src.indexOf('const to = ') + 120)
+    expect(line.indexOf('owner?.email'), 'owner address is preferred').toBeLessThan(
+      line.indexOf('session.customer_details?.email'),
+    )
   })
 })

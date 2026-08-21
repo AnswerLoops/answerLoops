@@ -33,6 +33,29 @@ export async function getOrgMembers(orgId: number): Promise<Member[]> {
   return rows
 }
 
+/**
+ * The org's owner, for the one message addressed to a person rather than to a
+ * workspace: the welcome email sent when an org first subscribes.
+ *
+ * The Stripe webhook knows an org id and nothing about people, and the session
+ * it carries holds whatever address Stripe collected at checkout, which is not
+ * necessarily the account that signed up. The membership table is the
+ * authoritative answer to "whose workspace is this".
+ *
+ * Ordered by join date so the founding owner wins if ownership was later
+ * shared — they are the one who started the trial.
+ */
+export async function getOrgOwner(orgId: number): Promise<{ email: string | null; name: string | null } | null> {
+  const [row] = await getDb()
+    .select({ email: users.email, name: users.name })
+    .from(memberships)
+    .innerJoin(users, eq(users.id, memberships.userId))
+    .where(and(eq(memberships.orgId, orgId), eq(memberships.role, 'owner')))
+    .orderBy(memberships.createdAt)
+    .limit(1)
+  return row ?? null
+}
+
 export async function addMember(userId: number, orgId: number, role: string): Promise<void> {
   await getDb()
     .insert(memberships)

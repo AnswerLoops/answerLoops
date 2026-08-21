@@ -3,12 +3,15 @@ import type Stripe from 'stripe'
 import { getStripe } from '@/lib/billing/stripe'
 import {
   upsertSubscription,
+  getSubscription,
   getSubscriptionByStripeId,
   hasProcessedWebhookEvent,
   markWebhookEventProcessed,
   pruneOldWebhookEvents,
 } from '@/lib/db/queries/billing'
 import { priceIdToPlan, getPlan } from '@/lib/billing/plans'
+import { getOrgOwner } from '@/lib/db/queries/members'
+import { sendWelcomeEmail } from '@/lib/email/send'
 import { logger } from '@/lib/logger'
 
 export const runtime = 'nodejs'
@@ -101,6 +104,12 @@ export async function POST(req: Request) {
           return NextResponse.json({ error: 'Unrecognized plan_id' }, { status: 500 })
         }
 
+        // Read before the upsert writes one: this is the difference between a
+        // first-ever subscription and a resubscription, and it is the only
+        // thing standing between "welcome" and greeting a returning customer
+        // as though they were new.
+        const hadSubscriptionBefore = (await getSubscription(orgId)) !== null
+
         await upsertSubscription({
           orgId,
           planId: requestedPlan.id,
@@ -110,6 +119,36 @@ export async function POST(req: Request) {
           lastEventCreated: event.created,
         })
         logger.info('Trial started via checkout', { module: MOD, orgId })
+
+        // The welcome email is sent from here rather than from account
+        // creation. Finishing OAuth makes someone a user; finishing checkout
+        // makes them a customer with a dashboard to be welcomed into, and only
+        // the second is worth an email. Sent at most once per org: this event
+        // is deduplicated by id above, and the first-subscription check means
+        // a cancel-and-resubscribe does not trigger a second one.
+        //
+        // Addressed to the org owner from our own records rather than to
+        // whatever address Stripe collected — someone may pay with a different
+        // address than they signed up with, and the account is what they will
+        // sign back into.
+        //
+        // Nothing here may throw. A mail failure must not turn into a non-2xx,
+        // because Stripe would retry an event whose subscription is already
+        // written. If it somehow does, the retry is harmless: the row now
+        // exists, so hadSubscriptionBefore is true and no second email is sent.
+        if (!hadSubscriptionBefore) {
+          try {
+            const owner = await getOrgOwner(orgId)
+            const to = owner?.email ?? session.customer_details?.email ?? null
+            if (to) {
+              await sendWelcomeEmail(to, owner?.name ?? session.customer_details?.name ?? null)
+            } else {
+              logger.warn('First subscription with no address to welcome', { module: MOD, orgId })
+            }
+          } catch (err) {
+            logger.error('Welcome email failed after checkout', { module: MOD, orgId, error: err })
+          }
+        }
         break
       }
 
