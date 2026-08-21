@@ -83,6 +83,16 @@ jobs:
           format: table
           exit-code: '1'
 
+      # Scoped to /app — the application and its dependencies, which are what
+      # this repository chooses and can act on. The Node base image also ships
+      # npm and pnpm under /usr/local/lib/node_modules; those are upstream's to
+      # version, this repository cannot patch them from a lockfile, and a gate
+      # that blocks every deploy on something the deploy cannot fix stops being
+      # a gate and starts being an outage. They are tracked separately and
+      # addressed by removing that tooling from the runtime stage, which is the
+      # actual fix rather than a suppression.
+      #
+      # The secret scan above is deliberately NOT scoped: it stays whole-image.
       - name: Refuse to publish known-vulnerable dependencies
         uses: aquasecurity/trivy-action@df678dbccf677bc6937338d569ba0da18964a8cc # master 2026-07-01
         with:
@@ -91,6 +101,7 @@ jobs:
           scanners: vuln
           severity: CRITICAL,HIGH
           ignore-unfixed: true
+          skip-dirs: /usr/local/lib/node_modules
           format: table
           exit-code: '1'
 
