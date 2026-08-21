@@ -148,7 +148,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
     },
 
     async authorized({ request, auth: session }) {
-      const { pathname } = request.nextUrl
+      const { pathname, search } = request.nextUrl
 
       if (isPublic(pathname)) return true
 
@@ -157,7 +157,17 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
         const loginUrl = new URL('/login', request.nextUrl)
-        loginUrl.searchParams.set('callbackUrl', pathname)
+        // Path *and* query. The query is often the whole point of the link:
+        // `/checkout?plan=pro` returning as a bare `/checkout` silently drops
+        // the plan and lands the visitor on the default one instead — a
+        // downgrade they never chose and would only notice on the invoice.
+        // Same for any other deep link whose parameters carry the intent.
+        //
+        // Relative by construction: both halves are read off this request's
+        // own URL, never from anything a caller supplies, and the consumer in
+        // app/actions/auth.ts accepts only a value beginning with a single
+        // slash. searchParams.set handles the encoding.
+        loginUrl.searchParams.set('callbackUrl', `${pathname}${search}`)
         return NextResponse.redirect(loginUrl)
       }
 
