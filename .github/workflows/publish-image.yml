@@ -18,7 +18,14 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # Lowercased, not ${{ github.repository }}. This repository's name is mixed
+  # case (AnswerLoops/answerLoops) and container registries only accept
+  # lowercase references, so the interpolated value is rejected by buildx before
+  # it ever reaches the registry — the publish has never succeeded under this
+  # name. Written out literally rather than lowercased at runtime so it matches,
+  # visibly, the reference docker-compose.ghcr.yml and the self-hosting docs
+  # already tell people to pull.
+  IMAGE_NAME: answerloops/answerloops
 
 concurrency:
   group: publish-image-${{ github.ref }}
