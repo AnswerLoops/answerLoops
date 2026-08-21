@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import { ORDERED_PLANS, TRIAL_DAYS } from '@/lib/billing/plans'
 import { Nav, Footer } from '@/components/marketing/chrome'
 import { PricingToggle } from '@/components/marketing/pricing-toggle'
@@ -50,6 +51,18 @@ export default async function PricingPage({
   // no explanation in either case reads as the product losing your progress.
   const { resume, checkout } = await searchParams
   const navState = await resolveNavState()
+
+  // A returning subscriber who clicked a bare "Sign in" arrives here, not at
+  // the dashboard: getCallbackUrl() picks the post-OAuth destination before
+  // anyone has authenticated, so it cannot know whether this person already
+  // has a plan and sends everyone to /pricing?resume=1. It assumed the access
+  // gate would forward the entitled onward from here, but /pricing is in
+  // PUBLIC_PATHS, so `authorized()` returns early and the gate never runs.
+  // Nothing moved them on, leaving a paying customer parked on the pricing
+  // page being told to buy what they already have. This page is the only
+  // place left that can complete that redirect.
+  if (resume === '1' && navState === 'active') redirect('/dashboard')
+
   return (
     <div className="min-h-screen bg-[#f5f8fd]">
       <Nav state={navState} />
@@ -96,7 +109,12 @@ export default async function PricingPage({
             </div>
           )}
 
-          {resume === '1' && checkout !== 'failed' && (
+          {/* Also gated on having no plan, not just on the resume flag. The
+              redirect above catches the sign-in path, but any other route to
+              ?resume=1 with an active subscription would otherwise render
+              "pick a plan" directly beneath a header offering the dashboard —
+              two contradictory answers to the same question. */}
+          {resume === '1' && checkout !== 'failed' && navState === 'no-plan' && (
             <div className="mx-auto mb-6 max-w-2xl rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-center">
               <p className="text-sm font-medium text-blue-900">You&apos;re signed in — pick a plan to finish setting up.</p>
               <p className="mt-1 text-xs text-blue-700">
