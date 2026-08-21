@@ -40,6 +40,8 @@
     "@mendable/firecrawl-js": "^4.28.1",
     "@octokit/app": "^16.1.2",
     "@octokit/rest": "^22.0.1",
+    "@stripe/react-stripe-js": "^6.8.1",
+    "@stripe/stripe-js": "^9.13.0",
     "ai": "^6.0.153",
     "csv-parse": "^7.0.0",
     "discord.js": "^14.26.2",

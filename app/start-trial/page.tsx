@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 import { getPlan, parseBillingInterval, stripeConfigured, TRIAL_DAYS } from '@/lib/billing/plans'
-import { createCheckoutSession } from '@/lib/billing/checkout'
 import { orgHasProductAccess } from '@/lib/billing/access'
 import { DEFAULT_ORG_ID } from '@/lib/db/schema'
 import { logger } from '@/lib/logger'
@@ -107,25 +106,11 @@ export default async function StartTrialPage({
   // No plan chosen, or an unrecognised one: back to the website to pick.
   if (!plan) redirect('/pricing?resume=1')
 
-  const result = await createCheckoutSession(
-    orgId,
-    plan.id,
-    session.user.email ?? '',
-    session.user.name ?? '',
-    interval,
-  )
-
-  if (!result.ok) {
-    // Checkout is the only way into the product, so this cannot be swallowed —
-    // surface it where there is a next action rather than on a blank screen.
-    logger.error('start-trial could not create a checkout session', {
-      module: MOD,
-      orgId,
-      planId: plan.id,
-      error: result.error,
-    })
-    redirect('/pricing?checkout=failed')
-  }
-
-  redirect(result.url)
+  // On to the branded checkout page rather than creating a hosted session and
+  // redirecting to checkout.stripe.com. The session itself is created there,
+  // once the page knows which plan is selected — it lets someone switch plan or
+  // interval without leaving, and a Checkout Session's line items are fixed at
+  // creation, so creating one here would be throwing it away on the first
+  // switch.
+  redirect(`/checkout?plan=${encodeURIComponent(plan.id)}&interval=${interval}`)
 }

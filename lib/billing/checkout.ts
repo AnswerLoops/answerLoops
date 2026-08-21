@@ -24,6 +24,15 @@ export type CheckoutResult =
   | { ok: true; url: string }
   | { ok: false; error: string; status: number }
 
+/**
+ * An embedded session hands back a client secret instead of a URL: the card
+ * form renders inside our own page rather than on checkout.stripe.com, so
+ * there is nowhere to send the browser.
+ */
+export type EmbeddedCheckoutResult =
+  | { ok: true; clientSecret: string }
+  | { ok: false; error: string; status: number }
+
 function baseUrl(): string {
   return process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
 }
@@ -124,6 +133,109 @@ export async function createCheckoutSession(
     return { ok: true, url: checkoutSession.url }
   } catch (err) {
     logger.error('Stripe checkout session creation failed', {
+      module: MOD,
+      orgId,
+      planId: plan.id,
+      error: err,
+    })
+    const message =
+      err instanceof Stripe.errors.StripeError
+        ? 'Could not start checkout — billing is misconfigured. Contact support.'
+        : 'Could not start checkout. Try again.'
+    return { ok: false, error: message, status: 502 }
+  }
+}
+
+/**
+ * Creates an embedded Checkout session, for the branded signup page.
+ *
+ * Same plan, price, customer and trial resolution as the hosted flow above —
+ * deliberately, so the two cannot disagree about what someone is buying. The
+ * differences are only where the card form renders and how the browser gets
+ * back:
+ *
+ * - `ui_mode: 'embedded_page'` renders Stripe's form inside our page. Stripe still
+ *   owns the card fields, 3D Secure, wallet buttons and the promotion-code
+ *   input, so this changes the surroundings without taking on PCI scope or
+ *   re-implementing payment-method UI.
+ * - `return_url` replaces success_url/cancel_url. It points back at
+ *   /start-trial?checkout=success, which is where the wait-for-the-webhook
+ *   handling already lives — an embedded session does not change the fact that
+ *   Stripe redirects the browser independently of delivering the webhook.
+ *
+ * There is no cancel_url because there is nothing to cancel out of: the page
+ * hosting the form is ours, and someone abandoning it just navigates away.
+ */
+export async function createEmbeddedCheckoutSession(
+  orgId: number,
+  planId: string,
+  fallbackEmail: string,
+  fallbackName: string,
+  interval: BillingInterval = 'monthly',
+): Promise<EmbeddedCheckoutResult> {
+  const plan: Plan | null = getPlan(planId)
+  if (!plan) return { ok: false, error: 'Unknown plan', status: 400 }
+
+  const priceId = stripePriceFor(plan, interval)
+  if (!priceId) {
+    // Same reasoning as the hosted flow: charging a different amount than the
+    // page displayed is worse than declining to sell.
+    return { ok: false, error: 'No Stripe price for this plan', status: 400 }
+  }
+
+  const db = getDb()
+  const [member] = await db
+    .select({ email: users.email, name: users.name })
+    .from(users)
+    .innerJoin(
+      memberships,
+      and(
+        eq(memberships.userId, users.id),
+        eq(memberships.orgId, orgId),
+        eq(memberships.role, 'owner'),
+      ),
+    )
+    .limit(1)
+
+  const email = member?.email ?? fallbackEmail
+  const name = member?.name ?? fallbackName
+
+  try {
+    const existing = await getSubscription(orgId)
+    const customerId = existing?.stripeCustomerId ?? (await getOrCreateCustomer(orgId, email, name))
+
+    const stripe = getStripe()
+    const base = baseUrl()
+
+    const checkoutSession = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: 'subscription',
+      // 'embedded_page', not 'embedded': the pinned API version
+      // (2026-05-27.dahlia, see lib/billing/stripe.ts) renamed the ui_mode
+      // values, and most documentation and examples still show the old names.
+      ui_mode: 'embedded_page',
+      line_items: [{ price: priceId, quantity: 1 }],
+      return_url: `${base}/start-trial?checkout=success`,
+      metadata: { org_id: String(orgId), plan_id: plan.id },
+      subscription_data: {
+        trial_period_days: TRIAL_DAYS,
+        metadata: { org_id: String(orgId), plan_id: plan.id },
+      },
+      allow_promotion_codes: true,
+    })
+
+    if (!checkoutSession.client_secret) {
+      logger.error('Stripe returned an embedded session with no client secret', {
+        module: MOD,
+        orgId,
+        planId: plan.id,
+      })
+      return { ok: false, error: 'Could not start checkout. Try again.', status: 502 }
+    }
+
+    return { ok: true, clientSecret: checkoutSession.client_secret }
+  } catch (err) {
+    logger.error('Stripe embedded checkout session creation failed', {
       module: MOD,
       orgId,
       planId: plan.id,
