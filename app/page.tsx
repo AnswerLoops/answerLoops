@@ -1,8 +1,10 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { ORDERED_PLANS } from '@/lib/billing/plans'
 import { AnimatedChat } from '@/components/animated-chat'
 import { Nav, Footer, GithubIcon, GITHUB_URL } from '@/components/marketing/chrome'
 import { resolveNavState } from '@/lib/marketing/nav-state'
+import { marketingSiteEnabled } from '@/lib/site'
 
 export const dynamic = 'force-dynamic'
 
@@ -622,6 +624,12 @@ function StructuredData() {
 }
 
 export default async function LandingPage() {
+  // A self-hosted install has already chosen not to buy a hosted plan, so the
+  // landing page is at best noise and at worst a checkout funnel pointing at
+  // our Stripe account. Root goes where a self-hoster actually wants it: the
+  // product. Unauthenticated requests carry on to /login from there.
+  if (!marketingSiteEnabled()) redirect('/dashboard')
+
   const navState = await resolveNavState()
   return (
     <div className="min-h-screen bg-white">
