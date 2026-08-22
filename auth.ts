@@ -204,6 +204,26 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           domain: cookieDomain,
         },
       },
+      // Missed by the fix above, and the same failure mode: Auth.js's
+      // createActionURL always builds the Google callback against AUTH_URL
+      // when it's set (trustHost only kicks in as a fallback when AUTH_URL is
+      // unset), so the callback lands on the root domain regardless of which
+      // host started sign-in. Host-only by Auth.js's default, this cookie was
+      // set on app.answerloops.com at sign-in and never reached that
+      // root-domain callback request. With neither a query param nor a
+      // readable cookie, @auth/core's createCallbackUrl falls back to
+      // `url.origin` — the bare root domain — which is why every sign-in
+      // landed on the marketing homepage instead of the intended destination.
+      callbackUrl: {
+        name: useSecureCookies ? '__Secure-authjs.apex-callback-url' : 'authjs.apex-callback-url',
+        options: {
+          httpOnly: true,
+          sameSite: 'lax',
+          path: '/',
+          secure: useSecureCookies,
+          domain: cookieDomain,
+        },
+      },
     },
   }),
 
