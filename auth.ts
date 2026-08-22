@@ -224,6 +224,27 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           domain: cookieDomain,
         },
       },
+      // Same root cause a third time, this one reproduced live: the sign-out
+      // confirmation page is rendered on app.answerloops.com, but its <form>
+      // action posts to the fixed AUTH_URL host (the root domain) — same
+      // createActionURL behavior as the callback and Google-authorize URLs
+      // above. Auth.js's default csrf-token cookie uses the __Host- prefix,
+      // which forbids a Domain attribute outright, so it stayed host-only on
+      // app.answerloops.com and never reached the cross-host POST — the
+      // server saw a csrfToken in the form body with no matching cookie and
+      // rejected the request with MissingCSRF, silently failing the sign-out
+      // button. __Secure- instead of __Host- for the same reason as the other
+      // apex cookies: sharing across the apex requires a Domain attribute.
+      csrfToken: {
+        name: useSecureCookies ? '__Secure-authjs.apex-csrf-token' : 'authjs.apex-csrf-token',
+        options: {
+          httpOnly: true,
+          sameSite: 'lax',
+          path: '/',
+          secure: useSecureCookies,
+          domain: cookieDomain,
+        },
+      },
     },
   }),
 
