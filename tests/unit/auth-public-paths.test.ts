@@ -38,10 +38,23 @@ describe('auth.ts PUBLIC_PATHS covers every self-authenticating API route', () =
   const publicPageRoutes = [
     '/vs', // comparison pages
     '/pricing', // pricing page
+    '/privacy', // legal policy must be readable before account creation
+    '/terms', // contract terms must be readable before account creation
   ]
 
   it.each(publicPageRoutes)('%s is listed in (or covered by a prefix in) PUBLIC_PATHS', (route) => {
     const covered = publicPaths.some((p) => route === p || route.startsWith(`${p}/`))
     expect(covered, `${route} is not covered by any PUBLIC_PATHS entry — unauthenticated visitors get 307'd to /login before the page ever renders`).toBe(true)
+  })
+
+  it('keeps public website pages on the marketing host when APP_URL is configured', () => {
+    const websiteMatch = authSrc.match(/const WEBSITE_PATHS = \[([\s\S]*?)\]/)
+    if (!websiteMatch) throw new Error('Could not find WEBSITE_PATHS in auth.ts')
+    const websitePaths = websiteMatch[1].split(',').map((s) => s.trim().replace(/^'|'$/g, '')).filter(Boolean)
+
+    for (const route of publicPageRoutes) {
+      const covered = websitePaths.some((p) => route === p || route.startsWith(`${p}/`))
+      expect(covered, `${route} is not covered by WEBSITE_PATHS — it will redirect from the marketing host to the app host`).toBe(true)
+    }
   })
 })
