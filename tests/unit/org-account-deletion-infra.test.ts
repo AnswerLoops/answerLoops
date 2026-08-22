@@ -257,7 +257,13 @@ describe('auth.ts: soft-deleted orgs lose access immediately, live-checked (not 
   it('page routes redirect to the account-deleted page', () => {
     const idx = src.indexOf("if (access.status === 'org-deleted') {")
     const body = src.slice(idx, idx + 400)
-    expect(body).toContain('NextResponse.redirect(new URL(ACCOUNT_DELETED_PATH, request.nextUrl))')
+    // Built from incomingOrigin, not request.nextUrl — the latter is
+    // normalized by NextAuth's edge wrapper to AUTH_URL's origin regardless of
+    // the actual incoming host, which would send a split-host deployment's
+    // app-subdomain visitor back to the marketing domain for this redirect.
+    // See the comment above incomingOrigin's definition in auth.ts.
+    expect(body).toContain('NextResponse.redirect(new URL(ACCOUNT_DELETED_PATH, incomingOrigin))')
+    expect(body).not.toContain('request.nextUrl))')
   })
 
   it('the deletion check runs before the onboarding check, so a deleted org never gets routed to /onboarding instead', () => {
