@@ -138,10 +138,64 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
   // reusing it risked ambiguous session resolution. See the internal
   // security page for details. Renaming forces every browser to establish a
   // fresh session under this cookie once, which is expected and safe.
+  // Only sessionToken got this treatment when the multi-subdomain setup was
+  // built, because it's the cookie that matters once someone is signed in.
+  // The OAuth handshake itself sets three more, all short-lived and all
+  // host-only by Auth.js's own default: pkceCodeVerifier, state, and nonce.
+  // They didn't matter on a single-domain deployment, where every step of one
+  // sign-in attempt necessarily happens on the same host anyway.
+  //
+  // They matter now. Signing in starts on app.answerloops.com (the platform
+  // host-forcing redirect above ensures that), and Auth.js's own redirect_uri
+  // construction for the Google authorize request is where the flow can
+  // still end up crossing back toward AUTH_URL's host depending on exactly
+  // which code path built it — confirmed in production logs, not assumed:
+  // InvalidCheck: pkceCodeVerifier value could not be parsed, immediately
+  // after the multi-subdomain redirect started forcing every sign-in through
+  // app.answerloops.com. The verifier cookie was set on one host and read
+  // back on the other, so Auth.js could not find it and failed the exchange
+  // for every account, new and returning alike — cookie-level, not
+  // account-level, which is why it wasn't selective.
+  //
+  // __Secure- rather than Auth.js's default __Host- prefix for the same
+  // reason as sessionToken: __Host- forbids a Domain attribute outright, and
+  // sharing across the apex is the entire point here.
   ...(cookieDomain && {
     cookies: {
       sessionToken: {
         name: useSecureCookies ? '__Secure-authjs.apex-session-token' : 'authjs.apex-session-token',
+        options: {
+          httpOnly: true,
+          sameSite: 'lax',
+          path: '/',
+          secure: useSecureCookies,
+          domain: cookieDomain,
+        },
+      },
+      pkceCodeVerifier: {
+        name: useSecureCookies ? '__Secure-authjs.apex-pkce.code-verifier' : 'authjs.apex-pkce.code-verifier',
+        options: {
+          httpOnly: true,
+          sameSite: 'lax',
+          path: '/',
+          secure: useSecureCookies,
+          domain: cookieDomain,
+          maxAge: 60 * 15, // matches Auth.js's own default for this cookie
+        },
+      },
+      state: {
+        name: useSecureCookies ? '__Secure-authjs.apex-state' : 'authjs.apex-state',
+        options: {
+          httpOnly: true,
+          sameSite: 'lax',
+          path: '/',
+          secure: useSecureCookies,
+          domain: cookieDomain,
+          maxAge: 60 * 15,
+        },
+      },
+      nonce: {
+        name: useSecureCookies ? '__Secure-authjs.apex-nonce' : 'authjs.apex-nonce',
         options: {
           httpOnly: true,
           sameSite: 'lax',
