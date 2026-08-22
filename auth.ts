@@ -7,6 +7,7 @@ import { users, memberships, orgs } from '@/lib/db/schema'
 import { DEFAULT_ORG_ID } from '@/lib/db/schema'
 import { resolveOrgIdForSessionUpdate, resolveOrgAccess } from '@/lib/auth/membership'
 import { orgHasProductAccess, isAccessExempt } from '@/lib/billing/access'
+import { appOrigin } from '@/lib/site'
 
 const PUBLIC_PATHS = ['/', '/login', '/api/auth', '/api/ingest', '/api/feedback', '/api/slack', '/api/widget', '/widget', '/api/billing/webhook', '/api/waitlist', '/api/health', '/api/github/webhook', '/api/email/ingest', '/api/mcp', '/api/agent', '/api/google-chat', '/vs', '/pricing', '/docs', '/privacy', '/robots.txt', '/sitemap.xml', '/llms.txt']
 const ONBOARDING_PATH = '/onboarding'
@@ -14,6 +15,19 @@ const ACCOUNT_DELETED_PATH = '/account-deleted'
 const START_TRIAL_PATH = '/start-trial'
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+}
+
+// The marketing website — informational pages with nothing behind a login.
+// Everything else (sign-in, checkout, onboarding, the whole dashboard) is the
+// platform, and belongs on the app's own subdomain wherever a deployment has
+// configured one; see appOrigin() in lib/site.ts. Deliberately a separate list
+// from PUBLIC_PATHS above: that one governs what needs a session, this one
+// governs what host something lives on, and the two questions don't have the
+// same answer — /login needs no session but is still part of the platform,
+// while /docs and /privacy need no session and genuinely are the website.
+const WEBSITE_PATHS = ['/', '/pricing', '/vs', '/docs', '/privacy', '/robots.txt', '/sitemap.xml', '/llms.txt']
+function isWebsitePath(pathname: string): boolean {
+  return WEBSITE_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
 
 function getAllowedEmails(): string[] {
@@ -148,13 +162,53 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
     async authorized({ request, auth: session }) {
       const { pathname, search } = request.nextUrl
 
+      // request.nextUrl.origin cannot be trusted anywhere in this callback.
+      // Measured directly against this exact proxy.ts wiring rather than
+      // assumed: NextAuth's auth() function, used as the edge proxy,
+      // normalizes request.nextUrl to AUTH_URL's origin regardless of what
+      // host the request actually arrived on — confirmed by logging both side
+      // by side with a mismatched AUTH_URL and watching request.nextUrl.origin
+      // echo AUTH_URL every time, on every request, not only the ones this
+      // file redirects. The real host has to come from the headers instead,
+      // the same trust this deployment already extends to Cloudflare/Railway
+      // elsewhere in this file (see the trustHost comment above) —
+      // forwarded-host first, since that's what a proxied request carries,
+      // host and the request's own protocol as the fallback for anything
+      // reaching this directly. Every redirect below that needs to stay on
+      // the current host is built from this, never from request.nextUrl.
+      const incomingHost = request.headers.get('x-forwarded-host') ?? request.headers.get('host')
+      const incomingProto = request.headers.get('x-forwarded-proto') ?? request.nextUrl.protocol.replace(':', '')
+      const incomingOrigin = incomingHost ? `${incomingProto}://${incomingHost}` : request.nextUrl.origin
+
+      // Checked before anything else, including the public-path exemption
+      // below: an anonymous request for a platform page on the wrong host
+      // should land on /login on the RIGHT host, not bounce through /login on
+      // the wrong one first and only get moved on the next hop. /api/ routes
+      // are excluded — they're called by webhooks and fetches, not navigated
+      // to, and a 307 would either break the caller or simply be ignored —
+      // and so is /widget, which is embedded on customers' own pages and must
+      // stay wherever it was embedded, not follow the platform to a
+      // subdomain that page never asked to load content from.
+      const appHostOrigin = appOrigin()
+      const appHost = appHostOrigin ? new URL(appHostOrigin).host : null
+      if (
+        appHost &&
+        incomingHost &&
+        incomingHost !== appHost &&
+        !isWebsitePath(pathname) &&
+        !pathname.startsWith('/api/') &&
+        !pathname.startsWith('/widget')
+      ) {
+        return NextResponse.redirect(new URL(`${pathname}${search}`, appHostOrigin!))
+      }
+
       if (isPublic(pathname)) return true
 
       if (!session?.user) {
         if (pathname.startsWith('/api/')) {
           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
-        const loginUrl = new URL('/login', request.nextUrl)
+        const loginUrl = new URL('/login', incomingOrigin)
         // Path *and* query. The query is often the whole point of the link:
         // `/checkout?plan=pro` returning as a bare `/checkout` silently drops
         // the plan and lands the visitor on the default one instead — a
@@ -191,14 +245,14 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           access.status === 'org-missing' ||
           access.status === 'not-member'
         ) {
-          return NextResponse.redirect(new URL('/api/auth/signout?callbackUrl=/login', request.nextUrl))
+          return NextResponse.redirect(new URL('/api/auth/signout?callbackUrl=/login', incomingOrigin))
         }
 
         if (access.status === 'org-deleted') {
           if (pathname.startsWith('/api/')) {
             return NextResponse.json({ error: 'This account has been deleted' }, { status: 403 })
           }
-          return NextResponse.redirect(new URL(ACCOUNT_DELETED_PATH, request.nextUrl))
+          return NextResponse.redirect(new URL(ACCOUNT_DELETED_PATH, incomingOrigin))
         }
 
         // Checked before onboarding on purpose. A trial requires a card up
@@ -219,7 +273,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
             if (pathname.startsWith('/api/')) {
               return NextResponse.json({ error: 'No active subscription' }, { status: 402 })
             }
-            return NextResponse.redirect(new URL(START_TRIAL_PATH, request.nextUrl))
+            return NextResponse.redirect(new URL(START_TRIAL_PATH, incomingOrigin))
           }
         }
 
@@ -239,7 +293,7 @@ export const { handlers, signIn, signOut, auth, unstable_update } = NextAuth({
           !(session as { onboarded?: boolean }).onboarded &&
           !access.onboardedAt
         ) {
-          return NextResponse.redirect(new URL(ONBOARDING_PATH, request.nextUrl))
+          return NextResponse.redirect(new URL(ONBOARDING_PATH, incomingOrigin))
         }
       }
 
