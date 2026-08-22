@@ -8,11 +8,16 @@ name: answerloops
 # Requires a .env file with, at minimum, DATABASE_URL pointing at a Postgres
 # instance. See content/docs/self-hosting for the full variable list.
 #
-# Pin a version rather than tracking latest for anything you care about staying
-# up:
+# `latest` currently tracks the tip of main and is rebuilt on every merge, so it
+# moves often and carries no stability promise. There are no releases yet.
 #
-#   ANSWERLOOPS_IMAGE=ghcr.io/answerloops/answerloops:1.4.0 \
+# To pin, use the immutable per-commit tag:
+#
+#   ANSWERLOOPS_IMAGE=ghcr.io/answerloops/answerloops:sha-<full-commit-sha> \
 #     docker compose -f docker-compose.ghcr.yml up -d
+#
+# Once releases begin, `latest` will mean the most recent release and semver
+# tags will be the way to pin.
 #
 # One image serves both services. app and bot run the same build and differ only
 # in their command, so there is nothing to keep in step between them.
