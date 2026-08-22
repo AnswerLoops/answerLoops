@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { ORDERED_PLANS, TRIAL_DAYS } from '@/lib/billing/plans'
 import { Nav, Footer } from '@/components/marketing/chrome'
 import { PricingToggle } from '@/components/marketing/pricing-toggle'
 import { PricingComparisonTable } from '@/components/marketing/pricing-comparison-table'
 import { resolveNavState } from '@/lib/marketing/nav-state'
+import { marketingSiteEnabled } from '@/lib/site'
 import { GITHUB_URL } from '@/lib/site'
 import Link from 'next/link'
 
@@ -47,6 +48,10 @@ export default async function PricingPage({
 }: {
   searchParams: Promise<{ resume?: string; checkout?: string }>
 }) {
+  // Not served by a self-hosted install: there is no hosted plan to sell there,
+  // and the page would be advertising our pricing from somebody else's domain.
+  if (!marketingSiteEnabled()) notFound()
+
   // Two ways to arrive here mid-flow, and landing on a plain pricing page with
   // no explanation in either case reads as the product losing your progress.
   const { resume, checkout } = await searchParams

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { ComparisonPage } from '@/components/marketing/comparison-page'
 import { resolveNavState } from '@/lib/marketing/nav-state'
+import { notFound } from 'next/navigation'
+import { marketingSiteEnabled } from '@/lib/site'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +22,10 @@ const ROWS = [
 ]
 
 export default async function VsChatbasePage() {
+  // Not served by a self-hosted install: there is no hosted plan to sell there,
+  // and the page would be advertising our pricing from somebody else's domain.
+  if (!marketingSiteEnabled()) notFound()
+
   const navState = await resolveNavState()
   return (
     <ComparisonPage
