@@ -228,6 +228,7 @@ export function Footer() {
           <p className="text-[0.625rem] text-white/40">© 2026 AnswerLoops. Open source.</p>
           <div className="flex items-center gap-4">
             <Link href="/privacy" className="text-[0.625rem] text-white/40 transition-colors hover:text-white/70">Privacy Policy</Link>
+            <Link href="/terms" className="text-[0.625rem] text-white/40 transition-colors hover:text-white/70">Terms of Service</Link>
             <p className="text-[0.625rem] text-white/40">Built in public · Self-hostable</p>
           </div>
         </div>

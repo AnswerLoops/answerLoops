@@ -108,7 +108,14 @@ export default async function LoginPage({ searchParams }: Props) {
           </p>
 
           <p className="mt-6 text-center text-xs text-ink-400">
-            By continuing, you agree to our terms of service.
+            By continuing, you agree to our{' '}
+            <Link href="/terms" className="underline underline-offset-2 hover:text-ink-600">
+              Terms of Service
+            </Link>{' '}
+            and acknowledge our{' '}
+            <Link href="/privacy" className="underline underline-offset-2 hover:text-ink-600">
+              Privacy Policy
+            </Link>.
           </p>
         </div>
       </div>
