@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EmailIntegrationCard } from '@/app/(dashboard)/settings/page'
 import {
@@ -84,11 +84,23 @@ function jsonResponse(body: unknown) {
 // Routes both endpoints EmailIntegrationCard fetches from a single mockFetch —
 // GoogleChatIntegrationCard's tests only ever hit /api/integrations, but this
 // card also hits /api/email-domain for the new "use your own domain" section.
-function mockRoutes(integrations: unknown[], emailDomain: unknown = null) {
+function mockRoutes(integrations: unknown[], emailDomain: unknown = null, oauth: unknown = null) {
   mockFetch.mockImplementation((url: string) => {
     if (url === '/api/email-domain') return Promise.resolve(jsonResponse(emailDomain))
+    // Mocked explicitly rather than falling through to the integrations array:
+    // the card reads this endpoint to decide which delivery method is already
+    // set up, and a truthy array here reads as a connected mailbox.
+    if (url === '/api/email-oauth') return Promise.resolve(jsonResponse(oauth))
     return Promise.resolve(jsonResponse(integrations))
   })
+}
+
+// Delivery method is a choice now: with nothing configured the card asks which
+// one before showing any setup UI. Registering a domain therefore starts by
+// picking "Use your own domain" from the chooser.
+async function chooseOwnDomain() {
+  const card = await screen.findByRole('button', { name: /^use your own domain/i })
+  fireEvent.click(card)
 }
 
 describe('EmailIntegrationCard: custom domain verification', () => {
@@ -99,9 +111,10 @@ describe('EmailIntegrationCard: custom domain verification', () => {
   it('shows the "use your own domain" input when connected and no domain is registered yet', async () => {
     mockRoutes([connectedIntegration()], null)
     render(<EmailIntegrationCard />)
+    await chooseOwnDomain()
 
-    await waitFor(() => expect(screen.getByRole('button', { name: /use your own domain/i })).toBeTruthy())
-    expect(screen.getByPlaceholderText('yourcompany.com')).toBeTruthy()
+    await waitFor(() => expect(screen.getByPlaceholderText('yourcompany.com')).toBeTruthy())
+    expect(screen.getByRole('button', { name: /use your own domain/i })).toBeTruthy()
     // the old free-text reply-from field must be gone entirely
     expect(screen.queryByText(/reply-from address/i)).toBeNull()
   })
@@ -127,6 +140,7 @@ describe('EmailIntegrationCard: custom domain verification', () => {
 
     const user = userEvent.setup()
     render(<EmailIntegrationCard />)
+    await chooseOwnDomain()
 
     await waitFor(() => expect(screen.getByPlaceholderText('yourcompany.com')).toBeTruthy())
     await user.type(screen.getByPlaceholderText('yourcompany.com'), 'acme.com')

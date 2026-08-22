@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EmailIntegrationCard } from '@/app/(dashboard)/settings/page'
 import { disconnectOauthAction } from '@/app/actions/integrations'
@@ -98,6 +98,9 @@ describe('EmailIntegrationCard: OAuth mailbox connection (Gmail + Outlook)', () 
   it('offers both Connect Gmail and Connect Outlook when no connection exists yet', async () => {
     mockRoutes()
     render(<EmailIntegrationCard />)
+    // With nothing configured the card asks which delivery method to use
+    // before showing any setup UI, so the mailbox path has to be chosen first.
+    fireEvent.click(await screen.findByRole('button', { name: /^connect a mailbox/i }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: /connect gmail/i })).toBeTruthy())
     expect(screen.getByRole('button', { name: /connect outlook/i })).toBeTruthy()

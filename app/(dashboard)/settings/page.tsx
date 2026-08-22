@@ -1112,7 +1112,7 @@ function TelegramIntegrationCard() {
             )}
             <div className="flex gap-2">
               <Button type="submit" size="sm" disabled={savePending}>
-                {savePending ? 'Saving…' : connected ? 'Update' : 'Connect'}
+                {savePending ? 'Saving…' : 'Update'}
               </Button>
               {editing && (
                 <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
@@ -1462,9 +1462,142 @@ function DnsRecordRow({
   )
 }
 
+type DeliveryMethod = 'domain' | 'mailbox' | 'webhook'
+
+/**
+ * How inbound mail reaches AnswerLoops — asked once, as a choice.
+ *
+ * There are three ways and only one is needed, but they used to be rendered as
+ * three stacked panels with no default and no indication of that. Someone
+ * arriving here met a domain form, an OAuth pair and a raw webhook endpoint
+ * with a copy-once secret, all at the same time, and nothing said which to
+ * pick. The tradeoff copy was already good; it was the shape that made the
+ * screen a puzzle.
+ *
+ * So: pick one, then set that one up. The other two stay one click away for
+ * anyone who wants to switch, and the choice is remembered by what is actually
+ * configured rather than by any stored preference — a verified domain or a
+ * connected mailbox *is* the answer to "which method", so there is no separate
+ * state that can disagree with reality.
+ */
+function EmailDeliverySection({
+  configured,
+  onChanged,
+}: {
+  configured: DeliveryMethod | null
+  onChanged: () => void
+}) {
+  // Only meaningful before something is configured; once a domain is verified
+  // or a mailbox connected, `configured` decides and this is ignored.
+  const [picked, setPicked] = useState<DeliveryMethod | null>(null)
+  const method = configured ?? picked
+
+  if (method === null) {
+    return (
+      <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 space-y-3">
+        <div>
+          <p className="text-xs font-medium text-gray-600">How should mail reach AnswerLoops?</p>
+          <p className="text-xs text-gray-500 mt-1">Pick one — you can change it later.</p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <MethodCard
+            title="Use your own domain"
+            badge="Recommended"
+            body="Replies send from your own address. Needs two DNS records, and does not depend on any login staying active."
+            onSelect={() => setPicked('domain')}
+          />
+          <MethodCard
+            title="Connect a mailbox"
+            body="Gmail or Outlook, connected in a couple of clicks. No DNS, but it stops working if the connection lapses."
+            onSelect={() => setPicked('mailbox')}
+          />
+          <MethodCard
+            title="Forward from your provider"
+            body="Point SendGrid, Mailgun, Postmark or Cloudflare Email Routing at a webhook. Most control, most setup."
+            onSelect={() => setPicked('webhook')}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      {method === 'domain' && <EmailDomainSection onVerified={onChanged} />}
+      {method === 'mailbox' && <EmailOauthSection onConnected={onChanged} />}
+      {method === 'webhook' && <EmailWebhookMethodNote />}
+
+      {/* Offered only while nothing is actually set up. Once a domain is
+          verified or a mailbox connected, that section owns its own removal
+          flow — hiding it behind a method switch would strand the only way to
+          undo it. */}
+      {configured === null && (
+        <button
+          type="button"
+          onClick={() => setPicked(null)}
+          className="-mx-2 inline-flex min-h-11 items-center rounded px-2 text-xs font-medium text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+        >
+          ← Use a different method
+        </button>
+      )}
+    </div>
+  )
+}
+
+function MethodCard({
+  title,
+  body,
+  badge,
+  onSelect,
+}: {
+  title: string
+  body: string
+  badge?: string
+  onSelect: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="flex h-full flex-col rounded-lg border border-gray-200 bg-white p-3 text-left transition hover:border-blue-300 hover:bg-blue-50/40"
+    >
+      {/* Wraps rather than shrinks. In a one-third column at the sm
+          breakpoint the badge stole enough width to break "Use your own
+          domain" onto four lines — the flex row shrank the title instead of
+          overflowing, so it measured as fitting while reading as broken. */}
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="text-xs font-medium text-gray-900">{title}</span>
+        {badge && (
+          <span className="shrink-0 rounded-full bg-blue-50 px-1.5 py-0.5 text-[0.5625rem] font-semibold uppercase tracking-wide text-blue-700">
+            {badge}
+          </span>
+        )}
+      </span>
+      <span className="mt-1 text-xs leading-relaxed text-gray-500">{body}</span>
+    </button>
+  )
+}
+
+function EmailWebhookMethodNote() {
+  return (
+    <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 space-y-2">
+      <p className="text-xs font-medium text-gray-600">Forward from your provider</p>
+      <p className="text-xs text-gray-500">
+        Use the webhook endpoint below. Mail starts flowing as soon as your provider posts to it — there is nothing
+        further to confirm here.
+      </p>
+    </div>
+  )
+}
+
 export function EmailIntegrationCard() {
   const [integration, setIntegration] = useState<EmailIntegration | null | undefined>(undefined)
   const [editing, setEditing] = useState(false)
+  // Which delivery method is actually set up, as opposed to which one someone
+  // clicked. Drives both the chooser's default and the status badge, because
+  // "enabled" and "mail can actually arrive" are different questions and the
+  // badge used to answer the first while appearing to answer the second.
+  const [configuredMethod, setConfiguredMethod] = useState<DeliveryMethod | null>(null)
   const [webhookSecret, setWebhookSecret] = useState<string | null>(null)
   const { toastMessage, showToast } = useToast()
   const [, startDeleteTransition] = useTransition()
@@ -1502,31 +1635,54 @@ export function EmailIntegrationCard() {
     setIntegration(data.find((i) => i.platform === 'email') ?? null)
   }
 
-  useEffect(() => { reloadIntegration() }, [])
+  // A verified domain or a live mailbox is the only evidence we have that mail
+  // can reach us. The webhook path leaves no trace to check — a provider is
+  // either posting to the endpoint or it is not — so it is deliberately not
+  // inferred here rather than guessed at.
+  async function reloadConfiguredMethod() {
+    const [domain, oauth] = await Promise.all([
+      fetch('/api/email-domain').then((r) => r.json()).catch(() => null),
+      fetch('/api/email-oauth').then((r) => r.json()).catch(() => null),
+    ])
+    if (domain) setConfiguredMethod('domain')
+    else if (oauth) setConfiguredMethod('mailbox')
+    else setConfiguredMethod(null)
+  }
+
+  useEffect(() => { reloadIntegration(); reloadConfiguredMethod() }, [])
 
   if (integration === undefined) return <p className="text-sm text-gray-400">Loading…</p>
 
   const connected = integration !== null && integration.enabled === 1
-  const showForm = !connected || editing
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
 
   return (
     <>
       {toastMessage && <Toast message={toastMessage} />}
       <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 text-sm font-bold">@</div>
+            <div className="w-8 h-8 shrink-0 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 text-sm font-bold">@</div>
             <div>
               <p className="text-sm font-medium text-gray-900">Email</p>
               <p className="text-xs text-gray-500">
-                {connected ? 'Connected' : 'Not connected'}
+                {!connected ? 'Not connected' : configuredMethod ? 'Connected' : 'Setup incomplete'}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${connected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-              {connected ? 'Active' : 'Inactive'}
+            {/* Enabling the channel is not the same as mail being able to
+                arrive. This read Active the moment the row existed, with no
+                domain verified and no mailbox connected — claiming a working
+                integration for one that could receive nothing. The webhook
+                path leaves no trace to check, so it stays pending until a
+                delivery method is provably in place. */}
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              !connected ? 'bg-gray-100 text-gray-500'
+                : configuredMethod ? 'bg-green-100 text-green-700'
+                : 'bg-amber-100 text-amber-700'
+            }`}>
+              {!connected ? 'Inactive' : configuredMethod ? 'Active' : 'Needs setup'}
             </span>
             {connected && !editing && (
               <Button
@@ -1541,9 +1697,12 @@ export function EmailIntegrationCard() {
           </div>
         </div>
 
-        {connected && <EmailDomainSection onVerified={reloadIntegration} />}
-
-        {connected && <EmailOauthSection onConnected={reloadIntegration} />}
+        {connected && (
+          <EmailDeliverySection
+            configured={configuredMethod}
+            onChanged={() => { reloadIntegration(); reloadConfiguredMethod() }}
+          />
+        )}
 
         {connected && !editing && (
           <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 divide-y divide-gray-100">
@@ -1582,8 +1741,29 @@ export function EmailIntegrationCard() {
           </div>
         )}
 
-        {showForm && (
-          <form key={editing ? 'edit' : 'new'} action={saveAction} className="space-y-3">
+        {/* Enabling the channel and tuning it are separate jobs, and mixing
+            them put three optional fields in front of the only button that
+            does anything. Sender filters, threshold and deflections are
+            meaningless until mail has somewhere to arrive from, so on the way
+            in this is a single action and those fields live where they already
+            had an editor — "Edit sender filters & deflections", below. */}
+        {!connected && (
+          <form action={saveAction} className="space-y-3">
+            <p className="text-xs text-gray-500">
+              Turn on the email channel, then choose how mail should reach it — your own domain, a Gmail or Outlook
+              mailbox, or a forward from your existing provider. Sender filters and deflection settings come after.
+            </p>
+            <Button type="submit" disabled={savePending}>
+              {savePending ? 'Setting up…' : 'Set up email'}
+            </Button>
+            {(saveState as { error?: string } | null)?.error && (
+              <p className="text-xs text-red-600">{(saveState as { error?: string }).error}</p>
+            )}
+          </form>
+        )}
+
+        {editing && (
+          <form key="edit" action={saveAction} className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
                 Allowed sender addresses/domains <span className="text-gray-400 font-normal">(optional — leave blank to accept all)</span>
