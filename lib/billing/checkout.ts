@@ -1,5 +1,5 @@
 import Stripe from 'stripe'
-import { getStripe, getOrCreateCustomer } from './stripe'
+import { getStripe } from './stripe'
 import { getPlan, stripePriceFor, TRIAL_DAYS, type BillingInterval, type Plan } from './plans'
 import { getSubscription } from '@/lib/db/queries/billing'
 import { getDb } from '@/lib/db/drizzle'
@@ -92,13 +92,18 @@ export async function createCheckoutSession(
   // swallowed, leaving a dead page with no indication anything went wrong.
   try {
     const existing = await getSubscription(orgId)
-    const customerId = existing?.stripeCustomerId ?? (await getOrCreateCustomer(orgId, email, name))
+    const customerId = existing?.stripeCustomerId ?? null
 
     const stripe = getStripe()
     const base = baseUrl()
 
     const checkoutSession = await stripe.checkout.sessions.create({
-      customer: customerId,
+      // Do not create a Stripe Customer before checkout. For a first-time
+      // signup, customer_email only prefills Checkout; Stripe creates the
+      // Customer as part of the completed subscription. Existing subscribers
+      // keep using their stored Customer so upgrades remain attached to the
+      // same billing record.
+      ...(customerId ? { customer: customerId } : { customer_email: email }),
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       // Back through /start-trial rather than straight to /billing. Stripe
@@ -202,13 +207,16 @@ export async function createEmbeddedCheckoutSession(
 
   try {
     const existing = await getSubscription(orgId)
-    const customerId = existing?.stripeCustomerId ?? (await getOrCreateCustomer(orgId, email, name))
+    const customerId = existing?.stripeCustomerId ?? null
 
     const stripe = getStripe()
     const base = baseUrl()
 
     const checkoutSession = await stripe.checkout.sessions.create({
-      customer: customerId,
+      // A new signup must not become a Stripe Customer merely by opening the
+      // payment form. Checkout creates the Customer when the subscription is
+      // completed; an existing subscriber keeps the stored Customer ID.
+      ...(customerId ? { customer: customerId } : { customer_email: email }),
       mode: 'subscription',
       // 'embedded_page', not 'embedded': the pinned API version
       // (2026-05-27.dahlia, see lib/billing/stripe.ts) renamed the ui_mode
