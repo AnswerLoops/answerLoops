@@ -47,13 +47,17 @@ function collapseStatus(status: string): DomainVerificationStatus {
 
 export async function registerDomain(domain: string): Promise<RegisteredDomain | { error: string }> {
   if (MOCK_EXTERNALS || !process.env.RESEND_API_KEY) {
-    return { error: 'Email sending is not configured — RESEND_API_KEY is missing' }
+    logger.error('Resend domain registration unavailable — platform email credentials are not configured', {
+      module: MOD,
+      domain,
+    })
+    return { error: 'Domain verification is temporarily unavailable. Please try again later.' }
   }
 
   const { data, error } = await client().domains.create({ name: domain })
   if (error || !data) {
     logger.error('Resend domain registration failed', { module: MOD, domain, error })
-    return { error: error?.message ?? 'Failed to register domain with Resend' }
+    return { error: 'Domain verification is temporarily unavailable. Please try again later.' }
   }
 
   const { dkim, returnPath } = extractRecords(data.records ?? [])
@@ -62,15 +66,19 @@ export async function registerDomain(domain: string): Promise<RegisteredDomain |
 
 export async function checkDomainStatus(
   providerDomainId: string
-): Promise<{ status: DomainVerificationStatus }> {
+): Promise<{ status: DomainVerificationStatus; error?: string }> {
   if (MOCK_EXTERNALS || !process.env.RESEND_API_KEY) {
-    return { status: 'pending' }
+    logger.error('Resend domain status check unavailable — platform email credentials are not configured', {
+      module: MOD,
+      providerDomainId,
+    })
+    return { status: 'pending', error: 'Domain verification is temporarily unavailable. Please try again later.' }
   }
 
   const { data, error } = await client().domains.get(providerDomainId)
   if (error || !data) {
     logger.error('Resend domain status check failed', { module: MOD, providerDomainId, error })
-    return { status: 'pending' }
+    return { status: 'pending', error: 'Domain verification is temporarily unavailable. Please try again later.' }
   }
 
   return { status: collapseStatus(data.status) }

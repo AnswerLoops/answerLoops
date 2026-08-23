@@ -1172,13 +1172,25 @@ interface EmailDomain {
 // no setInterval), then hands off to reply.ts once verified.
 function EmailDomainSection({ onVerified }: { onVerified: () => void }) {
   const [emailDomain, setEmailDomain] = useState<EmailDomain | null | undefined>(undefined)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [, startRemoveTransition] = useTransition()
 
   async function reload() {
-    const data: EmailDomain | null = await fetch('/api/email-domain').then((r) => r.json())
-    setEmailDomain(data)
-    if (data?.status === 'verified') onVerified()
+    setLoadError(null)
+    try {
+      const response = await fetch('/api/email-domain')
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const data: EmailDomain | null = await response.json()
+      setEmailDomain(data)
+      if (data?.status === 'verified') onVerified()
+    } catch {
+      // Keep the setup form usable when the status check is temporarily
+      // unavailable. Previously this left emailDomain undefined forever and
+      // rendered a blank panel, making the first method choice appear broken.
+      setEmailDomain(null)
+      setLoadError('Could not check for an existing domain. You can still try adding one.')
+    }
   }
 
   useEffect(() => { reload() }, [])
@@ -1220,7 +1232,13 @@ function EmailDomainSection({ onVerified }: { onVerified: () => void }) {
     setTimeout(() => setCopiedField(null), 2000)
   }
 
-  if (emailDomain === undefined) return null
+  if (emailDomain === undefined) {
+    return (
+      <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+        <p className="text-xs text-gray-500">Loading domain setup…</p>
+      </div>
+    )
+  }
 
   return (
     <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 space-y-3">
@@ -1229,6 +1247,7 @@ function EmailDomainSection({ onVerified }: { onVerified: () => void }) {
         Verify a domain you own so replies send from your own address instead of the platform-hosted one — the
         professional option, most reliable since it doesn&apos;t depend on any login staying active.
       </p>
+      {loadError && <p className="text-xs text-amber-700">{loadError}</p>}
 
       {emailDomain === null && (
         <form action={startAction} className="flex flex-wrap items-center gap-2">
