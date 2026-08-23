@@ -546,7 +546,8 @@ export async function checkEmailDomainVerificationAction(
   const existing = await getEmailDomain(orgId)
   if (!existing?.provider_domain_id) return { error: 'No domain registered' }
 
-  const { status } = await checkDomainStatus(existing.provider_domain_id)
+  const { status, error } = await checkDomainStatus(existing.provider_domain_id)
+  if (error) return { error }
   await updateEmailDomainStatus(orgId, status)
 
   // Flip the send path over the moment verification succeeds so reply.ts
