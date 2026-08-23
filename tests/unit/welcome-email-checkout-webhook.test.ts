@@ -8,20 +8,13 @@ import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
  * already pins the source shape, and shape assertions cannot see the property
  * that matters here.
  *
- * That property is exactly-once. It is not enforced by any single line; it
- * falls out of two independent guards that a refactor can break one at a time:
- * the event-id dedup table catches Stripe re-delivering the *same* event, and
- * the pre-upsert `getSubscription` read catches a *different* event for an org
- * that has subscribed before. Remove either and the failure is invisible in
- * review and invisible in staging — you need a genuine retry, or a real
- * cancel-and-resubscribe, to see a customer welcomed twice.
+ * That property is exactly-once. It is enforced by the event-id dedup table
+ * for repeated deliveries and by the transaction-level org lock used when a
+ * checkout first creates a subscription. The latter matters because two
+ * different checkout events can arrive concurrently for the same org.
  *
- * The ordering between them is load-bearing and equally quiet: the read has to
- * happen before the upsert writes the row it is looking for. Written the other
- * way round the check can never be false, and every checkout looks like a
- * first one forever. The fake billing store below is stateful precisely so
- * that mistake fails here — `getSubscription` returns what `upsertSubscription`
- * last wrote, the same as the real table.
+ * The fake billing store below is stateful precisely so the first-subscription
+ * claim remains observable in these route-level tests.
  *
  * Signature verification is the one thing stubbed rather than exercised: the
  * route delegates it wholesale to `getStripe().webhooks.constructEvent`, so
@@ -36,6 +29,7 @@ const VALID_SIG = 'valid-test-signature'
 const {
   store,
   upsertSubscription,
+  upsertSubscriptionAndClaimWelcome,
   getSubscription,
   getSubscriptionByStripeId,
   hasProcessedWebhookEvent,
@@ -57,6 +51,11 @@ const {
     upsertSubscription: vi.fn(async (row: { orgId: number }) => {
       store.subsByOrg.set(row.orgId, row as Record<string, unknown>)
     }),
+    upsertSubscriptionAndClaimWelcome: vi.fn(async (row: { orgId: number }) => {
+      const isFirst = !store.subsByOrg.has(row.orgId)
+      store.subsByOrg.set(row.orgId, row as Record<string, unknown>)
+      return isFirst
+    }),
     getSubscription: vi.fn(async (orgId: number) => store.subsByOrg.get(orgId) ?? null),
     getSubscriptionByStripeId: vi.fn(async () => null),
     hasProcessedWebhookEvent: vi.fn(async (id: string) => store.processedEvents.has(id)),
@@ -64,7 +63,7 @@ const {
       store.processedEvents.add(id)
     }),
     pruneOldWebhookEvents: vi.fn(async () => {}),
-    getOrgOwner: vi.fn(async (): Promise<{ email: string | null; name: string | null } | null> => null),
+    getOrgOwner: vi.fn(async (_orgId: number): Promise<{ email: string | null; name: string | null } | null> => null),
     getOrgMembers: vi.fn(async () => []),
     sendWelcomeEmail: vi.fn(async () => {}),
     logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -84,6 +83,7 @@ vi.mock('@/lib/billing/stripe', () => ({
 
 vi.mock('@/lib/db/queries/billing', () => ({
   upsertSubscription,
+  upsertSubscriptionAndClaimWelcome,
   getSubscription,
   getSubscriptionByStripeId,
   hasProcessedWebhookEvent,
@@ -154,6 +154,11 @@ beforeEach(() => {
   vi.clearAllMocks()
   store.subsByOrg.clear()
   store.processedEvents.clear()
+  upsertSubscriptionAndClaimWelcome.mockImplementation(async (row: { orgId: number }) => {
+    const isFirst = !store.subsByOrg.has(row.orgId)
+    store.subsByOrg.set(row.orgId, row as Record<string, unknown>)
+    return isFirst
+  })
   getOrgOwner.mockResolvedValue(null)
   sendWelcomeEmail.mockResolvedValue(undefined)
   process.env.STRIPE_WEBHOOK_SECRET = 'whsec-test'
@@ -206,7 +211,7 @@ describe('checkout webhook: a customer is welcomed exactly once, ever', () => {
     expect(sendWelcomeEmail).toHaveBeenCalledTimes(1)
     // The resubscribe still has to be applied — suppressing the email must not
     // suppress the subscription write.
-    expect(upsertSubscription).toHaveBeenCalledTimes(2)
+    expect(upsertSubscriptionAndClaimWelcome).toHaveBeenCalledTimes(2)
   })
 
   it('sends nothing for an org that already had a subscription row before this event', async () => {
@@ -220,20 +225,35 @@ describe('checkout webhook: a customer is welcomed exactly once, ever', () => {
 
     expect(res.status).toBe(200)
     expect(sendWelcomeEmail).not.toHaveBeenCalled()
-    expect(upsertSubscription).toHaveBeenCalledTimes(1)
+    expect(upsertSubscriptionAndClaimWelcome).toHaveBeenCalledTimes(1)
   })
 
-  it('reads the existing subscription before writing the new one', async () => {
-    // Written in the other order the check reads back the row it just wrote,
-    // is true on every checkout, and no one is ever welcomed. Asserted on call
-    // order because both calls succeed either way.
+  it('uses the atomic first-subscription claim for checkout completion', async () => {
     getOrgOwner.mockResolvedValue({ email: 'ada@example.com', name: 'Ada' })
 
     await post(checkoutEvent())
 
-    const readAt = getSubscription.mock.invocationCallOrder[0]
-    const writeAt = upsertSubscription.mock.invocationCallOrder[0]
-    expect(readAt, 'the pre-existing-subscription read must precede the upsert').toBeLessThan(writeAt)
+    expect(upsertSubscriptionAndClaimWelcome).toHaveBeenCalledTimes(1)
+    expect(upsertSubscriptionAndClaimWelcome).toHaveBeenCalledWith(expect.objectContaining({ orgId: 42 }))
+  })
+
+  it('sends only one welcome when concurrent checkout events target one org', async () => {
+    getOrgOwner.mockResolvedValue({ email: 'ada@example.com', name: 'Ada' })
+
+    let claimed = false
+    upsertSubscriptionAndClaimWelcome.mockImplementation(async () => {
+      if (claimed) return false
+      claimed = true
+      await new Promise((resolve) => setTimeout(resolve, 5))
+      return true
+    })
+
+    await Promise.all([
+      post(checkoutEvent({ id: 'evt_concurrent_1' })),
+      post(checkoutEvent({ id: 'evt_concurrent_2' })),
+    ])
+
+    expect(sendWelcomeEmail).toHaveBeenCalledTimes(1)
   })
 
   it('welcomes each org separately', async () => {

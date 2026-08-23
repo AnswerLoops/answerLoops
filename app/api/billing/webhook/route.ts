@@ -3,6 +3,7 @@ import type Stripe from 'stripe'
 import { getStripe } from '@/lib/billing/stripe'
 import {
   upsertSubscription,
+  upsertSubscriptionAndClaimWelcome,
   getSubscription,
   getSubscriptionByStripeId,
   hasProcessedWebhookEvent,
@@ -104,13 +105,10 @@ export async function POST(req: Request) {
           return NextResponse.json({ error: 'Unrecognized plan_id' }, { status: 500 })
         }
 
-        // Read before the upsert writes one: this is the difference between a
-        // first-ever subscription and a resubscription, and it is the only
-        // thing standing between "welcome" and greeting a returning customer
-        // as though they were new.
-        const hadSubscriptionBefore = (await getSubscription(orgId)) !== null
-
-        await upsertSubscription({
+        // The read and write must be one transaction. Stripe can deliver two
+        // checkout events for an org concurrently; a standalone read-before-
+        // write lets both requests decide they are the first subscription.
+        const isFirstSubscription = await upsertSubscriptionAndClaimWelcome({
           orgId,
           planId: requestedPlan.id,
           status: 'trialing',
@@ -134,9 +132,9 @@ export async function POST(req: Request) {
         //
         // Nothing here may throw. A mail failure must not turn into a non-2xx,
         // because Stripe would retry an event whose subscription is already
-        // written. If it somehow does, the retry is harmless: the row now
-        // exists, so hadSubscriptionBefore is true and no second email is sent.
-        if (!hadSubscriptionBefore) {
+        // written. If it somehow does, the retry is harmless: the atomic
+        // claim returns false after the row exists, so no second email is sent.
+        if (isFirstSubscription) {
           try {
             const owner = await getOrgOwner(orgId)
             const to = owner?.email ?? session.customer_details?.email ?? null

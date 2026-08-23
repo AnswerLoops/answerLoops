@@ -41,13 +41,11 @@ describe('webhook idempotency (item 49a)', () => {
     expect(checkBlock).toContain('duplicate: true')
   })
 
-  it('marks the event processed only after the switch succeeds, not before', () => {
+  it('uses a transaction-level org claim for first-subscription welcome delivery', () => {
     const s = src()
-    const switchIdx = s.indexOf('switch (event.type)')
-    const markIdx = s.indexOf('await markWebhookEventProcessed(event.id)')
-    const finalReturnIdx = s.lastIndexOf("NextResponse.json({ received: true })")
-    expect(markIdx).toBeGreaterThan(switchIdx)
-    expect(markIdx).toBeLessThan(finalReturnIdx)
+    expect(s).toContain('upsertSubscriptionAndClaimWelcome')
+    expect(s).toContain('const isFirstSubscription = await upsertSubscriptionAndClaimWelcome')
+    expect(s).toContain('if (isFirstSubscription)')
   })
 })
 
@@ -68,9 +66,10 @@ describe('webhook event-ordering guard (item 49b)', () => {
     const s = src()
     const upsertCallCount = [...s.matchAll(/await upsertSubscription\(\{/g)].length
     const lastEventCreatedCount = [...s.matchAll(/lastEventCreated: event\.created/g)].length
-    // checkout.completed, subscription.updated, subscription.deleted, invoice.payment_failed
-    expect(upsertCallCount).toBe(4)
-    expect(lastEventCreatedCount).toBe(upsertCallCount)
+    // subscription.updated, subscription.deleted, invoice.payment_failed;
+    // checkout.completed uses the transaction-level first-subscription helper.
+    expect(upsertCallCount).toBe(3)
+    expect(lastEventCreatedCount).toBe(4)
   })
 })
 
@@ -110,6 +109,13 @@ describe('lib/db/queries/billing.ts — dedup + ordering support', () => {
     expect(s).toContain('export async function hasProcessedWebhookEvent(')
     expect(s).toContain('export async function markWebhookEventProcessed(')
     expect(s).toContain('export async function pruneOldWebhookEvents(')
+  })
+
+  it('serializes first-subscription claims per org', () => {
+    const s = querySrc()
+    expect(s).toContain('export async function upsertSubscriptionAndClaimWelcome(')
+    expect(s).toContain('pg_advisory_xact_lock(8451')
+    expect(s).toContain('return !existing')
   })
 })
 

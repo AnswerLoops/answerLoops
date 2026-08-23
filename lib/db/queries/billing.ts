@@ -104,6 +104,75 @@ export async function upsertSubscription(input: {
     })
 }
 
+/**
+ * Upserts the subscription while atomically claiming the org's first welcome.
+ *
+ * Stripe can deliver two checkout events for one org concurrently. The caller
+ * must not perform a read-before-write outside a transaction: both requests
+ * can observe an empty subscriptions row and both send the welcome email. The
+ * advisory transaction lock serializes checkout completion for this org, so
+ * exactly one caller sees the org without a subscription.
+ */
+export async function upsertSubscriptionAndClaimWelcome(input: {
+  orgId: number
+  planId: string
+  status: string
+  stripeCustomerId?: string | null
+  stripeSubscriptionId?: string | null
+  stripePriceId?: string | null
+  currentPeriodStart?: string | null
+  currentPeriodEnd?: string | null
+  cancelAtPeriodEnd?: boolean
+  trialEndsAt?: string | null
+  lastEventCreated?: number | null
+}): Promise<boolean> {
+  const now = new Date().toISOString()
+  return getDb().transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(8451, ${input.orgId})`)
+
+    const [existing] = await tx
+      .select({ id: subscriptions.id })
+      .from(subscriptions)
+      .where(eq(subscriptions.orgId, input.orgId))
+      .limit(1)
+
+    await tx
+      .insert(subscriptions)
+      .values({
+        orgId: input.orgId,
+        planId: input.planId,
+        status: input.status,
+        stripeCustomerId: input.stripeCustomerId ?? null,
+        stripeSubscriptionId: input.stripeSubscriptionId ?? null,
+        stripePriceId: input.stripePriceId ?? null,
+        currentPeriodStart: input.currentPeriodStart ?? null,
+        currentPeriodEnd: input.currentPeriodEnd ?? null,
+        cancelAtPeriodEnd: input.cancelAtPeriodEnd ? 1 : 0,
+        trialEndsAt: input.trialEndsAt ?? null,
+        lastEventCreated: input.lastEventCreated ?? null,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: subscriptions.orgId,
+        set: {
+          planId: input.planId,
+          status: input.status,
+          ...(input.stripeCustomerId !== undefined ? { stripeCustomerId: input.stripeCustomerId } : {}),
+          ...(input.stripeSubscriptionId !== undefined ? { stripeSubscriptionId: input.stripeSubscriptionId } : {}),
+          ...(input.stripePriceId !== undefined ? { stripePriceId: input.stripePriceId } : {}),
+          ...(input.currentPeriodStart !== undefined ? { currentPeriodStart: input.currentPeriodStart } : {}),
+          ...(input.currentPeriodEnd !== undefined ? { currentPeriodEnd: input.currentPeriodEnd } : {}),
+          ...(input.cancelAtPeriodEnd !== undefined ? { cancelAtPeriodEnd: input.cancelAtPeriodEnd ? 1 : 0 } : {}),
+          ...(input.trialEndsAt !== undefined ? { trialEndsAt: input.trialEndsAt } : {}),
+          ...(input.lastEventCreated !== undefined ? { lastEventCreated: input.lastEventCreated } : {}),
+          updatedAt: now,
+        },
+      })
+
+    return !existing
+  })
+}
+
 /** True if this Stripe event id has already been applied — webhook retries are common and expected. */
 export async function hasProcessedWebhookEvent(eventId: string): Promise<boolean> {
   const [row] = await getDb()
