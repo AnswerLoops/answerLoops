@@ -12,7 +12,7 @@
 
 </div>
 
-# AnswerLoops — open-source AI support agent for Discord, Slack, and GitHub
+# AnswerLoops — Agentic Open Source, AI support agent for Discord, Slack, and GitHub
 
 **Support automation you can inspect, extend, and own.**
 
