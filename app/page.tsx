@@ -1,8 +1,16 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { ORDERED_PLANS } from '@/lib/billing/plans'
 import { AnimatedChat } from '@/components/animated-chat'
 import { Nav, Footer, GithubIcon, GITHUB_URL } from '@/components/marketing/chrome'
 import { resolveNavState } from '@/lib/marketing/nav-state'
+
+export const metadata: Metadata = {
+  title: 'AnswerLoops — Agentic support for developer communities',
+  description:
+    'Agentic AI support for developer communities: resolve repeat questions across Discord, Slack, Google Chat, GitHub, Telegram, email, and website chat. Open source, self-hosted, and MCP/API-ready.',
+  alternates: { canonical: '/' },
+}
 
 export const dynamic = 'force-dynamic'
 

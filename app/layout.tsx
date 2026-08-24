@@ -13,8 +13,32 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://answerloops.com'),
   title: "AnswerLoops",
-  description: "Discord community support platform with AI triage",
+  description:
+    "Agentic AI support for developer communities: AnswerLoops resolves repeat questions across Discord, Slack, Google Chat, GitHub, Telegram, email, and website chat. Open source, self-hosted, and MCP/API-ready.",
+  openGraph: {
+    type: 'website',
+    siteName: 'AnswerLoops',
+    title: 'AnswerLoops — Agentic support for developer communities',
+    description:
+      'Resolve repeat questions across every community channel with confidence-gated automation. Open source, self-hosted, and MCP/API-ready.',
+    images: [
+      {
+        url: '/logo.png',
+        width: 900,
+        height: 900,
+        alt: 'AnswerLoops logo',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'AnswerLoops — Agentic support for developer communities',
+    description:
+      'Resolve repeat questions across every community channel with confidence-gated automation. Open source, self-hosted, and MCP/API-ready.',
+    images: ['/logo.png'],
+  },
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },

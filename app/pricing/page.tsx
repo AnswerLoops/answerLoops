@@ -12,7 +12,75 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Pricing — AnswerLoops',
-  description: 'Simple, deflection-based pricing for AnswerLoops. Self-host it yourself, or choose a hosted plan with a 14-day free trial. Save 20% billed annually.',
+  description: 'AnswerLoops pricing for agentic developer-community support. Self-host the open-source platform for free, or choose a hosted plan with a 14-day trial and MCP/API access.',
+  alternates: { canonical: '/pricing' },
+  openGraph: {
+    title: 'Pricing — AnswerLoops',
+    description: 'Self-host AnswerLoops for free or choose a hosted plan for agentic support across Discord, Slack, GitHub, email, and web chat.',
+    url: '/pricing',
+  },
+  twitter: {
+    title: 'Pricing — AnswerLoops',
+    description: 'Self-host AnswerLoops for free or choose a hosted plan for agentic support across every community channel.',
+  },
+}
+
+function PricingStructuredData() {
+  const softwareJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'AnswerLoops',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    url: 'https://answerloops.com/pricing',
+    description: 'Agentic AI support for developer communities across Discord, Slack, Google Chat, GitHub, Telegram, email, and website chat.',
+    offers: [
+      {
+        '@type': 'Offer',
+        name: 'Self-hosted',
+        price: '0',
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+        description: 'Open-source platform running on your own infrastructure.',
+      },
+      ...ORDERED_PLANS.map((plan) => ({
+        '@type': 'Offer',
+        name: plan.name,
+        price: (plan.priceMonthly / 100).toString(),
+        priceCurrency: 'USD',
+        availability: 'https://schema.org/InStock',
+        priceSpecification: {
+          '@type': 'UnitPriceSpecification',
+          price: (plan.priceMonthly / 100).toString(),
+          priceCurrency: 'USD',
+          billingDuration: 'P1M',
+        },
+        description: plan.deflectionsPerMonth === null
+          ? 'Unlimited deflections per month with a 14-day hosted trial.'
+          : `${plan.deflectionsPerMonth.toLocaleString()} deflections per month with a 14-day hosted trial.`,
+      })),
+    ],
+  }
+
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: PRICING_FAQ.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a,
+      },
+    })),
+  }
+
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+    </>
+  )
 }
 
 const PRICING_FAQ = [
@@ -67,6 +135,7 @@ export default async function PricingPage({
 
   return (
     <div className="min-h-screen bg-[#f5f8fd]">
+      <PricingStructuredData />
       <Nav state={navState} />
 
       <section className="relative isolate overflow-hidden bg-[#030611] pb-48 pt-20 sm:pb-56 sm:pt-28">

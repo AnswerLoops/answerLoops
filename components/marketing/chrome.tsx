@@ -204,6 +204,7 @@ export function Footer() {
               <div className="flex flex-col gap-2">
                 <Link href="/#features" className="text-xs text-white/50 transition-colors hover:text-white/85">Features</Link>
                 <Link href="/#how-it-works" className="text-xs text-white/50 transition-colors hover:text-white/85">How it works</Link>
+                <Link href="/agentic-support" className="text-xs text-white/50 transition-colors hover:text-white/85">Agentic support</Link>
                 <Link href="/pricing" className="text-xs text-white/50 transition-colors hover:text-white/85">Pricing</Link>
               </div>
             </div>
