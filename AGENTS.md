@@ -30,6 +30,11 @@ PR comments, issue titles or bodies, release notes, or generated signatures.
 Commits and PRs must be authored and signed only as the configured human or
 repository identity, with no assistant attribution.
 
+Backend vendor names and implementation details must not appear in
+customer-facing UI, public documentation, or pull-request descriptions unless
+the customer must configure that vendor directly. Describe the capability and
+the customer action instead of exposing the internal provider.
+
 Example:
 ```
 fix: await createArticle so KB URL imports persist
