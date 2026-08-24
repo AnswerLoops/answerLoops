@@ -27,6 +27,9 @@ describe('schema: emailDomains + integrations.emailSendMethod', () => {
       'dkimRecordValue',
       'returnPathRecordName',
       'returnPathRecordValue',
+      'receivingRecordName',
+      'receivingRecordValue',
+      'receivingRecordPriority',
       'dmarcSuggestion',
       'status',
       'lastCheckedAt',
@@ -62,6 +65,8 @@ describe('resend domains wrapper (lib/email/domain.ts)', () => {
     const src = readSrc('lib/email/domain.ts')
     expect(src).toContain("r.record === 'SPF'")
     expect(src).toContain("r.record === 'DKIM'")
+    expect(src).toContain("r.record === 'Receiving'")
+    expect(src).toContain('receivingRecord.name, value: receivingRecord.value')
   })
 
   it('explains when Resend rejects a domain because it is already registered', () => {
@@ -80,9 +85,20 @@ describe('resend domains wrapper (lib/email/domain.ts)', () => {
 describe('email-domains query layer', () => {
   it('exports the CRUD functions', async () => {
     const q = await import('../../lib/db/queries/email-domains')
-    for (const fn of ['getEmailDomain', 'upsertEmailDomain', 'updateEmailDomainStatus', 'deleteEmailDomain']) {
+    for (const fn of ['getEmailDomain', 'getEmailDomainByDomain', 'upsertEmailDomain', 'updateEmailDomainStatus', 'deleteEmailDomain']) {
       expect(typeof (q as Record<string, unknown>)[fn], fn).toBe('function')
     }
+  })
+})
+
+describe('inbound receiving path', () => {
+  it('registers Resend receiving and routes signed email.received events by domain', () => {
+    const domain = readSrc('lib/email/domain.ts')
+    const route = readSrc('app/api/email/ingest/route.ts')
+    expect(domain).toContain("receiving: 'enabled'")
+    expect(route).toContain("eventType !== 'email.received'")
+    expect(route).toContain('getEmailDomainByDomain(recipientDomain)')
+    expect(route).toContain('emails.receiving.get(emailId)')
   })
 })
 

@@ -22,6 +22,14 @@ Every commit **must** have a subject line AND a body. No exceptions.
 - **Body**: explain WHY the change was made and WHAT problem it solves. At least 2–3 sentences. Include the root cause for bug fixes, the user value for features, and any non-obvious context a future reader needs.
 - **Never** add `Co-Authored-By`, `Claude`, or any AI attribution trailer.
 
+## Attribution and naming rule — HARD RULE
+
+The agent name must never appear in repository-facing project metadata. Do not
+include it in branch names, commit subjects or bodies, PR titles or bodies,
+PR comments, issue titles or bodies, release notes, or generated signatures.
+Commits and PRs must be authored and signed only as the configured human or
+repository identity, with no assistant attribution.
+
 Example:
 ```
 fix: await createArticle so KB URL imports persist

@@ -362,12 +362,11 @@ export const integrations = pgTable(
   ]
 )
 
-// Verified custom-domain sending for the email channel (Phase 1 of the email
-// integration redesign). An org registers a
-// domain, we hand back Resend's DKIM + return-path (SPF) DNS records to
-// paste at their DNS host, then poll status until Resend confirms
-// ownership. Once verified, lib/email/reply.ts sends from this domain
-// instead of the platform-hosted address.
+// Verified custom-domain sending and receiving for the email channel. An org
+// registers a domain, we hand back Resend's DKIM, return-path (SPF), and
+// receiving MX records to paste at their DNS host, then poll status until
+// Resend confirms ownership. Once verified, replies use this domain and
+// Resend's email.received events route customer mail into the org's tickets.
 export const emailDomains = pgTable(
   'email_domains',
   {
@@ -380,6 +379,9 @@ export const emailDomains = pgTable(
     dkimRecordValue: text('dkim_record_value'),
     returnPathRecordName: text('return_path_record_name'),
     returnPathRecordValue: text('return_path_record_value'),
+    receivingRecordName: text('receiving_record_name'),
+    receivingRecordValue: text('receiving_record_value'),
+    receivingRecordPriority: integer('receiving_record_priority'),
     dmarcSuggestion: text('dmarc_suggestion'), // informational copy only, not enforced/polled
     // 'pending' | 'verified' | 'failed' — mirrors Resend's DomainStatus,
     // collapsed (not_started/partially_* fold into 'pending')
