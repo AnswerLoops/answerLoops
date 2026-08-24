@@ -1,7 +1,9 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { DEFAULT_ORG_ID } from '@/lib/db/schema'
 import { buildGmailAuthUrl } from '@/lib/email/gmail'
+
+export const GMAIL_OAUTH_STATE_COOKIE = 'answerloops-gmail-oauth-state'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -18,5 +20,13 @@ export async function GET(req: NextRequest) {
     return Response.redirect(settingsUrl)
   }
 
-  return Response.redirect(authUrl)
+  const response = NextResponse.redirect(authUrl)
+  response.cookies.set(GMAIL_OAUTH_STATE_COOKIE, state, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 10 * 60,
+    path: '/',
+  })
+  return response
 }

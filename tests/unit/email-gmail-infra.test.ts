@@ -119,11 +119,15 @@ describe('server actions + routes: Gmail connect/disconnect flow', () => {
     const src = readSrc('app/api/email/gmail/install/route.ts')
     expect(src).toContain('buildGmailAuthUrl')
     expect(src).toContain('base64url')
+    expect(src).toContain('answerloops-gmail-oauth-state')
+    expect(src).toContain('httpOnly: true')
   })
 
   it('callback route validates state expiry and upserts the connection + send method', () => {
     const src = readSrc('app/api/email/gmail/callback/route.ts')
     expect(src).toContain('10 * 60 * 1000')
+    expect(src).toContain('stateCookie')
+    expect(src).toContain('state mismatch')
     expect(src).toContain('upsertEmailOauthConnection')
     expect(src).toContain("emailSendMethod: 'oauth'")
   })
