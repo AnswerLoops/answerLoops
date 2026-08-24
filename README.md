@@ -12,11 +12,13 @@
 
 </div>
 
-# AnswerLoops — Agentic Open Source, AI support agent for Discord, Slack, and GitHub
+# AnswerLoops — Open-source AI support agent for developer communities
 
 **Support automation you can inspect, extend, and own.**
 
-AnswerLoops is an open-source AI support platform for developer communities. It turns questions from Discord, Slack, Google Chat, GitHub, Telegram, email, and an embeddable web widget into one structured support pipeline.
+AnswerLoops is an open-source, self-hosted AI support agent for developer communities. It turns repeat questions from Discord, GitHub, Slack, Google Chat, Telegram, email, and an embeddable web widget into one structured support pipeline, with confidence-gated automation and human escalation for uncertain answers.
+
+It is built for open-source maintainers, developer-relations teams, and community operators who want support automation they can inspect, extend, and run on their own infrastructure—not a generic chatbot or a seat-based helpdesk.
 
 The important part is the gate between “the model produced text” and “a customer saw it.” AnswerLoops retrieves evidence from your knowledge base and connected repositories, drafts an answer, and asks a separate reviewer pass to grade it. Strong answers can be posted automatically; uncertain answers stay in the human queue with the context and draft attached.
 

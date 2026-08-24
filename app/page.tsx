@@ -4,6 +4,7 @@ import { ORDERED_PLANS } from '@/lib/billing/plans'
 import { AnimatedChat } from '@/components/animated-chat'
 import { Nav, Footer, GithubIcon, GITHUB_URL } from '@/components/marketing/chrome'
 import { resolveNavState } from '@/lib/marketing/nav-state'
+import { ORGANIZATION_ID } from '@/lib/site-identity'
 
 export const metadata: Metadata = {
   title: 'AnswerLoops — Agentic support for developer communities',
@@ -582,6 +583,7 @@ function StructuredData() {
     operatingSystem: 'Web',
     description: 'AI community support platform that auto-answers repeat Discord, Slack, Google Chat, GitHub, Telegram, and email questions from your knowledge base, escalating only the hard ones to a human.',
     url: 'https://answerloops.com',
+    provider: { '@id': ORGANIZATION_ID },
     offers: [
       {
         '@type': 'Offer',
