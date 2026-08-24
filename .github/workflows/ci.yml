@@ -25,6 +25,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  llms-txt:
+    name: Check llms.txt freshness
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: 22
+
+      - run: node scripts/sync-llms-txt.mjs --check
+
   test-and-build:
     name: Test + build
     runs-on: ubuntu-latest
