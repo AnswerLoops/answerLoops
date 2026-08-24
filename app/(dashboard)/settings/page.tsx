@@ -3543,13 +3543,13 @@ export default function SettingsPage() {
       </div>
 
       {/* Tab bar */}
-      <div className="mb-7 flex gap-1 overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-sm">
+      <div className="mb-7 flex min-w-0 gap-1 overflow-x-auto rounded-2xl border border-slate-200/80 bg-white/80 p-2 shadow-sm">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setTab(tab.id)}
             className={[
-              'rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors',
+              'shrink-0 rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors',
               activeTab === tab.id
                 ? 'bg-[#07101f] text-white shadow-md'
                 : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900',
