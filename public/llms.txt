@@ -26,6 +26,7 @@ Self-hosted: free forever (AGPL-3.0). Hosted (managed SaaS): Standard $29/mo (50
 
 ## Integrations
 
+<!-- BEGIN GENERATED INTEGRATION LINKS -->
 - Discord: https://answerloops.com/docs/integrations/discord
 - Slack: https://answerloops.com/docs/integrations/slack
 - Google Chat: https://answerloops.com/docs/integrations/google-chat
@@ -34,10 +35,19 @@ Self-hosted: free forever (AGPL-3.0). Hosted (managed SaaS): Standard $29/mo (50
 - GitHub: https://answerloops.com/docs/integrations/github
 - MCP server: https://answerloops.com/docs/integrations/mcp
 - Agent API (REST): https://answerloops.com/docs/integrations/agent-api
+<!-- END GENERATED INTEGRATION LINKS -->
 
 ## Links
 
+<!-- BEGIN GENERATED PUBLIC LINKS -->
 - Marketing site: https://answerloops.com
+- Agentic support overview: https://answerloops.com/agentic-support
+- Pricing: https://answerloops.com/pricing
+- Privacy policy: https://answerloops.com/privacy
+- Terms of service: https://answerloops.com/terms
+- AnswerLoops vs Chatbase: https://answerloops.com/vs/chatbase
+- AnswerLoops vs Intercom: https://answerloops.com/vs/intercom
+<!-- END GENERATED PUBLIC LINKS -->
 - Documentation: https://answerloops.com/docs
 - Source code (self-hosted): https://github.com/AnswerLoops/answerLoops
 - API/MCP endpoint: https://answerloops.com/api/mcp
