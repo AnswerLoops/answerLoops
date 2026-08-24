@@ -3,13 +3,13 @@ import { auth } from '@/auth'
 import { exchangeGmailCode } from '@/lib/email/gmail'
 import { upsertEmailOauthConnection } from '@/lib/db/queries/email-oauth'
 import { upsertIntegration } from '@/lib/db/queries/integrations'
-import { GMAIL_OAUTH_STATE_COOKIE } from '../install/route'
+import { clearGmailOauthStateCookie, GMAIL_OAUTH_STATE_COOKIE } from '../install/route'
+import { appOrigin } from '@/lib/site'
 
 function redirectWithError(url: URL, error: string): NextResponse {
   url.searchParams.set('gmail_error', error)
   const response = NextResponse.redirect(url)
-  response.cookies.delete(GMAIL_OAUTH_STATE_COOKIE)
-  return response
+  return clearGmailOauthStateCookie(response)
 }
 
 export async function GET(req: NextRequest) {
@@ -22,7 +22,11 @@ export async function GET(req: NextRequest) {
   const state = searchParams.get('state')
   const stateCookie = req.cookies.get(GMAIL_OAUTH_STATE_COOKIE)?.value
 
-  const baseUrl = process.env.AUTH_URL ?? req.nextUrl.origin
+  // Keep the post-consent page on the product host. In the hosted deployment
+  // the callback may be registered on the apex domain while the dashboard is
+  // on the app subdomain; the shared state cookie makes that callback safe,
+  // and this keeps the user from landing on the marketing host afterward.
+  const baseUrl = appOrigin() ?? process.env.AUTH_URL ?? req.nextUrl.origin
   const settingsUrl = new URL('/settings', baseUrl)
   settingsUrl.searchParams.set('tab', 'email')
 
@@ -61,6 +65,5 @@ export async function GET(req: NextRequest) {
 
   settingsUrl.searchParams.set('gmail_connected', '1')
   const response = NextResponse.redirect(settingsUrl)
-  response.cookies.delete(GMAIL_OAUTH_STATE_COOKIE)
-  return response
+  return clearGmailOauthStateCookie(response)
 }

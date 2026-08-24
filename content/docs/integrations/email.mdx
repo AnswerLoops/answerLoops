@@ -83,6 +83,8 @@ AnswerLoops only ever requests permission to *send* mail as you — it never rea
 2. Click **Connect Gmail** or **Connect Outlook** and approve AnswerLoops on the provider's consent screen.
 3. Once approved, replies automatically send from your connected mailbox — no separate toggle needed.
 
+If the consent screen completes but the settings page does not show the mailbox as connected, make sure the OAuth callback URL and the deployment's app URL are configured for the same deployment. Hosted deployments that use a separate app subdomain must also share the authentication cookie across the apex domain so the callback can complete.
+
 If the connection is ever revoked (password change, admin revocation, long inactivity), AnswerLoops detects it the next time it tries to send, emails your org's admins the same day with a reconnect link, and falls replies back to the platform default in the meantime — nothing is silently dropped. The Email card shows a distinct "connection lost — reconnect" state until you reconnect.
 
 Removing the connection reverts sending to the platform default.

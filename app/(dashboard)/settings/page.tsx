@@ -1170,9 +1170,8 @@ interface EmailDomain {
 }
 
 // "Use your own domain" section of EmailIntegrationCard — registers a
-// domain with Resend, shows the DNS records to add, polls verification
-// status (Google Chat's pendingCode → "Check connection status" pattern,
-// no setInterval), then hands off to reply.ts once verified.
+// domain, shows the DNS records to add, checks verification status on demand,
+// then hands off to reply.ts once verified.
 function EmailDomainSection({ onVerified }: { onVerified: () => void }) {
   const [emailDomain, setEmailDomain] = useState<EmailDomain | null | undefined>(undefined)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -1245,10 +1244,10 @@ function EmailDomainSection({ onVerified }: { onVerified: () => void }) {
 
   return (
     <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 space-y-3">
-      <p className="text-xs font-medium text-gray-600">Use your own domain</p>
+      <p className="text-sm font-medium text-gray-700">Connect your support email</p>
       <p className="text-xs text-gray-500">
-        Verify a domain you own so customers can email support@yourdomain and replies send from that same domain.
-        This is the reliable option and does not depend on a mailbox login.
+        Customers will email <code className="font-mono">support@yourdomain</code>. Their messages will become tickets here,
+        and replies will be sent from <code className="font-mono">noreply@yourdomain</code>.
       </p>
       {loadError && <p className="text-xs text-amber-700">{loadError}</p>}
 
@@ -1261,7 +1260,7 @@ function EmailDomainSection({ onVerified }: { onVerified: () => void }) {
             className="flex-1 min-w-[10rem] rounded border border-gray-200 px-3 py-1.5 text-sm font-mono"
           />
           <Button type="submit" size="sm" disabled={startPending}>
-            {startPending ? 'Registering…' : 'Use your own domain'}
+            {startPending ? 'Starting setup…' : 'Continue'}
           </Button>
         </form>
       )}
@@ -1271,12 +1270,16 @@ function EmailDomainSection({ onVerified }: { onVerified: () => void }) {
 
       {emailDomain?.status === 'pending' && (
         <div className="space-y-2">
-          <p className="text-xs text-gray-500">
-            Add these DNS records at your domain host, then check verification status.
-          </p>
+          <div className="rounded-md border border-blue-100 bg-blue-50/60 p-3 space-y-1">
+            <p className="text-xs font-medium text-gray-700">Almost there</p>
+            <p className="text-xs text-gray-600">
+              Add these records wherever your DNS is managed (usually your domain registrar). They verify outgoing mail
+              and route customer emails into your tickets.
+            </p>
+          </div>
           {emailDomain.dkim_record_name && emailDomain.dkim_record_value && (
             <DnsRecordRow
-              label="DKIM"
+              label="Verify outgoing mail"
               name={emailDomain.dkim_record_name}
               value={emailDomain.dkim_record_value}
               copied={copiedField === 'dkim'}
@@ -1285,7 +1288,7 @@ function EmailDomainSection({ onVerified }: { onVerified: () => void }) {
           )}
           {emailDomain.return_path_record_name && emailDomain.return_path_record_value && (
             <DnsRecordRow
-              label="Return-path (SPF)"
+              label="Authorize outgoing mail"
               name={emailDomain.return_path_record_name}
               value={emailDomain.return_path_record_value}
               copied={copiedField === 'returnPath'}
@@ -1294,7 +1297,7 @@ function EmailDomainSection({ onVerified }: { onVerified: () => void }) {
           )}
           {emailDomain.receiving_record_name && emailDomain.receiving_record_value && (
             <DnsRecordRow
-              label={`Inbound MX (priority ${emailDomain.receiving_record_priority ?? 10})`}
+              label="Receive customer emails"
               name={emailDomain.receiving_record_name}
               value={emailDomain.receiving_record_value}
               copied={copiedField === 'receiving'}
@@ -1302,11 +1305,14 @@ function EmailDomainSection({ onVerified }: { onVerified: () => void }) {
             />
           )}
           {emailDomain.dmarc_suggestion && (
-            <p className="text-xs text-gray-400">Suggested DMARC record: <code className="font-mono">{emailDomain.dmarc_suggestion}</code></p>
+            <details className="text-xs text-gray-500">
+              <summary className="cursor-pointer">Optional email security record</summary>
+              <code className="mt-1 block font-mono break-all">{emailDomain.dmarc_suggestion}</code>
+            </details>
           )}
           <form action={checkAction}>
             <Button type="submit" size="sm" variant="secondary" disabled={checkPending}>
-              {checkPending ? 'Checking…' : 'Check verification status'}
+              {checkPending ? 'Checking…' : 'Check setup'}
             </Button>
           </form>
           {(checkState as { error?: string } | null)?.error && (
@@ -1317,11 +1323,14 @@ function EmailDomainSection({ onVerified }: { onVerified: () => void }) {
 
       {emailDomain?.status === 'verified' && (
         <div className="space-y-2">
-          <ReadOnlyRow label="Verified domain" value={emailDomain.domain} />
-          <p className="text-xs text-gray-500 break-all">Replies now send from <code className="font-mono">noreply@{emailDomain.domain}</code>.</p>
-          <p className="text-xs text-gray-500 max-w-lg">
-            Customer emails can now be sent to <code className="font-mono">support@{emailDomain.domain}</code> and will create tickets here.
-          </p>
+          <ReadOnlyRow label="Connected domain" value={emailDomain.domain} />
+          <div className="rounded-md border border-green-100 bg-green-50/60 p-3 space-y-1">
+            <p className="text-xs font-medium text-green-800">Your support email is connected</p>
+            <p className="text-xs text-green-700 break-all">
+              Customers can email <code className="font-mono">support@{emailDomain.domain}</code>. Tickets will appear here,
+              and replies will come from <code className="font-mono">noreply@{emailDomain.domain}</code>.
+            </p>
+          </div>
           <p className="text-xs text-gray-500 max-w-lg">
             Removing it deletes the domain from your email provider, not just from AnswerLoops, and
             cannot be undone — re-adding means verifying from scratch with new DNS records.
@@ -1434,7 +1443,9 @@ function EmailOauthSection({ onConnected }: { onConnected: () => void }) {
 
       {connection?.status === 'connected' && (
         <div className="space-y-2">
+          <p className="text-xs font-medium text-green-700">Gmail is connected</p>
           <ReadOnlyRow label={`${OAUTH_PROVIDER_LABEL[connection.provider]} mailbox`} value={connection.mailbox_address} />
+          <p className="text-xs text-gray-500">Replies will be sent from this mailbox.</p>
           <Button
             size="sm"
             variant="danger"
@@ -1611,6 +1622,7 @@ export function EmailIntegrationCard() {
   // "enabled" and "mail can actually arrive" are different questions and the
   // badge used to answer the first while appearing to answer the second.
   const [configuredMethod, setConfiguredMethod] = useState<DeliveryMethod | null>(null)
+  const [configuredLive, setConfiguredLive] = useState(false)
   const { toastMessage, showToast } = useToast()
   const [, startDeleteTransition] = useTransition()
   const router = useRouter()
@@ -1653,9 +1665,18 @@ export function EmailIntegrationCard() {
       fetch('/api/email-domain').then((r) => r.json()).catch(() => null),
       fetch('/api/email-oauth').then((r) => r.json()).catch(() => null),
     ])
-    if (domain) setConfiguredMethod('domain')
-    else if (oauth) setConfiguredMethod('mailbox')
-    else setConfiguredMethod(null)
+    if (domain) {
+      setConfiguredMethod('domain')
+      setConfiguredLive(domain.status === 'verified')
+    } else if (oauth) {
+      // Keep a disconnected row visible so the user can reconnect it, but do
+      // not let a stale row make the channel look operational.
+      setConfiguredMethod('mailbox')
+      setConfiguredLive(oauth.status === 'connected')
+    } else {
+      setConfiguredMethod(null)
+      setConfiguredLive(false)
+    }
   }
 
   useEffect(() => { reloadIntegration(); reloadConfiguredMethod() }, [])
@@ -1673,7 +1694,7 @@ export function EmailIntegrationCard() {
             <div>
               <p className="text-sm font-medium text-gray-900">Email</p>
               <p className="text-xs text-gray-500">
-                {!connected ? 'Not connected' : configuredMethod ? 'Connected' : 'Setup incomplete'}
+                {!connected ? 'Not connected' : configuredLive ? 'Connected' : 'Setup incomplete'}
               </p>
             </div>
           </div>
@@ -1685,11 +1706,11 @@ export function EmailIntegrationCard() {
                 path leaves no trace to check, so it stays pending until a
                 delivery method is provably in place. */}
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              !connected ? 'bg-gray-100 text-gray-500'
-                : configuredMethod ? 'bg-green-100 text-green-700'
+                !connected ? 'bg-gray-100 text-gray-500'
+                : configuredLive ? 'bg-green-100 text-green-700'
                 : 'bg-amber-100 text-amber-700'
             }`}>
-              {!connected ? 'Inactive' : configuredMethod ? 'Active' : 'Needs setup'}
+              {!connected ? 'Inactive' : configuredLive ? 'Active' : 'Needs setup'}
             </span>
             {connected && !editing && (
               <Button

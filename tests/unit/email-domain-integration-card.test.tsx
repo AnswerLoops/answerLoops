@@ -114,7 +114,7 @@ describe('EmailIntegrationCard: custom domain verification', () => {
     await chooseOwnDomain()
 
     await waitFor(() => expect(screen.getByPlaceholderText('yourcompany.com')).toBeTruthy())
-    expect(screen.getByRole('button', { name: /use your own domain/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy()
     // the old free-text reply-from field must be gone entirely
     expect(screen.queryByText(/reply-from address/i)).toBeNull()
   })
@@ -144,11 +144,11 @@ describe('EmailIntegrationCard: custom domain verification', () => {
 
     await waitFor(() => expect(screen.getByPlaceholderText('yourcompany.com')).toBeTruthy())
     await user.type(screen.getByPlaceholderText('yourcompany.com'), 'acme.com')
-    await user.click(screen.getByRole('button', { name: /use your own domain/i }))
+    await user.click(screen.getByRole('button', { name: /continue/i }))
 
     await waitFor(() => expect(screen.getByText('resend._domainkey.acme.com', { exact: false })).toBeTruthy())
     expect(screen.getByText('p=abc123')).toBeTruthy()
-    expect(screen.getByRole('button', { name: /check verification status/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /check setup/i })).toBeTruthy()
   })
 
   it('shows the verified domain and removes the pending DNS instructions once verified', async () => {
@@ -168,7 +168,7 @@ describe('EmailIntegrationCard: custom domain verification', () => {
     await waitFor(() => expect(screen.getByText('acme.com')).toBeTruthy())
     expect(screen.getByText(/noreply@acme\.com/)).toBeTruthy()
     expect(screen.getByRole('button', { name: /remove domain/i })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /check verification status/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /check setup/i })).toBeNull()
   })
 
   it('polls verification status on click', async () => {
@@ -187,8 +187,8 @@ describe('EmailIntegrationCard: custom domain verification', () => {
     const user = userEvent.setup()
     render(<EmailIntegrationCard />)
 
-    await waitFor(() => expect(screen.getByRole('button', { name: /check verification status/i })).toBeTruthy())
-    await user.click(screen.getByRole('button', { name: /check verification status/i }))
+    await waitFor(() => expect(screen.getByRole('button', { name: /check setup/i })).toBeTruthy())
+    await user.click(screen.getByRole('button', { name: /check setup/i }))
 
     await waitFor(() => expect(checkEmailDomainVerificationAction).toHaveBeenCalled())
   })
