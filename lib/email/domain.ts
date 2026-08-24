@@ -45,6 +45,18 @@ function collapseStatus(status: string): DomainVerificationStatus {
   return 'pending'
 }
 
+function registrationError(error: unknown): string {
+  const message = error && typeof error === 'object' && 'message' in error
+    ? String((error as { message?: unknown }).message ?? '')
+    : ''
+
+  if (message.toLowerCase().includes('registered already')) {
+    return 'This domain is already registered with the email provider. Use a different domain or contact support if it belongs to your account.'
+  }
+
+  return 'Domain verification is temporarily unavailable. Please try again later.'
+}
+
 export async function registerDomain(domain: string): Promise<RegisteredDomain | { error: string }> {
   if (MOCK_EXTERNALS || !process.env.RESEND_API_KEY) {
     logger.error('Resend domain registration unavailable — platform email credentials are not configured', {
@@ -56,8 +68,19 @@ export async function registerDomain(domain: string): Promise<RegisteredDomain |
 
   const { data, error } = await client().domains.create({ name: domain })
   if (error || !data) {
-    logger.error('Resend domain registration failed', { module: MOD, domain, error })
-    return { error: 'Domain verification is temporarily unavailable. Please try again later.' }
+    const errorMessage = registrationError(error)
+    logger.error('Resend domain registration failed', {
+      module: MOD,
+      domain,
+      error: error && typeof error === 'object'
+        ? {
+            name: 'name' in error ? error.name : undefined,
+            message: 'message' in error ? error.message : undefined,
+            statusCode: 'statusCode' in error ? error.statusCode : undefined,
+          }
+        : error,
+    })
+    return { error: errorMessage }
   }
 
   const { dkim, returnPath } = extractRecords(data.records ?? [])

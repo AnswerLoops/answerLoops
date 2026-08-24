@@ -115,27 +115,25 @@ describe('the welcome email is sent to a customer, not to an account', () => {
 
   it('only welcomes an org that had no subscription before this one', async () => {
     // A cancel-and-resubscribe is the same org coming back, not a new customer.
-    // The check has to read before the upsert writes the row, or it can never
-    // be false.
+    // The check must be part of the same transaction as the upsert, otherwise
+    // concurrent checkout events can both classify themselves as first.
     const src = await read('app/api/billing/webhook/route.ts')
     const checkoutCase = src.slice(
       src.indexOf("case 'checkout.session.completed'"),
       src.indexOf("case 'customer.subscription.updated'"),
     )
-    const readAt = checkoutCase.indexOf('hadSubscriptionBefore = (await getSubscription(orgId))')
-    const upsertAt = checkoutCase.indexOf('await upsertSubscription(')
-    const guardAt = checkoutCase.indexOf('if (!hadSubscriptionBefore)')
+    const claimAt = checkoutCase.indexOf('const isFirstSubscription = await upsertSubscriptionAndClaimWelcome(')
+    const guardAt = checkoutCase.indexOf('if (isFirstSubscription)')
 
-    expect(readAt, 'the pre-existing-subscription read').toBeGreaterThan(-1)
-    expect(readAt, 'must read before the upsert, or it always sees a row').toBeLessThan(upsertAt)
-    expect(guardAt, 'the send must be gated on it').toBeGreaterThan(upsertAt)
+    expect(claimAt, 'the first-subscription claim').toBeGreaterThan(-1)
+    expect(guardAt, 'the send must be gated on the atomic claim').toBeGreaterThan(claimAt)
   })
 
   it('cannot fail the webhook when the mail provider is down', async () => {
     // A non-2xx makes Stripe retry an event whose subscription is already
     // written. The send is wrapped so a provider outage stays a logged error.
     const src = await read('app/api/billing/webhook/route.ts')
-    const guarded = src.slice(src.indexOf('if (!hadSubscriptionBefore)'), src.indexOf("case 'customer.subscription.updated'"))
+    const guarded = src.slice(src.indexOf('if (isFirstSubscription)'), src.indexOf("case 'customer.subscription.updated'"))
     expect(guarded).toContain('try {')
     expect(guarded).toContain('catch')
     expect(guarded, 'a throw here would cost a retry, not just an email').not.toMatch(/throw\s/)

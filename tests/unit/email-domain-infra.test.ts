@@ -64,6 +64,12 @@ describe('resend domains wrapper (lib/email/domain.ts)', () => {
     expect(src).toContain("r.record === 'DKIM'")
   })
 
+  it('explains when Resend rejects a domain because it is already registered', () => {
+    const src = readSrc('lib/email/domain.ts')
+    expect(src).toContain('registered already')
+    expect(src).toContain('Use a different domain')
+  })
+
   it('guards every call against a missing RESEND_API_KEY / MOCK_EXTERNALS', () => {
     const src = readSrc('lib/email/domain.ts')
     const guardCount = (src.match(/MOCK_EXTERNALS \|\| !process\.env\.RESEND_API_KEY/g) ?? []).length
