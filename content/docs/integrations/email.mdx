@@ -1,15 +1,15 @@
 ---
 title: Email
-description: Turn any support inbox into an AI-triaged ticket queue by pointing your email provider at AnswerLoops's webhook.
+description: Turn a customer-owned support domain into an AI-triaged ticket queue with Resend receiving.
 ---
 
 ## Overview
 
-AnswerLoops accepts inbound support email through a webhook, not inbox polling. Every message that arrives is triaged, embedded against your knowledge base, and answered by the AI pipeline, then threaded back to the sender with proper RFC 5322 headers (`Message-ID` / `In-Reply-To` / `References`) so a customer's next reply lands in the same ticket instead of opening a new one.
+AnswerLoops accepts inbound support email through a customer-owned domain configured for Resend receiving, not inbox polling. Every message that arrives is triaged, embedded against your knowledge base, and answered by the AI pipeline, then threaded back to the sender with proper RFC 5322 headers (`Message-ID` / `In-Reply-To` / `References`) so a customer's next reply lands in the same ticket instead of opening a new one.
 
 Two things are independent and configured separately:
 
-- **Inbound mail** — point your own email provider (SendGrid, Mailgun, Postmark, Cloudflare Email Routing, or anything that can POST a webhook) at AnswerLoops with a shared secret. See [Setup](#setup) below.
+- **Inbound mail** — verify a domain you own in AnswerLoops and add the displayed DNS records. Resend sends an `email.received` event to AnswerLoops, which retrieves and ingests the message for the matching organization. See [Setup](#setup) below.
 - **Outbound sending (the `From:` address)** — either the platform default, a domain you verify, or your own connected Gmail/Outlook mailbox. See [Custom domain](#custom-domain-verified-sending) and [Connect a mailbox](#connect-a-mailbox-gmail-or-outlook-send-only-oauth) below.
 
 All email tickets appear in the unified ticket list with an Email source badge.
@@ -24,7 +24,7 @@ All email tickets appear in the unified ticket list with an Email source badge.
 
 ### 1. Prerequisites
 
-`RESEND_API_KEY` and `RESEND_FROM` must be set on the app service — AnswerLoops sends every outbound reply through Resend (directly, via a verified custom domain, or as the fallback for OAuth-connected mailboxes).
+`RESEND_API_KEY`, `RESEND_FROM`, and `RESEND_WEBHOOK_SECRET` must be set on the app service. The key is used for sending, domain verification, and retrieving received messages; the webhook secret verifies Resend's signed events.
 
 ### 2. Configure in AnswerLoops
 
@@ -37,27 +37,19 @@ Go to **Settings → Channels → Email** and fill in:
 | Confidence threshold | `confidenceThreshold` | 0–1, default `0.8`. Answers scoring below this are routed to a human instead of posting automatically. |
 | Automatic Deflections | `autoDeflectEnabled` | See the callout above. Off by default. |
 
-Click **Connect**. A webhook secret is generated and shown once — copy it before navigating away.
+Choose **Use your own domain**, enter the domain or support subdomain that should receive tickets, and submit it. AnswerLoops registers the domain for both sending and receiving and displays the DKIM, return-path/SPF, and inbound MX records required by Resend.
 
-### 3. Point your provider at the webhook
+### 3. Add DNS records and verify
 
-```
-POST https://yourapp.com/api/email/ingest
-```
+Add every record shown in the setup panel at the domain's DNS host. Keep any existing records that your company already uses; if the root domain's MX records belong to Google Workspace or Microsoft 365, use a support subdomain instead so customer mail is not redirected away from the company's mailbox.
 
-with header:
+Click **Check verification status** after DNS propagation. Once the domain is verified, customers can email:
 
 ```
-X-Email-Webhook-Secret: <your webhook secret>
+support@yourdomain.com
 ```
 
-**SendGrid Inbound Parse** — Settings → Inbound Parse → Add Host & URL, enter your domain and the webhook URL, set the secret header under HTTP POST settings.
-
-**Mailgun Routes** — Sending → Routes → Create Route, match filter `match_recipient("support@yourdomain.com")`, action `forward("https://yourapp.com/api/email/ingest")`, add the secret header on the route.
-
-**Postmark Inbound** — Message Streams → Inbound → Settings, set the inbound webhook URL, set the secret header in Postmark's webhook settings.
-
-**Cloudflare Email Routing** — Email → Email Routing → Rules, forward to a Worker that POSTs to the webhook URL with the secret header attached.
+Resend delivers signed `email.received` events to `POST https://yourapp.com/api/email/ingest`. AnswerLoops verifies the event, resolves the organization from the recipient domain, retrieves the full message from Resend, and sends it through the normal ticket pipeline.
 
 <Note>
   Full self-hosting details, including a deeper reliability writeup (loop detection, idempotency, spam handling) live on the [Email Channel Setup](/docs/self-hosting/email-channel) page.
@@ -73,9 +65,9 @@ Without domain verification, a raw `From:` override is spoofing from the receivi
 
 1. Go to **Settings → Channels → Email** and find **Use your own domain**.
 2. Enter the domain you want replies to come from (e.g. `yourcompany.com`) and click **Use your own domain**.
-3. AnswerLoops registers the domain with Resend and shows two DNS records (DKIM and a return-path/SPF record) — add both at your domain's DNS host.
+3. AnswerLoops registers the domain with Resend and shows the required DKIM, return-path/SPF, and inbound MX records — add them at your domain's DNS host.
 4. Click **Check verification status** once the records have propagated (this can take a few minutes to a few hours depending on your DNS host).
-5. Once verified, replies automatically send from `noreply@<your-domain>` — no separate toggle needed.
+5. Once verified, customers can send to `support@<your-domain>` and replies automatically send from `noreply@<your-domain>` — no separate toggle or mailbox login is needed.
 
 Removing a verified domain reverts sending to the platform default (`RESEND_FROM`).
 
@@ -112,7 +104,7 @@ Removing the connection reverts sending to the platform default.
 | `OUTLOOK_CLIENT_ID` / `OUTLOOK_CLIENT_SECRET` | For Outlook connect | A Microsoft Entra app registration requesting only the delegated `Mail.Send` scope. Without these, the **Connect Outlook** button is unavailable but every other email path still works |
 | `OUTLOOK_REDIRECT_URI` | No | Overrides the derived callback URL (`<app-url>/api/email/outlook/callback`) if it differs from `AUTH_URL`/`NEXTAUTH_URL` |
 
-The inbound webhook secret is generated per org and stored in the database — no env var needed for that.
+`RESEND_WEBHOOK_SECRET` is the signing secret for the Resend webhook endpoint. Customers do not need to know or configure this value.
 
 ---
 
@@ -120,7 +112,7 @@ The inbound webhook secret is generated per org and stored in the database — n
 
 <AccordionGroup>
   <Accordion title="Emails aren't creating tickets">
-    Check **Allowed senders** in Settings — if it's non-empty, mail from a sender not on the list is filtered before the pipeline runs and the ticket never appears. Also confirm the sender isn't triggering the loop guard (no-reply addresses, mailing-list headers, auto-responder headers) — those are rejected by design to prevent mail loops, not routing failures.
+    Confirm the domain is verified, the inbound MX record matches the record shown in Settings, and the message was sent to `support@yourdomain`. Then check **Allowed senders** — if it's non-empty, mail from a sender not on the list is filtered before the pipeline runs. Also confirm the sender isn't triggering the loop guard (no-reply addresses, mailing-list headers, auto-responder headers).
   </Accordion>
   <Accordion title="AI replies aren't being sent">
     `RESEND_API_KEY` must be valid and not expired, and the reply-from address (custom domain, connected mailbox, or `RESEND_FROM`) must belong to a domain verified in your Resend dashboard (or, for Gmail/Outlook, a currently-connected mailbox). An unverified sending domain causes Resend to reject the send silently from AnswerLoops' perspective — check `docker compose logs app | grep -i resend` for the actual Resend error.

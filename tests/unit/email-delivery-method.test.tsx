@@ -111,10 +111,9 @@ function mockRoutes(opts: { integrations?: unknown[]; emailDomain?: unknown; oau
   })
 }
 
-/** The three buttons of the chooser, matched on their titles. */
+/** The two supported customer-facing delivery choices. */
 const OWN_DOMAIN_CARD = /^use your own domain/i
 const MAILBOX_CARD = /^connect a mailbox/i
-const FORWARD_CARD = /^forward from your provider/i
 const DIFFERENT_METHOD = /use a different method/i
 
 /** The domain form's only distinguishing control. */
@@ -124,14 +123,15 @@ function chooserIsShowing() {
   return (
     screen.queryByRole('button', { name: OWN_DOMAIN_CARD }) !== null &&
     screen.queryByRole('button', { name: MAILBOX_CARD }) !== null &&
-    screen.queryByRole('button', { name: FORWARD_CARD }) !== null
+    screen.queryByRole('button', { name: OWN_DOMAIN_CARD }) !== null &&
+    screen.queryByRole('button', { name: MAILBOX_CARD }) !== null
   )
 }
 
 /**
  * The email card used to render the custom-domain panel, the Gmail/Outlook
  * OAuth panel and a raw webhook block all at once, the moment the channel was
- * enabled — three mutually exclusive ways to receive mail, stacked, with
+ * enabled — mutually exclusive ways to receive mail, stacked, with
  * nothing indicating that only one was needed or which to prefer. The fix asks
  * the question once and then shows exactly one answer's UI.
  *
@@ -147,13 +147,12 @@ describe('EmailDeliverySection: the delivery-method chooser gates setup UI', () 
     mockSearchParams.forEach((_v, k) => mockSearchParams.delete(k))
   })
 
-  it('offers all three methods and no setup UI when the channel is on but nothing is configured', async () => {
+  it('offers the two supported methods and no setup UI when the channel is on but nothing is configured', async () => {
     mockRoutes()
     render(<EmailIntegrationCard />)
 
     await waitFor(() => expect(screen.getByRole('button', { name: OWN_DOMAIN_CARD })).toBeTruthy())
     expect(screen.getByRole('button', { name: MAILBOX_CARD })).toBeTruthy()
-    expect(screen.getByRole('button', { name: FORWARD_CARD })).toBeTruthy()
 
     // Nothing from either setup panel may be on screen before a choice.
     expect(screen.queryByPlaceholderText(DOMAIN_INPUT)).toBeNull()
@@ -171,7 +170,7 @@ describe('EmailDeliverySection: the delivery-method chooser gates setup UI', () 
     expect(screen.getByRole('button', { name: /connect outlook/i })).toBeTruthy()
     expect(screen.queryByPlaceholderText(DOMAIN_INPUT)).toBeNull()
     // The chooser itself is replaced, not appended to.
-    expect(screen.queryByRole('button', { name: FORWARD_CARD })).toBeNull()
+    expect(screen.queryByRole('button', { name: /forward from your provider/i })).toBeNull()
   })
 
   it('shows the domain form and not the mailbox setup after choosing "Use your own domain"', async () => {
@@ -196,7 +195,7 @@ describe('EmailDeliverySection: the delivery-method chooser gates setup UI', () 
 
     await user.click(screen.getByRole('button', { name: DIFFERENT_METHOD }))
 
-    await waitFor(() => expect(screen.getByRole('button', { name: FORWARD_CARD })).toBeTruthy())
+    await waitFor(() => expect(screen.getByRole('button', { name: OWN_DOMAIN_CARD })).toBeTruthy())
     expect(chooserIsShowing()).toBe(true)
     // The half-finished mailbox setup must be gone, not merely scrolled past.
     expect(screen.queryByRole('button', { name: /connect gmail/i })).toBeNull()
@@ -247,7 +246,7 @@ describe('EmailDeliverySection: an already-configured method skips the chooser',
     expect(screen.getByText('acme.com')).toBeTruthy()
 
     expect(screen.queryByRole('button', { name: MAILBOX_CARD })).toBeNull()
-    expect(screen.queryByRole('button', { name: FORWARD_CARD })).toBeNull()
+    expect(screen.queryByRole('button', { name: /forward from your provider/i })).toBeNull()
     expect(screen.queryByText(/how should mail reach/i)).toBeNull()
     expect(screen.queryByRole('button', { name: DIFFERENT_METHOD })).toBeNull()
   })
@@ -259,7 +258,7 @@ describe('EmailDeliverySection: an already-configured method skips the chooser',
     await waitFor(() => expect(screen.getByText('support@gmail.com')).toBeTruthy())
 
     expect(screen.queryByRole('button', { name: OWN_DOMAIN_CARD })).toBeNull()
-    expect(screen.queryByRole('button', { name: FORWARD_CARD })).toBeNull()
+    expect(screen.queryByRole('button', { name: /forward from your provider/i })).toBeNull()
     expect(screen.queryByPlaceholderText(DOMAIN_INPUT)).toBeNull()
     expect(screen.queryByText(/how should mail reach/i)).toBeNull()
     expect(screen.queryByRole('button', { name: DIFFERENT_METHOD })).toBeNull()

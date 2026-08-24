@@ -5,16 +5,16 @@ description: Route inbound support emails through the AnswerLoops AI pipeline.
 
 ## How it works
 
-Email doesn't poll an inbox. AnswerLoops accepts inbound mail through a webhook endpoint: the AI pipeline triages, embeds, and answers each message, then replies directly to the sender via Resend with proper RFC 5322 threading (`Message-ID` / `In-Reply-To` / `References`), so a customer's next reply lands in the same conversation instead of opening a new ticket.
+Email doesn't poll an inbox. In the hosted flow, AnswerLoops verifies a customer-owned domain with Resend receiving; Resend posts signed `email.received` events to the webhook, AnswerLoops retrieves the full message, and the AI pipeline triages, embeds, and answers it. Replies go directly to the sender via Resend with proper RFC 5322 threading (`Message-ID` / `In-Reply-To` / `References`).
 
-Point your own SendGrid, Mailgun, Postmark, or Cloudflare account at AnswerLoops's webhook with a shared secret.
+For self-hosted deployments, you can use the same Resend receiving flow or keep an existing provider that can POST inbound messages to the webhook with the per-organization legacy secret.
 
 ## Setup
 
 ### 1. Prerequisites
 
 - `RESEND_API_KEY` and `RESEND_FROM` must be set (used for outbound replies)
-- An account with a supported email routing provider
+- A Resend domain configured with sending and receiving capabilities, or a supported inbound provider for the legacy path
 
 ### 2. Configure in AnswerLoops Settings
 
@@ -24,9 +24,9 @@ Under **Settings → Email**, enter:
 - **Escalation email** (optional) — referenced in replies when AI confidence is below threshold.
 - **Confidence threshold** — 0–1, default 0.8.
 
-Click **Connect**. The webhook secret is shown once — copy it before closing.
+Choose **Use your own domain** and add the DKIM, return-path/SPF, and inbound MX records shown in Settings. Once the domain is verified, customers send mail to `support@yourdomain`.
 
-### 3. Configure your email provider
+### 3. Configure your receiving webhook
 
 Point your provider's inbound webhook at:
 
@@ -34,7 +34,9 @@ Point your provider's inbound webhook at:
 POST https://yourapp.com/api/email/ingest
 ```
 
-Set the custom secret header:
+Resend sends signed `email.received` events to that endpoint. Set `RESEND_WEBHOOK_SECRET` to the signing secret from Resend. The route uses the recipient domain to find the organization, then retrieves the full message with `RESEND_API_KEY`.
+
+For a legacy provider, set the custom secret header:
 
 ```
 X-Email-Webhook-Secret: <your webhook secret>
@@ -107,7 +109,7 @@ Unlike Gmail's send path (which mints its own RFC `Message-ID` and sets `In-Repl
 | `OUTLOOK_CLIENT_ID` / `OUTLOOK_CLIENT_SECRET` | Microsoft Entra app registration credentials for the Connect Outlook flow. Without these, that feature is unavailable but nothing else breaks |
 | `OUTLOOK_REDIRECT_URI` | Optional override for the OAuth callback URL; defaults to `<AUTH_URL or NEXTAUTH_URL>/api/email/outlook/callback` |
 
-The inbound webhook secret is generated automatically and stored in the database per org — no env var needed for that.
+The legacy inbound webhook secret is generated automatically and stored per organization. Hosted customers do not configure it; Resend receiving uses the platform webhook signing secret instead.
 
 ## Notes
 

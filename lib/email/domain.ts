@@ -17,6 +17,7 @@ export interface RegisteredDomain {
   providerDomainId: string
   dkim: DomainRecordPair | null
   returnPath: DomainRecordPair | null
+  receiving: (DomainRecordPair & { priority: number }) | null
 }
 
 export type DomainVerificationStatus = 'pending' | 'verified' | 'failed'
@@ -27,12 +28,19 @@ export type DomainVerificationStatus = 'pending' | 'verified' | 'failed'
 function extractRecords(records: { record: string; name: string; value: string }[]): {
   dkim: DomainRecordPair | null
   returnPath: DomainRecordPair | null
+  receiving: (DomainRecordPair & { priority: number }) | null
 } {
   const dkimRecord = records.find((r) => r.record === 'DKIM')
   const spfRecord = records.find((r) => r.record === 'SPF')
+  const receivingRecord = records.find((r) => r.record === 'Receiving') as
+    | { name: string; value: string; priority?: number }
+    | undefined
   return {
     dkim: dkimRecord ? { name: dkimRecord.name, value: dkimRecord.value } : null,
     returnPath: spfRecord ? { name: spfRecord.name, value: spfRecord.value } : null,
+    receiving: receivingRecord
+      ? { name: receivingRecord.name, value: receivingRecord.value, priority: receivingRecord.priority ?? 10 }
+      : null,
   }
 }
 
@@ -66,7 +74,10 @@ export async function registerDomain(domain: string): Promise<RegisteredDomain |
     return { error: 'Domain verification is temporarily unavailable. Please try again later.' }
   }
 
-  const { data, error } = await client().domains.create({ name: domain })
+  const { data, error } = await client().domains.create({
+    name: domain,
+    capabilities: { sending: 'enabled', receiving: 'enabled' },
+  })
   if (error || !data) {
     const errorMessage = registrationError(error)
     logger.error('Resend domain registration failed', {
@@ -83,8 +94,8 @@ export async function registerDomain(domain: string): Promise<RegisteredDomain |
     return { error: errorMessage }
   }
 
-  const { dkim, returnPath } = extractRecords(data.records ?? [])
-  return { providerDomainId: data.id, dkim, returnPath }
+  const { dkim, returnPath, receiving } = extractRecords(data.records ?? [])
+  return { providerDomainId: data.id, dkim, returnPath, receiving }
 }
 
 export async function checkDomainStatus(

@@ -13,6 +13,9 @@ export interface EmailDomain {
   dkim_record_value: string | null
   return_path_record_name: string | null
   return_path_record_value: string | null
+  receiving_record_name: string | null
+  receiving_record_value: string | null
+  receiving_record_priority: number | null
   dmarc_suggestion: string | null
   status: DomainVerificationStatus
   last_checked_at: string | null
@@ -32,6 +35,9 @@ function toEmailDomain(row: typeof emailDomains.$inferSelect): EmailDomain {
     dkim_record_value: row.dkimRecordValue,
     return_path_record_name: row.returnPathRecordName,
     return_path_record_value: row.returnPathRecordValue,
+    receiving_record_name: row.receivingRecordName,
+    receiving_record_value: row.receivingRecordValue,
+    receiving_record_priority: row.receivingRecordPriority,
     dmarc_suggestion: row.dmarcSuggestion,
     status: row.status as DomainVerificationStatus,
     last_checked_at: row.lastCheckedAt,
@@ -46,12 +52,18 @@ export async function getEmailDomain(orgId: number): Promise<EmailDomain | null>
   return row ? toEmailDomain(row) : null
 }
 
+export async function getEmailDomainByDomain(domain: string): Promise<EmailDomain | null> {
+  const [row] = await getDb().select().from(emailDomains).where(eq(emailDomains.domain, domain.toLowerCase())).limit(1)
+  return row ? toEmailDomain(row) : null
+}
+
 export async function upsertEmailDomain(input: {
   orgId: number
   domain: string
   providerDomainId: string
   dkim: DomainRecordPair | null
   returnPath: DomainRecordPair | null
+  receiving?: (DomainRecordPair & { priority: number }) | null
   dmarcSuggestion?: string | null
 }): Promise<EmailDomain> {
   const existing = await getEmailDomain(input.orgId)
@@ -62,6 +74,9 @@ export async function upsertEmailDomain(input: {
     dkimRecordValue: input.dkim?.value ?? null,
     returnPathRecordName: input.returnPath?.name ?? null,
     returnPathRecordValue: input.returnPath?.value ?? null,
+    receivingRecordName: input.receiving?.name ?? null,
+    receivingRecordValue: input.receiving?.value ?? null,
+    receivingRecordPriority: input.receiving?.priority ?? null,
     dmarcSuggestion: input.dmarcSuggestion ?? null,
     status: 'pending' as const,
     updatedAt: new Date().toISOString(),

@@ -520,15 +520,17 @@ export async function startEmailDomainVerificationAction(
     return null
   }
 
-  const result = await registerDomain(parsed.data.domain)
+  const domainName = parsed.data.domain.toLowerCase()
+  const result = await registerDomain(domainName)
   if ('error' in result) return { error: result.error }
 
   await upsertEmailDomain({
     orgId,
-    domain: parsed.data.domain,
+    domain: domainName,
     providerDomainId: result.providerDomainId,
     dkim: result.dkim,
     returnPath: result.returnPath,
+    receiving: result.receiving,
   })
 
   refresh()

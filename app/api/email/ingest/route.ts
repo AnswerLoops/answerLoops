@@ -1,8 +1,11 @@
 import { NextRequest } from 'next/server'
+import { Resend } from 'resend'
 import {
   getIntegrationByBotSecret,
+  getIntegration,
   parseChannelIds,
 } from '@/lib/db/queries/integrations'
+import { getEmailDomainByDomain } from '@/lib/db/queries/email-domains'
 import { processCommunityMessage } from '@/lib/ingest/pipeline'
 import { recordCustomerReply, getTicketById } from '@/lib/db/queries/tickets'
 import { createNotification } from '@/lib/db/queries/notifications'
@@ -79,7 +82,7 @@ export async function POST(req: NextRequest) {
   const isResendWebhook = !!(resendSecret && svixId && svixSignature)
 
   let orgId: number
-  let integration: NonNullable<Awaited<ReturnType<typeof getIntegrationByBotSecret>>>
+  let integration: Awaited<ReturnType<typeof getIntegration>>
   let data: Record<string, unknown>
   let headersRaw: unknown
 
@@ -103,16 +106,51 @@ export async function POST(req: NextRequest) {
     const eventType = String(parsed['type'] ?? '')
     const eventData = (parsed['data'] ?? {}) as Record<string, unknown>
 
-    // This webhook now only carries delivery-status events for our own
-    // outbound sends (custom-domain / default Resend paths) — there's no
-    // platform-hosted inbound address for a real "email.received" event to
-    // ever match against, so anything else is acked and dropped.
     if (eventType && eventType.startsWith('email.') && eventType !== 'email.received') {
       await handleDeliveryEvent(eventType, eventData)
-    } else {
-      logger.debug('resend webhook event ignored (no inbound address to match)', { module: MOD, eventType })
+      return Response.json({ ok: true })
     }
-    return Response.json({ ok: true })
+
+    if (eventType !== 'email.received') return Response.json({ ok: true })
+
+    const recipientList = Array.isArray(eventData['to']) ? eventData['to'].map(String) : []
+    const recipient = recipientList[0] ?? ''
+    const recipientDomain = recipient.includes('@') ? recipient.split('@').pop()!.toLowerCase() : ''
+    const domain = recipientDomain ? await getEmailDomainByDomain(recipientDomain) : null
+    if (!domain || domain.status !== 'verified') {
+      logger.warn('received email has no verified AnswerLoops domain', { module: MOD, recipientDomain })
+      return Response.json({ ok: true })
+    }
+
+    const emailId = String(eventData['email_id'] ?? '')
+    const apiKey = process.env.RESEND_API_KEY
+    if (!emailId || !apiKey) return new Response('Unable to retrieve received email', { status: 503 })
+
+    const { data: received, error: receiveError } = await new Resend(apiKey).emails.receiving.get(emailId)
+    if (receiveError || !received) {
+      logger.error('failed to retrieve received email from Resend', {
+        module: MOD,
+        emailId,
+        error: receiveError && typeof receiveError === 'object'
+          ? { name: 'name' in receiveError ? receiveError.name : undefined, message: 'message' in receiveError ? receiveError.message : undefined }
+          : receiveError,
+      })
+      return new Response('Unable to retrieve received email', { status: 502 })
+    }
+
+    orgId = domain.org_id
+    integration = await getIntegration(orgId, 'email')
+    if (!integration || integration.enabled !== 1) return Response.json({ ok: true })
+    data = {
+      from: received.from,
+      to: received.to,
+      subject: received.subject,
+      text: received.text ?? '',
+      html: received.html ?? '',
+      message_id: received.message_id,
+      headers: received.headers ?? {},
+    }
+    headersRaw = received.headers ?? {}
   } else {
     // Legacy BYO-provider path: shared secret header (SendGrid, Mailgun, Postmark, etc).
     const secret = req.headers.get('x-email-webhook-secret')
@@ -151,6 +189,8 @@ export async function POST(req: NextRequest) {
   }
 
   const rawFrom = String(data['from'] ?? data['From'] ?? '')
+  const rawTo = data['to'] ?? data['To'] ?? ''
+  const toAddress = Array.isArray(rawTo) ? String(rawTo[0] ?? '') : String(rawTo)
   const subject = String(data['subject'] ?? data['Subject'] ?? '(no subject)')
   const rawText = String(data['text'] ?? data['Text'] ?? data['plain'] ?? '')
   const rawHtml = String(data['html'] ?? data['Html'] ?? '')
@@ -182,7 +222,7 @@ export async function POST(req: NextRequest) {
       inReplyTo: inReplyToHeader,
       references: referencesHeader,
       fromAddr: senderEmail,
-      toAddr: undefined,
+      toAddr: toAddress || undefined,
       subject,
       rawPayload: data,
     })
@@ -200,7 +240,7 @@ export async function POST(req: NextRequest) {
     inReplyTo: inReplyToHeader,
     references: referencesHeader,
     fromAddr: senderEmail,
-    toAddr: undefined,
+    toAddr: toAddress || undefined,
     subject,
     spamVerdict,
     rawPayload: data,

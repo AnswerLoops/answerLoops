@@ -1162,6 +1162,9 @@ interface EmailDomain {
   dkim_record_value: string | null
   return_path_record_name: string | null
   return_path_record_value: string | null
+  receiving_record_name: string | null
+  receiving_record_value: string | null
+  receiving_record_priority: number | null
   dmarc_suggestion: string | null
   status: 'pending' | 'verified' | 'failed'
 }
@@ -1244,8 +1247,8 @@ function EmailDomainSection({ onVerified }: { onVerified: () => void }) {
     <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 space-y-3">
       <p className="text-xs font-medium text-gray-600">Use your own domain</p>
       <p className="text-xs text-gray-500">
-        Verify a domain you own so replies send from your own address instead of the platform-hosted one — the
-        professional option, most reliable since it doesn&apos;t depend on any login staying active.
+        Verify a domain you own so customers can email support@yourdomain and replies send from that same domain.
+        This is the reliable option and does not depend on a mailbox login.
       </p>
       {loadError && <p className="text-xs text-amber-700">{loadError}</p>}
 
@@ -1289,6 +1292,15 @@ function EmailDomainSection({ onVerified }: { onVerified: () => void }) {
               onCopy={() => copy('returnPath', emailDomain.return_path_record_value!)}
             />
           )}
+          {emailDomain.receiving_record_name && emailDomain.receiving_record_value && (
+            <DnsRecordRow
+              label={`Inbound MX (priority ${emailDomain.receiving_record_priority ?? 10})`}
+              name={emailDomain.receiving_record_name}
+              value={emailDomain.receiving_record_value}
+              copied={copiedField === 'receiving'}
+              onCopy={() => copy('receiving', emailDomain.receiving_record_value!)}
+            />
+          )}
           {emailDomain.dmarc_suggestion && (
             <p className="text-xs text-gray-400">Suggested DMARC record: <code className="font-mono">{emailDomain.dmarc_suggestion}</code></p>
           )}
@@ -1307,6 +1319,9 @@ function EmailDomainSection({ onVerified }: { onVerified: () => void }) {
         <div className="space-y-2">
           <ReadOnlyRow label="Verified domain" value={emailDomain.domain} />
           <p className="text-xs text-gray-500 break-all">Replies now send from <code className="font-mono">noreply@{emailDomain.domain}</code>.</p>
+          <p className="text-xs text-gray-500 max-w-lg">
+            Customer emails can now be sent to <code className="font-mono">support@{emailDomain.domain}</code> and will create tickets here.
+          </p>
           <p className="text-xs text-gray-500 max-w-lg">
             Removing it deletes the domain from your email provider, not just from AnswerLoops, and
             cannot be undone — re-adding means verifying from scratch with new DNS records.
@@ -1481,19 +1496,16 @@ function DnsRecordRow({
   )
 }
 
-type DeliveryMethod = 'domain' | 'mailbox' | 'webhook'
+type DeliveryMethod = 'domain' | 'mailbox'
 
 /**
  * How inbound mail reaches AnswerLoops — asked once, as a choice.
  *
- * There are three ways and only one is needed, but they used to be rendered as
- * three stacked panels with no default and no indication of that. Someone
- * arriving here met a domain form, an OAuth pair and a raw webhook endpoint
- * with a copy-once secret, all at the same time, and nothing said which to
- * pick. The tradeoff copy was already good; it was the shape that made the
- * screen a puzzle.
+ * Only one delivery method is needed, but the choices used to be rendered as
+ * stacked panels with no default and no indication of that. The tradeoff copy
+ * was already good; it was the shape that made the screen a puzzle.
  *
- * So: pick one, then set that one up. The other two stay one click away for
+ * So: pick one, then set that one up. The other stays one click away for
  * anyone who wants to switch, and the choice is remembered by what is actually
  * configured rather than by any stored preference — a verified domain or a
  * connected mailbox *is* the answer to "which method", so there is no separate
@@ -1522,18 +1534,13 @@ function EmailDeliverySection({
           <MethodCard
             title="Use your own domain"
             badge="Recommended"
-            body="Replies send from your own address. Needs two DNS records, and does not depend on any login staying active."
+            body="Receive tickets at your own address and send replies from it. Add the DNS records once; no mailbox login is required."
             onSelect={() => setPicked('domain')}
           />
           <MethodCard
             title="Connect a mailbox"
             body="Gmail or Outlook, connected in a couple of clicks. No DNS, but it stops working if the connection lapses."
             onSelect={() => setPicked('mailbox')}
-          />
-          <MethodCard
-            title="Forward from your provider"
-            body="Point SendGrid, Mailgun, Postmark or Cloudflare Email Routing at a webhook. Most control, most setup."
-            onSelect={() => setPicked('webhook')}
           />
         </div>
       </div>
@@ -1544,7 +1551,6 @@ function EmailDeliverySection({
     <div className="space-y-3">
       {method === 'domain' && <EmailDomainSection onVerified={onChanged} />}
       {method === 'mailbox' && <EmailOauthSection onConnected={onChanged} />}
-      {method === 'webhook' && <EmailWebhookMethodNote />}
 
       {/* Offered only while nothing is actually set up. Once a domain is
           verified or a mailbox connected, that section owns its own removal
@@ -1597,18 +1603,6 @@ function MethodCard({
   )
 }
 
-function EmailWebhookMethodNote() {
-  return (
-    <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 space-y-2">
-      <p className="text-xs font-medium text-gray-600">Forward from your provider</p>
-      <p className="text-xs text-gray-500">
-        Use the webhook endpoint below. Mail starts flowing as soon as your provider posts to it — there is nothing
-        further to confirm here.
-      </p>
-    </div>
-  )
-}
-
 export function EmailIntegrationCard() {
   const [integration, setIntegration] = useState<EmailIntegration | null | undefined>(undefined)
   const [editing, setEditing] = useState(false)
@@ -1617,7 +1611,6 @@ export function EmailIntegrationCard() {
   // "enabled" and "mail can actually arrive" are different questions and the
   // badge used to answer the first while appearing to answer the second.
   const [configuredMethod, setConfiguredMethod] = useState<DeliveryMethod | null>(null)
-  const [webhookSecret, setWebhookSecret] = useState<string | null>(null)
   const { toastMessage, showToast } = useToast()
   const [, startDeleteTransition] = useTransition()
   const router = useRouter()
@@ -1630,9 +1623,6 @@ export function EmailIntegrationCard() {
         setIntegration(updated.find((i: EmailIntegration) => i.platform === 'email') ?? null)
         setEditing(false)
         showToast('Email settings saved')
-        if ('webhookSecret' in result && result.webhookSecret) {
-          setWebhookSecret(result.webhookSecret as string)
-        }
         router.refresh()
       }
       return result
@@ -1643,7 +1633,7 @@ export function EmailIntegrationCard() {
   const [deleteState, deleteAction, deletePending] = useActionState(
     async (prev: unknown, fd: FormData) => {
       const result = await deleteEmailIntegrationAction(prev, fd)
-      if (!result?.error) { setIntegration(null); setEditing(false); setWebhookSecret(null) }
+      if (!result?.error) { setIntegration(null); setEditing(false) }
       return result
     },
     null
@@ -1673,8 +1663,6 @@ export function EmailIntegrationCard() {
   if (integration === undefined) return <p className="text-sm text-gray-400">Loading…</p>
 
   const connected = integration !== null && integration.enabled === 1
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
-
   return (
     <>
       {toastMessage && <Toast message={toastMessage} />}
@@ -1743,22 +1731,6 @@ export function EmailIntegrationCard() {
           </Button>
         )}
 
-        {(connected || webhookSecret) && (
-          <div className="rounded-md bg-amber-50 border border-amber-100 p-3 space-y-2">
-            <p className="text-xs font-medium text-amber-800">Webhook endpoint</p>
-            <p className="text-xs text-amber-700">
-              Configure your email provider (SendGrid, Mailgun, Postmark, Cloudflare Email Routing) to POST inbound emails to:
-            </p>
-            <code className="block text-xs font-mono text-amber-900 break-all">{baseUrl}/api/email/ingest</code>
-            {webhookSecret && (
-              <>
-                <p className="text-xs text-amber-700 mt-1">Set the <code className="font-mono">X-Email-Webhook-Secret</code> header to:</p>
-                <code className="block text-xs font-mono text-amber-900 break-all select-all">{webhookSecret}</code>
-                <p className="text-xs text-gray-400">Save this — it will not be shown again.</p>
-              </>
-            )}
-          </div>
-        )}
 
         {/* Enabling the channel and tuning it are separate jobs, and mixing
             them put three optional fields in front of the only button that
@@ -1769,8 +1741,8 @@ export function EmailIntegrationCard() {
         {!connected && (
           <form action={saveAction} className="space-y-3">
             <p className="text-xs text-gray-500">
-              Turn on the email channel, then choose how mail should reach it — your own domain, a Gmail or Outlook
-              mailbox, or a forward from your existing provider. Sender filters and deflection settings come after.
+              Turn on the email channel, then choose your company domain for inbound tickets or connect Gmail or
+              Outlook for outbound replies. Sender filters and deflection settings come after.
             </p>
             <Button type="submit" disabled={savePending}>
               {savePending ? 'Setting up…' : 'Set up email'}
