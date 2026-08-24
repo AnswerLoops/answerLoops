@@ -1,0 +1,14 @@
+import type { Metadata } from 'next'
+import { IntentPage } from '@/components/marketing/intent-page'
+import { resolveNavState } from '@/lib/marketing/nav-state'
+
+export const dynamic = 'force-dynamic'
+export const metadata: Metadata = {
+  title: 'AI Support for Discord and GitHub — AnswerLoops',
+  description: 'Use AnswerLoops for AI support across Discord and GitHub Issues or Discussions, with one knowledge base, confidence gating, and human escalation.',
+  alternates: { canonical: '/discord-github-support' },
+}
+
+export default async function DiscordGithubSupportPage() {
+  return <IntentPage navState={await resolveNavState()} eyebrow="Discord and GitHub support" title="AI support for Discord and GitHub" intro="AnswerLoops connects the two places where developer communities ask the most questions: real-time Discord conversations and durable GitHub Issues or Discussions. One support pipeline keeps the answer consistent across both." audience="Open-source projects and developer tools whose support workload is split between community chat, issue trackers, and documentation." highlights={[{ title: 'One knowledge source', body: 'Ground answers in docs, repository content, FAQs, and resolved tickets instead of training a separate bot for each channel.' }, { title: 'Channel-aware replies', body: 'Respond where the question started, with the ticket context and source channel preserved for your team.' }, { title: 'Triage before noise', body: 'Classify and prioritize incoming questions so bugs, account issues, and repeat how-to questions do not look identical.' }, { title: 'Human escalation', body: 'When evidence is weak or the question needs maintainer judgment, keep the draft in the queue for review.' }]} workflow={[{ step: '01', title: 'Ingest', body: 'Discord messages, forum posts, GitHub issues, comments, and discussions enter the same org-scoped ticket model.' }, { step: '02', title: 'Answer', body: 'The agent searches your knowledge and creates a grounded draft, then a confidence check decides whether it can post.' }, { step: '03', title: 'Learn', body: 'A resolved answer can be promoted into reusable knowledge, improving future responses in both channels.' }]} comparison={[{ question: 'Does it support both channels?', answer: 'Yes. Discord and GitHub Issues/Discussions are first-class sources in the same support workflow.' }, { question: 'Can it answer automatically?', answer: 'High-confidence answers can post automatically; low-confidence answers are routed to a human with the draft attached.' }, { question: 'Can I add more channels later?', answer: 'Yes. Slack, Google Chat, Telegram, email, and an embeddable web widget use the same underlying support pipeline.' }]} docs={[{ label: 'Discord setup', href: '/docs/self-hosting/discord-bot' }, { label: 'Read the introduction', href: '/docs/introduction' }, { label: 'See agentic support', href: '/agentic-support' }]} />
+}

@@ -1,0 +1,14 @@
+import type { Metadata } from 'next'
+import { IntentPage } from '@/components/marketing/intent-page'
+import { resolveNavState } from '@/lib/marketing/nav-state'
+
+export const dynamic = 'force-dynamic'
+export const metadata: Metadata = {
+  title: 'Open-Source Customer Support for Developer Communities — AnswerLoops',
+  description: 'AnswerLoops gives open-source maintainers one support workflow for Discord, GitHub, Slack, docs, and web chat, with grounded answers and human escalation.',
+  alternates: { canonical: '/open-source-support' },
+}
+
+export default async function OpenSourceSupportPage() {
+  return <IntentPage navState={await resolveNavState()} eyebrow="Open-source community support" title="Open-source customer support for developer communities" intro="AnswerLoops helps maintainers answer repeat questions across Discord, GitHub, Slack, and your docs without turning every new question into another interruption for the core team." audience="Open-source maintainers, developer-relations teams, and community operators whose users ask for help in public channels instead of a traditional support inbox." highlights={[{ title: 'Meet users where they ask', body: 'Discord, GitHub Issues and Discussions, Slack, Telegram, email, and web chat feed one ticket and answer workflow.' }, { title: 'Keep answers grounded', body: 'Search your documentation, connected repositories, and approved knowledge before drafting a response.' }, { title: 'Protect maintainer time', body: 'High-confidence repeat answers can be automated while uncertain questions stay visible to a human.' }, { title: 'Let the community teach the system', body: 'Resolved answers can become reusable knowledge, so the next version of the question is easier to handle.' }]} workflow={[{ step: '01', title: 'Collect', body: 'A question arrives in the channel your community already uses and becomes a structured support ticket.' }, { step: '02', title: 'Ground', body: 'AnswerLoops retrieves relevant documentation and knowledge, then grades the draft before it is posted.' }, { step: '03', title: 'Improve', body: 'Your team resolves edge cases and promotes useful answers into the knowledge base for future questions.' }]} comparison={[{ question: 'Is it open source?', answer: 'Yes. The project is available under AGPL-3.0 and can be run on your own infrastructure.' }, { question: 'Who is it for?', answer: 'Teams supporting developer communities, especially projects where Discord and GitHub are primary support surfaces.' }, { question: 'Does it replace maintainers?', answer: 'No. It automates repeatable answers and routes uncertain or sensitive questions to people.' }]} docs={[{ label: 'Read the introduction', href: '/docs/introduction' }, { label: 'Self-host it', href: '/docs/quickstart-self-host' }, { label: 'See pricing', href: '/pricing' }]} />
+}

@@ -6,12 +6,12 @@ import { resolveNavState } from '@/lib/marketing/nav-state'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Agentic Support for Developer Communities — AnswerLoops',
+  title: 'What Is an Agentic Support Platform? — AnswerLoops',
   description:
     'AnswerLoops is an open-source, self-hostable agentic support platform for developer communities. Resolve repeat questions across Discord, Slack, GitHub, email, Telegram, Google Chat, and web chat.',
   alternates: { canonical: '/agentic-support' },
   openGraph: {
-    title: 'Agentic Support for Developer Communities — AnswerLoops',
+    title: 'What Is an Agentic Support Platform? — AnswerLoops',
     description:
       'An open-source, self-hostable support agent that resolves repeat questions across every community channel while keeping your team in control.',
     url: '/agentic-support',
@@ -62,7 +62,7 @@ export default async function AgenticSupportPage() {
           <div className="relative mx-auto max-w-5xl px-5 text-center sm:px-8">
             <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-blue-300">Agentic support infrastructure</p>
             <h1 className="mt-6 text-balance text-5xl font-semibold leading-[0.98] tracking-[-0.055em] text-white sm:text-7xl">
-              Support that learns from every question.
+              What is an agentic support platform?
             </h1>
             <p className="mx-auto mt-7 max-w-3xl text-pretty text-base leading-relaxed text-slate-200/75 sm:text-xl">
               AnswerLoops is an agentic support platform for developer communities. It resolves repeat questions across the channels where your users already ask for help, while your team stays in control of the answers that matter most.
