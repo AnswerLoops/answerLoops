@@ -6,6 +6,7 @@ import { PricingToggle } from '@/components/marketing/pricing-toggle'
 import { PricingComparisonTable } from '@/components/marketing/pricing-comparison-table'
 import { resolveNavState } from '@/lib/marketing/nav-state'
 import { GITHUB_URL } from '@/lib/site'
+import { ORGANIZATION_ID } from '@/lib/site-identity'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -33,6 +34,7 @@ function PricingStructuredData() {
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
     url: 'https://answerloops.com/pricing',
+    provider: { '@id': ORGANIZATION_ID },
     description: 'Agentic AI support for developer communities across Discord, Slack, Google Chat, GitHub, Telegram, email, and website chat.',
     offers: [
       {
