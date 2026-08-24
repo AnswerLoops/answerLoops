@@ -20,6 +20,15 @@ const MOD = 'billing/checkout'
  */
 const CANCEL_PATH = '/pricing'
 
+// Checkout can be requested more than once while the browser is mounting the
+// embedded form, retrying a slow response, or recovering from a lost network
+// response. Stripe's idempotency layer makes those requests converge on one
+// session for this org/plan/interval combination instead of creating multiple
+// subscription-mode sessions that can each become a Customer.
+function checkoutIdempotencyKey(orgId: number, planId: string, interval: BillingInterval): string {
+  return `checkout:${orgId}:${planId}:${interval}`
+}
+
 export type CheckoutResult =
   | { ok: true; url: string }
   | { ok: false; error: string; status: number }
@@ -128,7 +137,7 @@ export async function createCheckoutSession(
           message: `Your card will not be charged today. The first ${TRIAL_DAYS} days are free, and you can cancel any time before then at no cost.`,
         },
       },
-    })
+    }, { idempotencyKey: checkoutIdempotencyKey(orgId, plan.id, interval) })
 
     if (!checkoutSession.url) {
       logger.error('Stripe returned a session with no URL', { module: MOD, orgId, planId: plan.id })
@@ -230,7 +239,7 @@ export async function createEmbeddedCheckoutSession(
         metadata: { org_id: String(orgId), plan_id: plan.id },
       },
       allow_promotion_codes: true,
-    })
+    }, { idempotencyKey: checkoutIdempotencyKey(orgId, plan.id, interval) })
 
     if (!checkoutSession.client_secret) {
       logger.error('Stripe returned an embedded session with no client secret', {
