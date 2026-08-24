@@ -35,9 +35,10 @@ describe('new checkout customer lifecycle', () => {
     await createCheckoutSession(42, 'standard', 'owner@example.com', 'Owner')
 
     expect(getOrCreateCustomer).not.toHaveBeenCalled()
-    expect(createSession).toHaveBeenCalledWith(expect.objectContaining({
-      customer_email: 'owner@example.com',
-    }))
+    expect(createSession).toHaveBeenCalledWith(
+      expect.objectContaining({ customer_email: 'owner@example.com' }),
+      { idempotencyKey: 'checkout:42:standard:monthly' },
+    )
     expect(createSession.mock.calls[0][0]).not.toHaveProperty('customer')
   })
 
@@ -48,7 +49,10 @@ describe('new checkout customer lifecycle', () => {
     await createCheckoutSession(42, 'standard', 'owner@example.com', 'Owner')
 
     expect(getOrCreateCustomer).not.toHaveBeenCalled()
-    expect(createSession).toHaveBeenCalledWith(expect.objectContaining({ customer: 'cus_existing' }))
+    expect(createSession).toHaveBeenCalledWith(
+      expect.objectContaining({ customer: 'cus_existing' }),
+      { idempotencyKey: 'checkout:42:standard:monthly' },
+    )
     expect(createSession.mock.calls[0][0]).not.toHaveProperty('customer_email')
   })
 
@@ -59,7 +63,21 @@ describe('new checkout customer lifecycle', () => {
     await createEmbeddedCheckoutSession(42, 'standard', 'owner@example.com', 'Owner')
 
     expect(getOrCreateCustomer).not.toHaveBeenCalled()
-    expect(createSession.mock.calls[0][0]).toHaveProperty('customer_email', 'owner@example.com')
+    expect(createSession).toHaveBeenCalledWith(
+      expect.objectContaining({ customer_email: 'owner@example.com' }),
+      { idempotencyKey: 'checkout:42:standard:monthly' },
+    )
     expect(createSession.mock.calls[0][0]).not.toHaveProperty('customer')
+  })
+
+  it('uses the same idempotency key when checkout is requested again', async () => {
+    const { createCheckoutSession } = await import('@/lib/billing/checkout')
+
+    await createCheckoutSession(42, 'standard', 'owner@example.com', 'Owner')
+    await createCheckoutSession(42, 'standard', 'owner@example.com', 'Owner')
+
+    expect(createSession).toHaveBeenCalledTimes(2)
+    expect(createSession.mock.calls[0][1]).toEqual(createSession.mock.calls[1][1])
+    expect(createSession.mock.calls[0][1]).toEqual({ idempotencyKey: 'checkout:42:standard:monthly' })
   })
 })
