@@ -5,6 +5,26 @@ import { buildGmailAuthUrl } from '@/lib/email/gmail'
 
 export const GMAIL_OAUTH_STATE_COOKIE = 'answerloops-gmail-oauth-state'
 
+function gmailOauthStateCookieOptions() {
+  const domain = process.env.AUTH_COOKIE_DOMAIN
+  return {
+    httpOnly: true,
+    sameSite: 'lax' as const,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 10 * 60,
+    path: '/',
+    ...(domain ? { domain } : {}),
+  }
+}
+
+export function clearGmailOauthStateCookie(response: NextResponse): NextResponse {
+  response.cookies.set(GMAIL_OAUTH_STATE_COOKIE, '', {
+    ...gmailOauthStateCookieOptions(),
+    maxAge: 0,
+  })
+  return response
+}
+
 export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return Response.redirect(new URL('/login', req.url))
@@ -21,12 +41,6 @@ export async function GET(req: NextRequest) {
   }
 
   const response = NextResponse.redirect(authUrl)
-  response.cookies.set(GMAIL_OAUTH_STATE_COOKIE, state, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 10 * 60,
-    path: '/',
-  })
+  response.cookies.set(GMAIL_OAUTH_STATE_COOKIE, state, gmailOauthStateCookieOptions())
   return response
 }

@@ -1434,7 +1434,9 @@ function EmailOauthSection({ onConnected }: { onConnected: () => void }) {
 
       {connection?.status === 'connected' && (
         <div className="space-y-2">
+          <p className="text-xs font-medium text-green-700">Gmail is connected</p>
           <ReadOnlyRow label={`${OAUTH_PROVIDER_LABEL[connection.provider]} mailbox`} value={connection.mailbox_address} />
+          <p className="text-xs text-gray-500">Replies will be sent from this mailbox.</p>
           <Button
             size="sm"
             variant="danger"
@@ -1611,6 +1613,7 @@ export function EmailIntegrationCard() {
   // "enabled" and "mail can actually arrive" are different questions and the
   // badge used to answer the first while appearing to answer the second.
   const [configuredMethod, setConfiguredMethod] = useState<DeliveryMethod | null>(null)
+  const [configuredLive, setConfiguredLive] = useState(false)
   const { toastMessage, showToast } = useToast()
   const [, startDeleteTransition] = useTransition()
   const router = useRouter()
@@ -1653,9 +1656,18 @@ export function EmailIntegrationCard() {
       fetch('/api/email-domain').then((r) => r.json()).catch(() => null),
       fetch('/api/email-oauth').then((r) => r.json()).catch(() => null),
     ])
-    if (domain) setConfiguredMethod('domain')
-    else if (oauth) setConfiguredMethod('mailbox')
-    else setConfiguredMethod(null)
+    if (domain) {
+      setConfiguredMethod('domain')
+      setConfiguredLive(domain.status === 'verified')
+    } else if (oauth) {
+      // Keep a disconnected row visible so the user can reconnect it, but do
+      // not let a stale row make the channel look operational.
+      setConfiguredMethod('mailbox')
+      setConfiguredLive(oauth.status === 'connected')
+    } else {
+      setConfiguredMethod(null)
+      setConfiguredLive(false)
+    }
   }
 
   useEffect(() => { reloadIntegration(); reloadConfiguredMethod() }, [])
@@ -1673,7 +1685,7 @@ export function EmailIntegrationCard() {
             <div>
               <p className="text-sm font-medium text-gray-900">Email</p>
               <p className="text-xs text-gray-500">
-                {!connected ? 'Not connected' : configuredMethod ? 'Connected' : 'Setup incomplete'}
+                {!connected ? 'Not connected' : configuredLive ? 'Connected' : 'Setup incomplete'}
               </p>
             </div>
           </div>
@@ -1685,11 +1697,11 @@ export function EmailIntegrationCard() {
                 path leaves no trace to check, so it stays pending until a
                 delivery method is provably in place. */}
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              !connected ? 'bg-gray-100 text-gray-500'
-                : configuredMethod ? 'bg-green-100 text-green-700'
+                !connected ? 'bg-gray-100 text-gray-500'
+                : configuredLive ? 'bg-green-100 text-green-700'
                 : 'bg-amber-100 text-amber-700'
             }`}>
-              {!connected ? 'Inactive' : configuredMethod ? 'Active' : 'Needs setup'}
+              {!connected ? 'Inactive' : configuredLive ? 'Active' : 'Needs setup'}
             </span>
             {connected && !editing && (
               <Button
