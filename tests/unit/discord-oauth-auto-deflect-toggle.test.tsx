@@ -1,4 +1,6 @@
 // @vitest-environment happy-dom
+import fs from 'node:fs'
+import path from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -263,5 +265,25 @@ describe('DiscordIntegrationCard — OAuth-connected auto-deflect toggle', () =>
     // integration state was never reloaded on error, so the checkbox still
     // reflects the last-known-good server value (on), not the failed flip.
     expect((screen.getByRole('checkbox') as HTMLInputElement).checked).toBe(true)
+  })
+})
+
+// Code review finding: updateDiscordAutoDeflectAction called upsertIntegration
+// without an `enabled` field, and upsertIntegration always writes `enabled`
+// (defaulting true unless explicitly false — not "leave as-is" like most of
+// its other fields). Omitting it would silently re-enable a row someone had
+// deliberately disabled. Server actions in this file are tested by source
+// assertion elsewhere in this repo (no auth+DB mocking convention exists for
+// them) — following that same pattern here.
+describe('updateDiscordAutoDeflectAction — preserves the existing enabled flag', () => {
+  it('passes enabled explicitly, computed from the existing row, not omitted', () => {
+    const src = fs.readFileSync(path.join(process.cwd(), 'app/actions/integrations.ts'), 'utf-8')
+
+    const fnIdx = src.indexOf('export async function updateDiscordAutoDeflectAction')
+    expect(fnIdx).toBeGreaterThanOrEqual(0)
+    const bodyEnd = src.indexOf('\n}', fnIdx)
+    const body = src.slice(fnIdx, bodyEnd)
+
+    expect(body).toContain('enabled: existing ? existing.enabled === 1 : true')
   })
 })

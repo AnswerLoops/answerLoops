@@ -90,6 +90,15 @@ describe('watchConfigChanges — heartbeat is gated on LISTEN success', () => {
     expect(heartbeatCreateIdx).toBeLessThan(catchIdx)
   })
 
+  it('the LISTEN .then() bails on a stale epoch before touching heartbeat — code review finding: a newer connect() can take over before this promise settles, and unconditionally setting heartbeat here would clobber the real one with an interval polling an already-superseded connection', () => {
+    const listenCallIdx = fn.indexOf("sql.unsafe('LISTEN config_changed')")
+    const thenIdx = fn.indexOf('.then(', listenCallIdx)
+    const heartbeatCreateIdx = fn.indexOf('heartbeat = setInterval(', thenIdx)
+    const guardIdx = fn.indexOf('if (myEpoch !== epoch) return', thenIdx)
+    expect(guardIdx).toBeGreaterThan(thenIdx)
+    expect(guardIdx).toBeLessThan(heartbeatCreateIdx)
+  })
+
   it('the LISTEN failure branch reconnects instead of silently giving up', () => {
     const catchIdx = fn.indexOf('.catch(', fn.indexOf("sql.unsafe('LISTEN config_changed')"))
     const catchBody = fn.slice(catchIdx, catchIdx + 300)

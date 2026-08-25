@@ -193,6 +193,12 @@ function watchConfigChanges(onNotify: () => Promise<void>): () => Promise<void> 
 
     sql.unsafe('LISTEN config_changed')
       .then(() => {
+        // A newer connect() may have already taken over (its onclose fired
+        // and triggered a reconnect) before this LISTEN promise settled.
+        // Every other completion path here is epoch-guarded via
+        // scheduleReconnect — this one must be too, or it clobbers the
+        // real heartbeat with one polling an already-superseded connection.
+        if (myEpoch !== epoch) return
         logger.info('LISTEN config_changed active', { module: MOD })
         heartbeat = setInterval(() => {
           sql.unsafe('SELECT 1').catch((err) => scheduleReconnect(myEpoch, 'heartbeat failed', err))
@@ -507,7 +513,7 @@ async function main() {
     // Multi-tenant: look up per-org config by guild. Falls back to live.config
     // for single-org (env-var) deployments where no org has a connected guild.
     const orgCfg = message.guildId
-      ? await loadOrgConfigForGuild(message.guildId).catch(() => null)
+      ? await loadOrgConfigForGuild(message.guildId)
       : null
     const cfg = orgCfg?.config ?? live.config
     const result = await forwardMessage(message as unknown as IncomingMessage, cfg)
@@ -551,7 +557,7 @@ async function main() {
     if (!newlyCreated) return
     if (!thread.parentId) return
     const guildId = thread.guildId
-    const orgCfg = guildId ? await loadOrgConfigForGuild(guildId).catch(() => null) : null
+    const orgCfg = guildId ? await loadOrgConfigForGuild(guildId) : null
     const cfg = orgCfg?.config ?? live.config
     if (!cfg.channelIds.includes(thread.parentId)) {
       // Previously a bare early return with no log — cost real debugging
@@ -603,7 +609,7 @@ async function main() {
     async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => {
       const guildId = (reaction.message as { guildId?: string | null }).guildId ?? null
       const orgCfg = guildId
-        ? await loadOrgConfigForGuild(guildId).catch(() => null)
+        ? await loadOrgConfigForGuild(guildId)
         : null
       const cfg = orgCfg?.config ?? live.config
       const result = await forwardReaction(reaction as unknown as IncomingReaction, user, cfg)
