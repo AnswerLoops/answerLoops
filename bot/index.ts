@@ -511,21 +511,7 @@ async function main() {
       : null
     const cfg = orgCfg?.config ?? live.config
     const result = await forwardMessage(message as unknown as IncomingMessage, cfg)
-    if (!result.forwarded) {
-      // shouldForward() (bot/handlers.ts) silently declines a bot author, an
-      // unmonitored channel, or a too-short message — this was previously
-      // indistinguishable from "everything is fine, nothing happened", which
-      // cost real debugging time twice in production tracking down why a
-      // channel that looked correctly configured never produced a ticket.
-      logger.debug('message not forwarded', {
-        module: MOD,
-        messageId: message.id,
-        guildId: message.guildId,
-        channelId: message.channelId,
-        orgId: orgCfg?.orgId,
-        monitoredChannelIds: cfg.channelIds,
-      })
-    } else if (result.data?.duplicate) {
+    if (result.data?.duplicate) {
       logger.debug('duplicate message skipped', { module: MOD, messageId: message.id })
     } else if (result.data?.appended) {
       logger.info('thread reply appended to existing ticket', {
@@ -553,20 +539,7 @@ async function main() {
     const guildId = thread.guildId
     const orgCfg = guildId ? await loadOrgConfigForGuild(guildId).catch(() => null) : null
     const cfg = orgCfg?.config ?? live.config
-    if (!cfg.channelIds.includes(thread.parentId)) {
-      // Previously a bare early return with no log — cost real debugging
-      // time twice in production tracking down why a forum post that looked
-      // correctly configured in Settings never produced a ticket.
-      logger.debug('forum post not forwarded — parent channel not monitored', {
-        module: MOD,
-        threadId: thread.id,
-        guildId,
-        parentChannelId: thread.parentId,
-        orgId: orgCfg?.orgId,
-        monitoredChannelIds: cfg.channelIds,
-      })
-      return
-    }
+    if (!cfg.channelIds.includes(thread.parentId)) return
 
     let starterMessage: Message | null = null
     try {
