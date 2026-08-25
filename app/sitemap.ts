@@ -6,7 +6,19 @@ const BASE_URL = 'https://answerloops.com'
 // Static marketing routes worth a crawler's time. Auth-gated app routes
 // (/dashboard, /settings, etc.) are intentionally excluded — a crawler can't
 // do anything useful with a page that just redirects to /login.
-const STATIC_ROUTES = ['', '/agentic-support', '/pricing', '/privacy', '/terms', '/vs/chatbase', '/vs/intercom']
+const STATIC_ROUTES = [
+  '',
+  '/agentic-support',
+  '/discord-github-support',
+  '/mcp-support-agents',
+  '/open-source-support',
+  '/pricing',
+  '/privacy',
+  '/self-hosted-ai-support',
+  '/terms',
+  '/vs/chatbase',
+  '/vs/intercom',
+]
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((path) => ({
