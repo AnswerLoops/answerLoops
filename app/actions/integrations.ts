@@ -156,7 +156,17 @@ export async function updateDiscordAutoDeflectAction(autoDeflectEnabled: boolean
 
   const existing = await getIntegration(orgId, 'discord')
   const botSecret = existing?.bot_secret ?? crypto.randomBytes(32).toString('hex')
-  await upsertIntegration({ orgId, platform: 'discord', botSecret, autoDeflectEnabled })
+  // upsertIntegration always writes `enabled` (defaulting true when omitted,
+  // not "leave as-is" like most of its other fields) — passing the current
+  // value explicitly here, rather than leaving it out, keeps this toggle
+  // from silently re-enabling a row someone deliberately disabled.
+  await upsertIntegration({
+    orgId,
+    platform: 'discord',
+    botSecret,
+    autoDeflectEnabled,
+    enabled: existing ? existing.enabled === 1 : true,
+  })
 
   refresh()
   return null
