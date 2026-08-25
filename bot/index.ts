@@ -113,11 +113,29 @@ function startStuckTicketSweep(): void {
   setInterval(() => { sweep().catch(() => {}) }, STUCK_TICKET_SWEEP_INTERVAL_MS)
 }
 
+// How often to ping the dedicated LISTEN connection. Two jobs: (1) on Neon
+// and similar serverless Postgres, any query keeps the whole compute from
+// auto-suspending on idle (the default is ~5 minutes) — a suspend silently
+// kills every connection on it, LISTEN included; (2) a network path can also
+// drop a long-idle TCP connection on its own (proxies, load balancers) without
+// a clean close, which postgres.js's own onclose-based reconnect never sees.
+// A periodic query on this exact connection surfaces that failure quickly
+// instead of leaving the bot silently deaf to every NOTIFY until it's
+// manually restarted — this is what actually happened in production: the
+// connection went stale after ~30 minutes idle and every config change after
+// that was missed with nothing in the logs to explain why.
+const LISTEN_HEARTBEAT_INTERVAL_MS = 4 * 60 * 1000
+
 /**
- * Opens a dedicated single connection for LISTEN/NOTIFY.
+ * Opens a dedicated single connection for LISTEN/NOTIFY and keeps it alive.
  * Pooled connections cannot be used for LISTEN — the notification arrives on
  * whichever connection Postgres chooses, so we need one stable connection.
- * Returns a cleanup function that closes the connection on shutdown.
+ * Manages the raw connection directly (rather than postgres.js's `.listen()`
+ * sugar, which opens its own hidden internal connection reconnected only on
+ * a clean `close` event) so a heartbeat can run on the exact socket LISTEN
+ * uses, and a failed heartbeat triggers an immediate reconnect+re-LISTEN.
+ * Returns a cleanup function that stops the heartbeat and closes the
+ * connection on shutdown.
  */
 function watchConfigChanges(onNotify: () => Promise<void>): () => Promise<void> {
   const url = getDirectDatabaseUrl()
@@ -126,19 +144,74 @@ function watchConfigChanges(onNotify: () => Promise<void>): () => Promise<void> 
     return () => Promise.resolve()
   }
 
-  const listener = postgres(url, { max: 1 })
+  let stopped = false
+  let current: ReturnType<typeof postgres> | null = null
+  let heartbeat: ReturnType<typeof setInterval> | null = null
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  // Ending the old connection as part of our own reconnect also fires that
+  // connection's onclose — without this guard, that stray callback would
+  // schedule a second, redundant reconnect on top of the one already in
+  // flight. Each connect() call owns one epoch; a callback only acts if it's
+  // still the current epoch, so a replaced connection's late-arriving
+  // onclose/heartbeat-failure is silently ignored instead of double-firing.
+  let epoch = 0
 
-  listener
-    .listen('config_changed', async () => {
-      logger.info('config_changed notification — reloading', { module: MOD })
-      await onNotify().catch((err) =>
-        logger.warn('config reload failed after notify', { module: MOD, error: err })
-      )
-    })
-    .catch((err) => logger.warn('LISTEN setup failed', { module: MOD, error: err }))
+  const scheduleReconnect = (forEpoch: number, reason: string, err?: unknown) => {
+    if (stopped || forEpoch !== epoch || reconnectTimer) return
+    logger.warn('LISTEN connection lost — reconnecting', { module: MOD, reason, error: err })
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null
+      connect()
+    }, 2000)
+  }
 
-  logger.info('LISTEN config_changed active', { module: MOD })
-  return () => listener.end()
+  const connect = () => {
+    if (stopped) return
+    const myEpoch = ++epoch
+    if (heartbeat) { clearInterval(heartbeat); heartbeat = null }
+    current?.end({ timeout: 0 }).catch(() => {})
+
+    // `onnotify` isn't in postgres.js's public Options<T> TS type, but it's a
+    // real runtime option — the library's own `sql.listen()` sugar
+    // (node_modules/postgres/src/index.js) uses this exact mechanism
+    // internally to receive NOTIFY payloads. Declared explicitly here rather
+    // than cast with `any` so the rest of the options object stays checked.
+    const options: postgres.Options<{}> & { onnotify: (channel: string, payload: string) => void } = {
+      max: 1,
+      max_lifetime: null,
+      onnotify: (channel) => {
+        if (channel !== 'config_changed') return
+        logger.info('config_changed notification — reloading', { module: MOD })
+        onNotify().catch((err) =>
+          logger.warn('config reload failed after notify', { module: MOD, error: err })
+        )
+      },
+      onclose: () => scheduleReconnect(myEpoch, 'connection closed'),
+    }
+    const sql = postgres(url, options)
+    current = sql
+
+    sql.unsafe('LISTEN config_changed')
+      .then(() => {
+        logger.info('LISTEN config_changed active', { module: MOD })
+        heartbeat = setInterval(() => {
+          sql.unsafe('SELECT 1').catch((err) => scheduleReconnect(myEpoch, 'heartbeat failed', err))
+        }, LISTEN_HEARTBEAT_INTERVAL_MS)
+      })
+      .catch((err) => {
+        logger.warn('LISTEN setup failed', { module: MOD, error: err })
+        scheduleReconnect(myEpoch, 'initial LISTEN failed', err)
+      })
+  }
+
+  connect()
+
+  return async () => {
+    stopped = true
+    if (heartbeat) clearInterval(heartbeat)
+    if (reconnectTimer) clearTimeout(reconnectTimer)
+    await current?.end()
+  }
 }
 
 /** Builds { channelId → guildId } from all guilds the bot is currently in. */
