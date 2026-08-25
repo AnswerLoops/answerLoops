@@ -89,6 +89,27 @@ describe('getNextOrgTicketNumber: atomic assignment', () => {
       expect(calls.indexOf(updateCall!)).toBeLessThan(calls.indexOf(insertCall))
     }
   })
+
+  it('throws a clear, actionable error instead of crashing on undefined when the org does not exist', async () => {
+    // Production incident: ingest auth fell back to DEFAULT_ORG_ID for a
+    // deployment where that org was never provisioned, and this previously
+    // crashed with "Cannot read properties of undefined (reading 'next')" —
+    // a zero-row UPDATE...RETURNING, silently indistinguishable from any
+    // other bug without reading the source. Confirm it now names the org.
+    const missingOrgDb = drizzle(async (sqlText: string) => {
+      if (sqlText.trim().toLowerCase().startsWith('update') && sqlText.includes('"orgs"')) {
+        return { rows: [] } // no matching org row — the actual failure mode
+      }
+      return { rows: [] }
+    })
+    vi.doMock('@/lib/db/drizzle', () => ({ getDb: () => missingOrgDb }))
+    vi.resetModules()
+    const { createTicket } = await import('@/lib/db/queries/tickets')
+
+    await expect(
+      createTicket({ content: 'test question', priority: 'medium', source_platform: 'discord' }, 999)
+    ).rejects.toThrow('getNextOrgTicketNumber: no org found with id 999')
+  })
 })
 
 describe('display: dashboard shows org_ticket_number, never the raw global id', () => {
