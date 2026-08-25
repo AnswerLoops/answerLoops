@@ -3,7 +3,7 @@
 import { useActionState, useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { updateWorkspaceNameAction, completeOnboardingAction } from '@/app/actions/onboarding'
-import { saveDiscordIntegrationAction, saveTelegramIntegrationAction, saveSlackChannelsAction } from '@/app/actions/integrations'
+import { saveDiscordIntegrationAction, saveDiscordGuildChannelsAction, saveTelegramIntegrationAction, saveSlackChannelsAction } from '@/app/actions/integrations'
 import { ingestUrlAction } from '@/app/actions/ingest-url'
 import type { IngestUrlResult } from '@/app/actions/ingest-url'
 
@@ -247,9 +247,15 @@ function DiscordFlow({ onDone, onBack, oauthGuildId }: { onDone: () => void; onB
     if (!selectedGuild || selectedChannels.size === 0) return
     setSaving(true); setSaveError('')
     const fd = new FormData()
-    fd.set('botToken', botToken)
     fd.set('channelIds', [...selectedChannels].join(','))
-    const result = await saveDiscordIntegrationAction(null, fd) as { error?: string } | null
+    let result: { error?: string } | null
+    if (oauthGuildId) {
+      fd.set('guildId', oauthGuildId)
+      result = await saveDiscordGuildChannelsAction(null, fd) as { error?: string } | null
+    } else {
+      fd.set('botToken', botToken)
+      result = await saveDiscordIntegrationAction(null, fd) as { error?: string } | null
+    }
     if (result?.error) { setSaveError(result.error); setSaving(false); return }
     onDone()
   }

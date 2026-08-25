@@ -74,6 +74,14 @@ describe('onboarding wizard routes 1-click Discord connects to the channel picke
     expect(src).toMatch(/won.t send any messages here until you select at least one channel/)
   })
 
+  it('saves OAuth channel selections through the guild-specific action without requiring a token', () => {
+    const src = read('app/onboarding/wizard.tsx')
+    const saveBlock = src.slice(src.indexOf('async function save()'), src.indexOf('function toggleChannel'))
+    expect(saveBlock).toContain('saveDiscordGuildChannelsAction')
+    expect(saveBlock).toContain("fd.set('guildId', oauthGuildId)")
+    expect(saveBlock).toContain('saveDiscordIntegrationAction')
+  })
+
   it('ConnectStep defaults straight into the Discord flow when oauthGuildId is present, skipping the platform picker', () => {
     const src = read('app/onboarding/wizard.tsx')
     expect(src).toContain("useState<Platform>(oauthGuildId ? 'discord' : slackConnected ? 'slack' : null)")
