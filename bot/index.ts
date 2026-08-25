@@ -486,6 +486,21 @@ async function main() {
       logger.warn('failed to save guild channel map', { module: MOD, error: err })
     )
     logger.info('guild channel map saved', { module: MOD, guildCount: c.guilds.cache.size })
+
+    // Ground truth for "can this process actually receive events here" —
+    // cheaper and more reliable than reading Discord's permission UI by
+    // hand. A guild or channel missing from this dump means Discord isn't
+    // giving the bot visibility into it at all, no matter what Settings or
+    // the discord_guilds table say, and no error would ever surface that on
+    // its own — a silently-denied channel just never generates an event.
+    for (const [guildId, guild] of c.guilds.cache) {
+      logger.debug('guild visibility at startup', {
+        module: MOD,
+        guildId,
+        guildName: guild.name,
+        channelIds: [...guild.channels.cache.keys()],
+      })
+    }
   })
 
   client.on(Events.MessageCreate, async (message: Message) => {
