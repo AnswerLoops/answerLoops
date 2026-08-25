@@ -87,6 +87,12 @@ async function getNextOrgTicketNumber(orgId: number): Promise<number> {
     .set({ nextTicketNumber: sql`${orgs.nextTicketNumber} + 1` })
     .where(eq(orgs.id, orgId))
     .returning({ next: orgs.nextTicketNumber })
+  // A zero-row UPDATE (orgId doesn't exist — e.g. a caller resolved the
+  // wrong or an unprovisioned org id) previously crashed here with an
+  // opaque "Cannot read properties of undefined (reading 'next')", which
+  // cost real time tracing back to "which org is missing" during a
+  // production incident. Fail with that answer directly.
+  if (!row) throw new Error(`getNextOrgTicketNumber: no org found with id ${orgId}`)
   return row.next - 1
 }
 
