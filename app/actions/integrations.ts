@@ -138,6 +138,30 @@ export async function deleteDiscordIntegrationAction(
   return null
 }
 
+// Automatic Deflections is one setting per org (integrations.autoDeflectEnabled),
+// not per guild — OAuth-connected orgs have no legacy integrations row to
+// edit it through (that card is legacy-manual-connect only), so this is the
+// only path that can set it for them. Mirrors the bot_secret fallback in
+// app/api/discord/callback/route.ts: an OAuth org always has a bot_secret by
+// the time it can reach this (the callback ensures one), but generating a
+// fresh one here too means flipping this toggle never fails/no-ops for an
+// org whose integrations row is missing for any other reason.
+export async function updateDiscordAutoDeflectAction(autoDeflectEnabled: boolean): Promise<{ error?: string } | null> {
+  const session = await auth()
+  if (!session?.user) return { error: 'Unauthorized' }
+  const orgId = session.orgId ?? DEFAULT_ORG_ID
+
+  const gateError = await requireFeature(orgId, 'discord_integration')
+  if (gateError) return { error: gateError }
+
+  const existing = await getIntegration(orgId, 'discord')
+  const botSecret = existing?.bot_secret ?? crypto.randomBytes(32).toString('hex')
+  await upsertIntegration({ orgId, platform: 'discord', botSecret, autoDeflectEnabled })
+
+  refresh()
+  return null
+}
+
 // ── Discord — multi-server (OAuth-connected guilds) ─────────────────────────
 
 export async function saveDiscordGuildChannelsAction(

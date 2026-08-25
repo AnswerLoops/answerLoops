@@ -4,7 +4,7 @@ import { useActionState, useRef, useTransition } from 'react'
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { updateSLAAction } from '@/app/actions/sla'
-import { saveDiscordIntegrationAction, deleteDiscordIntegrationAction, saveDiscordGuildChannelsAction, removeDiscordGuildAction, saveSlackChannelsAction, deleteSlackIntegrationAction, saveTelegramIntegrationAction, deleteTelegramIntegrationAction, saveEmailIntegrationAction, deleteEmailIntegrationAction, startEmailDomainVerificationAction, checkEmailDomainVerificationAction, removeEmailDomainAction, disconnectOauthAction, generateGoogleChatConnectCodeAction, saveGoogleChatSettingsAction, deleteGoogleChatIntegrationAction, getCurrentDeploymentMode } from '@/app/actions/integrations'
+import { saveDiscordIntegrationAction, deleteDiscordIntegrationAction, saveDiscordGuildChannelsAction, removeDiscordGuildAction, updateDiscordAutoDeflectAction, saveSlackChannelsAction, deleteSlackIntegrationAction, saveTelegramIntegrationAction, deleteTelegramIntegrationAction, saveEmailIntegrationAction, deleteEmailIntegrationAction, startEmailDomainVerificationAction, checkEmailDomainVerificationAction, removeEmailDomainAction, disconnectOauthAction, generateGoogleChatConnectCodeAction, saveGoogleChatSettingsAction, deleteGoogleChatIntegrationAction, getCurrentDeploymentMode } from '@/app/actions/integrations'
 import { sendInviteAction, revokeInviteAction, removeMemberAction, transferOwnershipAction } from '@/app/actions/invitations'
 import { getWidgetTokenAction, regenerateWidgetTokenAction, saveWidgetOriginsAction } from '@/app/actions/widget'
 import { saveAIConfigAction, clearAIConfigAction } from '@/app/actions/ai-config'
@@ -288,6 +288,35 @@ function DiscordIntegrationCard() {
             onAutoEditConsumed={() => setJustConnectedGuildId(null)}
           />
         ))}
+
+        {/* Automatic Deflections is one setting per org, not per guild — the
+            legacy card below can set it, but that card only renders for a
+            manual-bot-token connection. OAuth-connected orgs have no other
+            way to reach it, so this stands on its own whenever any guild is
+            connected via OAuth. */}
+        {guilds.length > 0 && (
+          <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
+            <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <div>
+                <span className="text-xs font-medium text-gray-600">Automatic Deflections</span>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  When off, high-confidence answers are held as drafts awaiting approval instead of posting automatically — a brief acknowledgment is sent to the channel instead.
+                </p>
+              </div>
+              <ToggleSwitch
+                label=""
+                confirmLabel="Discord"
+                checked={integration?.auto_deflect_enabled === 1}
+                onChange={async (checked) => {
+                  const result = await updateDiscordAutoDeflectAction(checked)
+                  if (result?.error) { showToast(result.error); return }
+                  await reloadIntegration()
+                  router.refresh()
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Legacy manual setup — shown only when connected without any OAuth guild */}
         {legacyConnected && !legacyEditing && (
