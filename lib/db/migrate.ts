@@ -101,6 +101,16 @@ export async function runMigrations() {
     CREATE TRIGGER trg_config_changed
       AFTER INSERT OR UPDATE OR DELETE ON integrations
       FOR EACH ROW EXECUTE FUNCTION notify_config_changed();
+
+    -- Per-guild channel picks (Settings → Discord, OAuth-connected servers)
+    -- live in discord_guilds, not integrations — without this trigger, saving
+    -- a channel selection there never notified the running bot, so the
+    -- change only took effect after a manual restart. See discord-bot.mdx's
+    -- Config hot-reload section, which claimed this already worked.
+    DROP TRIGGER IF EXISTS trg_config_changed_discord_guilds ON discord_guilds;
+    CREATE TRIGGER trg_config_changed_discord_guilds
+      AFTER INSERT OR UPDATE OR DELETE ON discord_guilds
+      FOR EACH ROW EXECUTE FUNCTION notify_config_changed();
   `)
 
   // Idempotent trigger: fires pg_notify('member_joined', org_id) on every new
