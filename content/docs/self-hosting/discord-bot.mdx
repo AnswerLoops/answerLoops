@@ -85,6 +85,8 @@ When you save changes in **Settings → Discord** (channel IDs, bot token, confi
 
 The bot also updates its channel→guild map automatically whenever it joins or leaves a server (`GuildCreate` / `GuildDelete` events) — no manual ID entry required.
 
+Both `integrations` (bot token, single-org channel config) and `discord_guilds` (per-guild channel picks for OAuth-connected servers) carry this trigger — a write to either one notifies the bot.
+
 <Note>
 The bot maintains one dedicated Postgres connection for `LISTEN`. This is separate from the connection pool and is closed cleanly on `SIGTERM`/`SIGINT`.
 </Note>

@@ -168,13 +168,34 @@ async function loadOrgConfigForGuild(guildId: string): Promise<{ config: BotConf
   if (guildConfigCache.has(guildId)) return guildConfigCache.get(guildId)!
 
   const targetUrl = process.env.BOT_TARGET_URL ?? 'http://localhost:3000'
-  const guildRow = await getDiscordGuildByGuildId(guildId).catch(() => null)
+  let guildRow: Awaited<ReturnType<typeof getDiscordGuildByGuildId>>
+  try {
+    guildRow = await getDiscordGuildByGuildId(guildId)
+  } catch (err) {
+    // A DB error here is not "this guild has no org" — caching that
+    // conflation as `null` would silently stop message forwarding for an
+    // already-configured guild until the next config_changed reload (itself
+    // unreliable without DIRECT_DATABASE_URL — see lib/db/direct-url.ts).
+    // Leave the guild unresolved for THIS lookup only; don't poison the cache.
+    logger.error('failed to resolve Discord guild config — DB lookup error, not treating as unconfigured', {
+      module: MOD, guildId, error: err,
+    })
+    return null
+  }
 
   let result: { config: BotConfig; orgId: number } | null = null
   if (guildRow) {
     // botSecret is shared per org across every guild that org connects —
     // resolve it from the org's integrations row, not the per-guild row.
-    const orgIntegration = await getIntegration(guildRow.org_id, 'discord').catch(() => null)
+    let orgIntegration: Awaited<ReturnType<typeof getIntegration>> = null
+    try {
+      orgIntegration = await getIntegration(guildRow.org_id, 'discord')
+    } catch (err) {
+      logger.error('failed to resolve org Discord integration — DB lookup error, not treating as unconfigured', {
+        module: MOD, guildId, orgId: guildRow.org_id, error: err,
+      })
+      return null
+    }
     result = {
       orgId: guildRow.org_id,
       config: {
@@ -195,7 +216,22 @@ async function loadConfig(): Promise<{
   slashConfig: SlashConfig
 }> {
   const targetUrl = process.env.BOT_TARGET_URL ?? 'http://localhost:3000'
-  const dbIntegration = await getIntegration(DEFAULT_ORG_ID, 'discord').catch(() => null)
+  let dbIntegration: Awaited<ReturnType<typeof getIntegration>> = null
+  let dbLookupFailed = false
+  try {
+    dbIntegration = await getIntegration(DEFAULT_ORG_ID, 'discord')
+  } catch (err) {
+    // Falling back to env vars here is correct for "no DB row configured",
+    // but wrong for "DB is momentarily unreachable" — the two look identical
+    // downstream unless logged distinctly. See lib/db/direct-url.ts: a
+    // pooled DATABASE_URL without DIRECT_DATABASE_URL set can flap the
+    // LISTEN connection, and this fallback previously masked that as a
+    // silent, unlogged "config reloaded — channel list changed".
+    dbLookupFailed = true
+    logger.error('failed to load Discord integration from database — falling back to environment variables', {
+      module: MOD, error: err,
+    })
+  }
 
   const discordToken = (dbIntegration?.bot_token ?? process.env.DISCORD_TOKEN) || ''
   const botSecret = (dbIntegration?.bot_secret ?? process.env.BOT_SECRET) || ''
@@ -205,9 +241,11 @@ async function loadConfig(): Promise<{
 
   if (dbIntegration) {
     logger.info('loaded Discord config from database', { module: MOD, channelCount: channelIds.length })
-  } else {
+  } else if (!dbLookupFailed) {
     logger.info('loaded Discord config from environment variables', { module: MOD, channelCount: channelIds.length })
   }
+  // else: already logged as an error above — don't also log the env-var
+  // fallback as if it were the expected, intentional path.
 
   return {
     discordToken,
