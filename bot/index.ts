@@ -437,6 +437,32 @@ async function main() {
   })
   clientRef = client
 
+  // The client can go silently deaf to gateway events (a zombie WebSocket
+  // connection, a shard dropped without a clean disconnect) while `client`
+  // still reports as logged in and every DB-side config still looks correct
+  // — nothing else in this file would ever notice or log that, which cost
+  // real debugging time chasing config/DB explanations for what turned out
+  // to be a connection health problem. discord.js normally auto-reconnects,
+  // but we had no visibility into whether that was even happening.
+  client.on(Events.Error, (err) => {
+    logger.error('Discord client error', { module: MOD, error: err })
+  })
+  client.on(Events.ShardError, (err, shardId) => {
+    logger.error('Discord shard error', { module: MOD, shardId, error: err })
+  })
+  client.on(Events.ShardDisconnect, (event, shardId) => {
+    logger.warn('Discord shard disconnected', { module: MOD, shardId, code: event.code, reason: event.reason })
+  })
+  client.on(Events.ShardReconnecting, (shardId) => {
+    logger.warn('Discord shard reconnecting', { module: MOD, shardId })
+  })
+  client.on(Events.ShardResume, (shardId, replayedEvents) => {
+    logger.info('Discord shard resumed', { module: MOD, shardId, replayedEvents })
+  })
+  client.on(Events.Warn, (message) => {
+    logger.warn('Discord client warning', { module: MOD, message })
+  })
+
   client.once(Events.ClientReady, async (c) => {
     logger.info(`logged in as ${c.user.tag}`, {
       module: MOD,
