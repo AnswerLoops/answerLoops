@@ -3079,9 +3079,19 @@ function GitHubIntegrationCard() {
   useEffect(() => { reload() }, [reload])
 
   useEffect(() => {
-    if (searchParams.get('github_connected') === '1') showToast('GitHub connected')
-    if (searchParams.get('github_error')) showToast('GitHub connection failed. Try again.')
-  }, [searchParams, showToast])
+    const connected = searchParams.get('github_connected') === '1'
+    const error = searchParams.get('github_error')
+    if (!connected && !error) return
+    if (connected) showToast('GitHub connected')
+    if (error) showToast('GitHub connection failed. Try again.')
+    // Remove params from URL without page reload — otherwise this effect
+    // refires on every re-render (showToast gets a fresh ref each time),
+    // showing the toast in an endless loop.
+    const url = new URL(window.location.href)
+    url.searchParams.delete('github_connected')
+    url.searchParams.delete('github_error')
+    router.replace(url.pathname + url.search, { scroll: false })
+  }, [searchParams, showToast, router])
 
   const connect = async () => {
     setConnecting(true)
