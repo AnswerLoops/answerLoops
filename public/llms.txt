@@ -49,6 +49,8 @@ Self-hosted: free forever (AGPL-3.0). Hosted (managed SaaS): Standard $29/mo (50
 - Pricing: https://answerloops.com/pricing
 - Privacy policy: https://answerloops.com/privacy
 - /self-hosted-ai-support: https://answerloops.com/self-hosted-ai-support
+- /self-hosting-proof: https://answerloops.com/self-hosting-proof
+- /support-example: https://answerloops.com/support-example
 - /support-workflow: https://answerloops.com/support-workflow
 - Terms of service: https://answerloops.com/terms
 - AnswerLoops vs Chatbase: https://answerloops.com/vs/chatbase
