@@ -16,6 +16,8 @@ const STATIC_ROUTES = [
   '/pricing',
   '/privacy',
   '/self-hosted-ai-support',
+  '/self-hosting-proof',
+  '/support-example',
   '/support-workflow',
   '/terms',
   '/vs/chatbase',
