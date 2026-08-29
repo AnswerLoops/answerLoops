@@ -246,6 +246,11 @@ export default async function TicketDetailPage(props: { params: Promise<{ id: st
               AI agent is generating an answer from GitHub source code…
             </div>
           )}
+          {ticket.ai_draft_status === 'needs_human' && !ticket.ai_draft && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
+              No AI draft was generated for this ticket — connect an AI provider in Settings → AI Model to enable auto-answers.
+            </div>
+          )}
 
           {/* Confidence assessment */}
           {assessment && (
