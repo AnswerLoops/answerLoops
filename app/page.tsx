@@ -6,6 +6,7 @@ import { Nav, Footer, GithubIcon, GITHUB_URL } from '@/components/marketing/chro
 import { resolveNavState } from '@/lib/marketing/nav-state'
 import { ORGANIZATION_ID } from '@/lib/site-identity'
 import { PageSchema } from '@/components/marketing/page-schema'
+import { jsonLdHtml } from '@/lib/marketing/json-ld'
 
 export const metadata: Metadata = {
   title: 'AnswerLoops — Agentic support for developer communities',
@@ -626,8 +627,10 @@ function StructuredData() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      {/* nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml */}
+      {/* jsonLd/faqJsonLd are built from server-controlled strings (plan names, FAQ copy), never user input; jsonLdHtml escapes `<` so the payload can't break out of the script tag. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(faqJsonLd) }} />
     </>
   )
 }

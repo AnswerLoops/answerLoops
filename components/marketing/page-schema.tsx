@@ -1,3 +1,6 @@
+import { jsonLdHtml } from '@/lib/marketing/json-ld'
+import { ORGANIZATION_ID, WEBSITE_ID } from '@/lib/site-identity'
+
 interface Breadcrumb {
   name: string
   path: string
@@ -9,21 +12,6 @@ export interface PageSchemaProps {
   path: string
   breadcrumbs?: Breadcrumb[]
   type?: 'WebPage' | 'CollectionPage'
-}
-
-const PAGE_SCHEMA_BY_TITLE: Record<string, PageSchemaProps> = {
-  'Open-source customer support for developer communities': { name: 'Open-source customer support for developer communities', description: 'AnswerLoops support workflow for open-source maintainers and developer communities.', path: '/open-source-support', breadcrumbs: [{ name: 'Support', path: '/agentic-support' }] },
-  'What is a self-hosted AI support platform?': { name: 'What is a self-hosted AI support platform?', description: 'How AnswerLoops supports self-hosted AI support deployments.', path: '/self-hosted-ai-support', breadcrumbs: [{ name: 'Support', path: '/agentic-support' }] },
-  'AI support for Discord and GitHub': { name: 'AI support for Discord and GitHub', description: 'AnswerLoops support workflow for Discord and GitHub communities.', path: '/discord-github-support', breadcrumbs: [{ name: 'Support', path: '/agentic-support' }] },
-  'MCP support agents for customer support': { name: 'MCP support agents for customer support', description: 'AnswerLoops MCP support agent capabilities and workflow.', path: '/mcp-support-agents', breadcrumbs: [{ name: 'Support', path: '/agentic-support' }] },
-  'A support pipeline built around evidence and review': { name: 'AnswerLoops architecture', description: 'AnswerLoops support pipeline architecture and knowledge loop.', path: '/architecture', breadcrumbs: [{ name: 'Proof', path: '/agentic-support' }] },
-  'From community question to reusable answer': { name: 'AnswerLoops support workflow', description: 'How AnswerLoops turns community questions into grounded, reviewed, reusable support answers.', path: '/support-workflow', breadcrumbs: [{ name: 'Proof', path: '/agentic-support' }] },
-  'Run the support stack where your team operates': { name: 'Self-hosting AnswerLoops', description: 'AnswerLoops self-hosting deployment and operations overview.', path: '/self-hosting-proof', breadcrumbs: [{ name: 'Proof', path: '/agentic-support' }] },
-  'One developer question, four useful outcomes': { name: 'AnswerLoops support example', description: 'A concrete AnswerLoops example from a developer question to reusable knowledge.', path: '/support-example', breadcrumbs: [{ name: 'Proof', path: '/agentic-support' }] },
-}
-
-export function pageSchemaForTitle(title: string): PageSchemaProps | undefined {
-  return PAGE_SCHEMA_BY_TITLE[title]
 }
 
 export function PageSchema({ name, description, path, breadcrumbs = [], type = 'WebPage' }: PageSchemaProps) {
@@ -40,8 +28,8 @@ export function PageSchema({ name, description, path, breadcrumbs = [], type = '
         name,
         description,
         url,
-        isPartOf: { '@id': 'https://answerloops.com/#website' },
-        about: { '@id': 'https://answerloops.com/#organization' },
+        isPartOf: { '@id': WEBSITE_ID },
+        about: { '@id': ORGANIZATION_ID },
         breadcrumb: { '@id': `${url}#breadcrumb` },
       },
       {
@@ -57,5 +45,8 @@ export function PageSchema({ name, description, path, breadcrumbs = [], type = '
     ],
   }
 
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+  // jsonLd is built entirely from server-controlled strings (page name/description/paths),
+  // never user input, and jsonLdHtml escapes `<` so the payload can't break out of the script tag.
+  // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }} />
 }

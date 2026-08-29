@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Footer, Nav } from '@/components/marketing/chrome'
 import type { NavState } from '@/components/marketing/chrome'
-import { PageSchema, pageSchemaForTitle } from '@/components/marketing/page-schema'
+import { PageSchema, type PageSchemaProps } from '@/components/marketing/page-schema'
 
 export interface IntentPageProps {
   navState: NavState
@@ -13,14 +13,13 @@ export interface IntentPageProps {
   workflow: Array<{ step: string; title: string; body: string }>
   comparison: Array<{ question: string; answer: string }>
   docs: Array<{ label: string; href: string }>
-  schema?: { name: string; description: string; path: string; breadcrumbs?: Array<{ name: string; path: string }> }
+  schema: PageSchemaProps
 }
 
-export function IntentPage({ navState, eyebrow, title, intro, audience, highlights, workflow, comparison, docs, schema: providedSchema }: IntentPageProps) {
-  const schema = providedSchema ?? pageSchemaForTitle(title)
+export function IntentPage({ navState, eyebrow, title, intro, audience, highlights, workflow, comparison, docs, schema }: IntentPageProps) {
   return (
     <div className="min-h-screen bg-[#f5f8fd]">
-      {schema && <PageSchema {...schema} />}
+      <PageSchema {...schema} />
       <Nav state={navState} />
 
       <main>

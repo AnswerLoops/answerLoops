@@ -1,6 +1,7 @@
 import { GITHUB_URL } from '@/lib/site'
 
 export const ORGANIZATION_ID = 'https://answerloops.com/#organization'
+export const WEBSITE_ID = 'https://answerloops.com/#website'
 
 /**
  * The canonical public identity graph shared by every crawlable route.
@@ -34,7 +35,7 @@ export const siteIdentityJsonLd = {
     },
     {
       '@type': 'WebSite',
-      '@id': 'https://answerloops.com/#website',
+      '@id': WEBSITE_ID,
       name: 'AnswerLoops',
       url: 'https://answerloops.com',
       publisher: { '@id': ORGANIZATION_ID },
@@ -44,7 +45,7 @@ export const siteIdentityJsonLd = {
       '@id': 'https://answerloops.com/docs',
       name: 'AnswerLoops Documentation',
       url: 'https://answerloops.com/docs',
-      isPartOf: { '@id': 'https://answerloops.com/#website' },
+      isPartOf: { '@id': WEBSITE_ID },
       about: { '@id': ORGANIZATION_ID },
     },
   ],

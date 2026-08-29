@@ -8,6 +8,7 @@ import { resolveNavState } from '@/lib/marketing/nav-state'
 import { GITHUB_URL } from '@/lib/site'
 import { ORGANIZATION_ID } from '@/lib/site-identity'
 import { PageSchema } from '@/components/marketing/page-schema'
+import { jsonLdHtml } from '@/lib/marketing/json-ld'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -80,8 +81,10 @@ function PricingStructuredData() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      {/* nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml */}
+      {/* softwareJsonLd/faqJsonLd are built from server-controlled strings (plan names, FAQ copy), never user input; jsonLdHtml escapes `<` so the payload can't break out of the script tag. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(softwareJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(faqJsonLd) }} />
     </>
   )
 }
