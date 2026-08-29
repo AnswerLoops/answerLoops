@@ -88,6 +88,12 @@ const MESSAGE = {
   platform: 'slack' as const,
 }
 
+const API_MESSAGE = {
+  ...MESSAGE,
+  platform: 'mcp' as const,
+  waitForEnrichment: true,
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   pendingAfter.splice(0)
@@ -187,5 +193,40 @@ describe('processCommunityMessage: platform-key trial behavior', () => {
       'C123',
       undefined
     )
+  })
+
+  it('waits for API-created tickets to finish enrichment before returning', async () => {
+    getDeploymentMode.mockReturnValue('cloud')
+    orgHasAIKey.mockResolvedValue(true)
+    createTicket.mockResolvedValue({
+      id: 1,
+      org_ticket_number: 1,
+      content: 'a brand new test message',
+      category: 'general_question',
+      ai_summary: 'a brand new test message',
+      source_author_name: 'nathan',
+      source_platform: 'mcp',
+      source_channel_id: 'C123',
+      source_thread_id: null,
+    })
+    const { processCommunityMessage } = await loadPipeline()
+
+    await processCommunityMessage(API_MESSAGE, 3)
+
+    expect(runAIAgent).toHaveBeenCalledWith(
+      1,
+      'a brand new test message',
+      'C123',
+      expect.any(Array),
+      3,
+      'mcp',
+      'general_question',
+      expect.any(Array),
+      1,
+      'production',
+      'C123',
+      undefined
+    )
+    expect(pendingAfter).toHaveLength(0)
   })
 })

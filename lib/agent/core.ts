@@ -215,6 +215,9 @@ export async function createTicketCore(
       // surface actually created the ticket for anyone querying the DB
       // directly.
       platform: 'mcp',
+      // Unlike a live webhook, the API caller has no acknowledgement latency
+      // requirement and expects the created ticket to include its AI draft.
+      waitForEnrichment: true,
     },
     orgId
   )

@@ -36,6 +36,10 @@ export interface MessagePayload {
   // in hand); other platforms construct their link from stored IDs at
   // render time instead. See tickets.source_url in lib/db/schema.ts.
   sourceUrl?: string
+  // API-created tickets have no live channel acknowledgement to protect, so
+  // their caller can wait for the draft pipeline and receive a fully
+  // enriched ticket instead of observing the initial placeholder state.
+  waitForEnrichment?: boolean
 }
 
 export interface PipelineResult {
@@ -152,7 +156,11 @@ export async function processCommunityMessage(
 
   logger.info('ticket created', { module: MOD, ticketId: ticket.id, orgId, platform })
 
-  after(() => runBackgroundEnrichment(ticket, orgId, aiPurpose))
+  if (payload.waitForEnrichment) {
+    await runBackgroundEnrichment(ticket, orgId, aiPurpose)
+  } else {
+    after(() => runBackgroundEnrichment(ticket, orgId, aiPurpose))
+  }
 
   return { ticket_id: ticket.id }
 }

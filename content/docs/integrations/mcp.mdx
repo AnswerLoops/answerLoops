@@ -80,7 +80,7 @@ All filters are optional. Returns up to `limit` (max 20) tickets, most recent fi
 { "name": "create_ticket", "arguments": { "content": "Users report webhook retries are duplicated", "authorName": "Slack bot", "idempotencyKey": "a1b2c3d4" } }
 ```
 
-`content` is required (max 4000 characters). The ticket is tagged `source_platform: "mcp"` and runs through the same category/priority classification and auto-draft pipeline as a Discord or Slack message — it may get auto-answered if confidence is high, otherwise it queues for human review in the dashboard. There's no chat channel to post a reply back into, so replies are saved on the ticket for the calling agent to read back via `get_tickets`.
+`content` is required (max 4000 characters). The ticket is tagged `source_platform: "mcp"` and runs through the same category/priority classification and auto-draft pipeline as a Discord or Slack message — it may get auto-answered if confidence is high, otherwise it queues for human review in the dashboard. The tool waits for this pipeline to finish before returning, so the ticket is ready to inspect with its draft or review state. There's no chat channel to post a reply back into, so replies are saved on the ticket for the calling agent to read back via `get_tickets`.
 
 `idempotencyKey` is optional — pass a stable identifier (a UUID, a hash of the content) if your client retries on timeout or network error. Retrying with the same key returns the original ticket (`duplicate: true`) instead of opening a second one and re-running AI triage a second time.
 
