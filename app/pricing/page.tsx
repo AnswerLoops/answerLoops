@@ -7,6 +7,7 @@ import { PricingComparisonTable } from '@/components/marketing/pricing-compariso
 import { resolveNavState } from '@/lib/marketing/nav-state'
 import { GITHUB_URL } from '@/lib/site'
 import { ORGANIZATION_ID } from '@/lib/site-identity'
+import { PageSchema } from '@/components/marketing/page-schema'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -137,6 +138,7 @@ export default async function PricingPage({
 
   return (
     <div className="min-h-screen bg-[#f5f8fd]">
+      <PageSchema name="AnswerLoops pricing" description="AnswerLoops pricing for agentic developer-community support." path="/pricing" breadcrumbs={[{ name: 'Product', path: '/agentic-support' }]} />
       <PricingStructuredData />
       <Nav state={navState} />
 

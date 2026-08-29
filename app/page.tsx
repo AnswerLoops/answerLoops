@@ -5,6 +5,7 @@ import { AnimatedChat } from '@/components/animated-chat'
 import { Nav, Footer, GithubIcon, GITHUB_URL } from '@/components/marketing/chrome'
 import { resolveNavState } from '@/lib/marketing/nav-state'
 import { ORGANIZATION_ID } from '@/lib/site-identity'
+import { PageSchema } from '@/components/marketing/page-schema'
 
 export const metadata: Metadata = {
   title: 'AnswerLoops — Agentic support for developer communities',
@@ -635,6 +636,7 @@ export default async function LandingPage() {
   const navState = await resolveNavState()
   return (
     <div className="min-h-screen bg-white">
+      <PageSchema name="AnswerLoops — agentic support for developer communities" description="Agentic AI support for developer communities across Discord, Slack, Google Chat, GitHub, Telegram, email, and website chat." path="/" />
       <StructuredData />
       <Nav state={navState} />
       <main>

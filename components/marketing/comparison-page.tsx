@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Nav, Footer, GITHUB_URL } from '@/components/marketing/chrome'
 import type { NavState } from '@/components/marketing/chrome'
+import { PageSchema } from '@/components/marketing/page-schema'
 
 export interface ComparisonRow {
   feature: string
@@ -20,6 +21,7 @@ export interface ComparisonPageProps {
 export function ComparisonPage({ navState, competitor, competitorSummary, intro, rows, bestFor }: ComparisonPageProps) {
   return (
     <div className="min-h-screen bg-white">
+      <PageSchema name={`AnswerLoops vs ${competitor}`} description={intro} path={`/vs/${competitor.toLowerCase()}`} breadcrumbs={[{ name: 'Comparisons', path: '/pricing' }]} />
       <Nav state={navState} />
 
       <section className="bg-ink-950 py-20">
