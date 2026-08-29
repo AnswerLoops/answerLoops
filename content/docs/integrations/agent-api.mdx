@@ -70,7 +70,7 @@ curl -X POST -H "Authorization: Bearer al_live_..." -H "Content-Type: applicatio
   https://your-instance.example.com/api/agent/tickets
 ```
 
-`content` is required (max 4000 characters). The ticket runs through the same category/priority classification and auto-draft pipeline as a Discord or Slack message. `idempotencyKey` is optional — pass a stable identifier (a UUID, a hash of the content) if your client retries on timeout or network error; retrying with the same key returns the original ticket (`"duplicate": true`) instead of opening a second one.
+`content` is required (max 4000 characters). The ticket runs through the same category/priority classification and auto-draft pipeline as a Discord or Slack message. The request waits for this pipeline to finish before returning, so the ticket is ready to inspect with its draft or review state. `idempotencyKey` is optional — pass a stable identifier (a UUID, a hash of the content) if your client retries on timeout or network error; retrying with the same key returns the original ticket (`"duplicate": true`) instead of opening a second one.
 
 ```json
 { "ticket_id": 42, "duplicate": false }
