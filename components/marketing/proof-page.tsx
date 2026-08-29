@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Footer, Nav } from '@/components/marketing/chrome'
 import type { NavState } from '@/components/marketing/chrome'
+import { PageSchema, type PageSchemaProps } from '@/components/marketing/page-schema'
 
 export interface ProofPageProps {
   navState: NavState
@@ -9,11 +10,12 @@ export interface ProofPageProps {
   intro: string
   sections: Array<{ title: string; body: string; details: string[] }>
   docs: Array<{ label: string; href: string }>
+  schema: PageSchemaProps
 }
 
-export function ProofPage({ navState, eyebrow, title, intro, sections, docs }: ProofPageProps) {
+export function ProofPage({ navState, eyebrow, title, intro, sections, docs, schema }: ProofPageProps) {
   return (
-    <div className="min-h-screen bg-[#f5f8fd]"><Nav state={navState} />
+    <div className="min-h-screen bg-[#f5f8fd]"><PageSchema {...schema} /><Nav state={navState} />
       <main>
         <section className="relative isolate overflow-hidden bg-[#030611] py-24 sm:py-32">
           <div className="landing-grid pointer-events-none absolute inset-0 opacity-55" />

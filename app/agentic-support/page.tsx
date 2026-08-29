@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Footer, Nav } from '@/components/marketing/chrome'
 import { resolveNavState } from '@/lib/marketing/nav-state'
+import { PageSchema } from '@/components/marketing/page-schema'
 
 export const dynamic = 'force-dynamic'
 
@@ -53,6 +54,7 @@ export default async function AgenticSupportPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f8fd]">
+      <PageSchema name="What is an agentic support platform?" description="Agentic support for developer communities across community channels." path="/agentic-support" breadcrumbs={[{ name: 'Product', path: '/' }]} />
       <Nav state={navState} />
 
       <main>
