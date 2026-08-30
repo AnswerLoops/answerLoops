@@ -1455,8 +1455,9 @@ function EmailOauthSection({ onConnected }: { onConnected: () => void }) {
       {toastMessage && <Toast message={toastMessage} />}
       <p className="text-xs font-medium text-gray-600">Connect a mailbox</p>
       <p className="text-xs text-gray-500">
-        Connect your own Gmail or Outlook mailbox so replies send through it directly — the quick option, no DNS
-        setup, but depends on the connection staying active. Only one mailbox can be connected at a time.
+        Choose the Gmail or Outlook mailbox that should send and receive support replies — not your personal login.
+        It's the quick option, no DNS setup, but depends on the connection staying active. Only one mailbox can be
+        connected at a time.
       </p>
 
       {connection === null && (
@@ -1694,14 +1695,24 @@ export function EmailIntegrationCard() {
       fetch('/api/email-domain').then((r) => r.json()).catch(() => null),
       fetch('/api/email-oauth').then((r) => r.json()).catch(() => null),
     ])
-    if (domain) {
+    const domainLive = domain?.status === 'verified'
+    const oauthLive = oauth?.status === 'connected'
+
+    // A live method always wins so a stale row from an earlier setup attempt
+    // can't hide a channel that's actually working. Only fall back to
+    // whichever row merely exists when neither is live.
+    if (domainLive) {
       setConfiguredMethod('domain')
-      setConfiguredLive(domain.status === 'verified')
-    } else if (oauth) {
-      // Keep a disconnected row visible so the user can reconnect it, but do
-      // not let a stale row make the channel look operational.
+      setConfiguredLive(true)
+    } else if (oauthLive) {
       setConfiguredMethod('mailbox')
-      setConfiguredLive(oauth.status === 'connected')
+      setConfiguredLive(true)
+    } else if (domain) {
+      setConfiguredMethod('domain')
+      setConfiguredLive(false)
+    } else if (oauth) {
+      setConfiguredMethod('mailbox')
+      setConfiguredLive(false)
     } else {
       setConfiguredMethod(null)
       setConfiguredLive(false)
@@ -3590,7 +3601,7 @@ export default function SettingsPage() {
             className={[
               'shrink-0 rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors',
               activeTab === tab.id
-                ? 'bg-[#07101f] text-white shadow-md'
+                ? 'bg-[#252525] text-white shadow-md'
                 : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900',
             ].join(' ')}
           >

@@ -164,8 +164,8 @@ export default function SimulationClient({ configuredProvider, configuredModel }
       </div>
 
       {/* Config */}
-      <div className="relative overflow-hidden rounded-2xl border border-blue-400/15 bg-[linear-gradient(135deg,#07101f_0%,#0b2251_100%)] p-5 shadow-[0_24px_65px_-36px_rgba(37,99,235,0.85)] sm:p-6">
-        <div className="pointer-events-none absolute -right-12 -top-24 h-52 w-52 rounded-full bg-cyan-400/15 blur-3xl" />
+      <div className="relative overflow-hidden rounded-2xl border border-slate-700 bg-[#252525] p-5 text-white shadow-[0_24px_65px_-36px_rgba(15,23,42,0.3)] sm:p-6">
+        <div className="pointer-events-none absolute -right-12 -top-24 h-52 w-52 rounded-full bg-blue-400/10 blur-3xl" />
         <h2 className="relative text-xs font-semibold uppercase tracking-[0.16em] text-blue-200">Simulation controls</h2>
         <div className="relative mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
