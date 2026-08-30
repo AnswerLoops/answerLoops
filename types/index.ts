@@ -1,7 +1,12 @@
 export type Priority = 'critical' | 'high' | 'medium' | 'low'
 export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
 export type TicketCategory = 'bug' | 'feature_request' | 'documentation' | 'how_to' | 'general_question'
-export type AIDraftStatus = 'pending' | 'posted' | 'approved' | 'overridden'
+// 'needs_human' is written by lib/ai/agent.ts whenever a draft is held for
+// staff approval instead of auto-posted — either because Automatic
+// Deflections is off, confidence was below the bar, or no AI provider is
+// configured (in which case ai_draft is null). It is by far the most common
+// non-deflected outcome, so every consumer of this type must handle it.
+export type AIDraftStatus = 'pending' | 'needs_human' | 'posted' | 'approved' | 'overridden'
 
 export type SourcePlatform = 'discord' | 'slack' | 'telegram' | 'email' | 'github' | 'mcp' | 'google_chat'
 

@@ -24,6 +24,7 @@ const categoryColors: Record<TicketCategory, string> = {
 
 const draftColors: Record<AIDraftStatus, string> = {
   pending: 'bg-gray-100 text-gray-600',
+  needs_human: 'bg-amber-100 text-amber-800',
   posted: 'bg-brand-100 text-brand-800',
   approved: 'bg-emerald-100 text-emerald-800',
   overridden: 'bg-gray-100 text-gray-500',
@@ -53,6 +54,7 @@ export function CategoryBadge({ category }: { category: TicketCategory }) {
 export function AIDraftBadge({ status }: { status: AIDraftStatus }) {
   const labels: Record<AIDraftStatus, string> = {
     pending: 'AI pending',
+    needs_human: 'AI needs review',
     posted: 'AI draft posted',
     approved: 'AI approved',
     overridden: 'AI overridden',
