@@ -113,7 +113,7 @@ export function StatsCards({ total, open, inProgress, resolved, slaBreaches, pen
           key={card.label}
           className={`group relative overflow-hidden rounded-2xl border p-4 transition duration-200 hover:-translate-y-0.5 ${
             isDark
-              ? 'border-blue-400/15 bg-[#07101f] text-white shadow-[0_18px_45px_rgba(15,23,42,0.17)]'
+              ? 'border-slate-700 bg-[#252525] text-white shadow-[0_18px_45px_rgba(15,23,42,0.16)]'
               : isBlue
                 ? 'border-blue-500/15 bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-[0_18px_45px_rgba(37,99,235,0.18)]'
                 : 'border-slate-200/80 bg-white/90 shadow-[0_12px_32px_rgba(30,64,175,0.05)] hover:shadow-[0_16px_40px_rgba(30,64,175,0.09)]'

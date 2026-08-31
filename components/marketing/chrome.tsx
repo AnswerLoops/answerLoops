@@ -34,7 +34,7 @@ export function NavWordmark() {
 // configured (cloud); self-hosted deployments never set this and keep the
 // relative link, since there's only ever one domain to begin with.
 const CTA_CLASS =
-  'flex items-center gap-1.5 whitespace-nowrap rounded-full border border-blue-300/20 bg-gradient-to-r from-blue-600 to-blue-500 px-3 py-2 text-[0.7875rem] font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:brightness-110 sm:px-4'
+  'flex items-center gap-1.5 whitespace-nowrap rounded-full border border-blue-300/20 bg-gradient-to-r from-blue-600 to-cyan-500 px-3 py-2 text-[0.7875rem] font-semibold !text-white shadow-lg shadow-blue-600/20 transition hover:brightness-110 sm:px-4'
 
 // The quieter half of the anonymous pair. A returning user and a new one want
 // opposite things from the same header, and one button cannot serve both: a
@@ -90,7 +90,7 @@ export function navState(loggedIn: boolean, hasAccess: boolean): NavState {
 
 export function Nav({ state }: { state: NavState }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-white/8 bg-[#030611]/88 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 sm:px-8">
         {/* Gaps tighten at md and relax again at lg. md is where the desktop
             nav appears while the header still has the least room for it, and
@@ -106,22 +106,22 @@ export function Nav({ state }: { state: NavState }) {
                   not room for mark + wordmark + CTA + menu, and the mark alone
                   still identifies the site. */}
               <span className="hidden text-[1.18125rem] font-semibold tracking-tight min-[394px]:inline">
-                <span className="text-white">answer</span>
+                <span className="text-slate-950">answer</span>
                 <span className="bg-gradient-to-r from-brand-400 to-indigo-400 bg-clip-text text-transparent">Loops</span>
               </span>
             </span>
           </Link>
           <nav className="hidden items-center gap-5 md:flex lg:gap-7">
-            <Link href="/#features" className="whitespace-nowrap text-[0.7875rem] font-medium text-white/45 transition-colors hover:text-white">Product</Link>
-            <Link href="/#how-it-works" className="whitespace-nowrap text-[0.7875rem] font-medium text-white/45 transition-colors hover:text-white">How it works</Link>
-            <Link href="/pricing" className="whitespace-nowrap text-[0.7875rem] font-medium text-white/45 transition-colors hover:text-white">Pricing</Link>
-            <a href="/docs" target="_blank" rel="noopener noreferrer" className="whitespace-nowrap text-[0.7875rem] font-medium text-white/45 transition-colors hover:text-white">Docs</a>
+            <Link href="/#features" className="whitespace-nowrap text-[0.7875rem] font-medium text-slate-600 transition-colors hover:text-slate-950">Product</Link>
+            <Link href="/#how-it-works" className="whitespace-nowrap text-[0.7875rem] font-medium text-slate-600 transition-colors hover:text-slate-950">How it works</Link>
+            <Link href="/pricing" className="whitespace-nowrap text-[0.7875rem] font-medium text-slate-600 transition-colors hover:text-slate-950">Pricing</Link>
+            <a href="/docs" target="_blank" rel="noopener noreferrer" className="whitespace-nowrap text-[0.7875rem] font-medium text-slate-600 transition-colors hover:text-slate-950">Docs</a>
           </nav>
         </div>
         <div className="flex items-center gap-3">
           {state === 'active' && (
             <Link href={DASHBOARD_HREF} className={CTA_CLASS}>
-              Go to dashboard →
+              <span className="!text-white" style={{ color: '#fff', WebkitTextFillColor: '#fff' }}>Go to dashboard →</span>
             </Link>
           )}
           {/* Signed in without a plan. Pointing at the dashboard here is what
@@ -134,7 +134,7 @@ export function Nav({ state }: { state: NavState }) {
               which is exactly where the gate puts them. */}
           {state === 'no-plan' && (
             <Link href={CHECKOUT_HREF} className={CTA_CLASS}>
-              Choose a plan →
+              <span className="!text-white" style={{ color: '#fff', WebkitTextFillColor: '#fff' }}>Choose a plan →</span>
             </Link>
           )}
           {/* Anonymous covers both a brand-new visitor and a returning one whose
@@ -153,7 +153,7 @@ export function Nav({ state }: { state: NavState }) {
                 Sign in
               </Link>
               <Link href={START_HREF} className={CTA_CLASS}>
-                Start free trial
+                <span className="!text-white" style={{ color: '#fff', WebkitTextFillColor: '#fff' }}>Start free trial</span>
               </Link>
             </>
           )}
@@ -174,7 +174,7 @@ export function Nav({ state }: { state: NavState }) {
                       these two has to survive the move — a blue text link next
                       to a grey one reads as two equal options rather than a
                       primary action and its alternative. */}
-                  <Link href={START_HREF} className="mt-1 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 px-3 py-3 text-center text-[0.91875rem] font-semibold text-white shadow-sm">Start free trial</Link>
+                  <Link href={START_HREF} className="mt-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 px-3 py-3 text-center text-[0.91875rem] font-semibold !text-white shadow-sm"><span style={{ color: '#fff', WebkitTextFillColor: '#fff' }}>Start free trial</span></Link>
                 </>
               )}
             </nav>
@@ -195,7 +195,7 @@ export function Footer() {
             <p className="max-w-xs text-xs leading-relaxed text-white/50">Confidence-gated AI support for developer communities. Open source and self-hostable.</p>
             <div className="mt-4 flex items-center gap-1.5 text-xs text-white/50">
               <GithubIcon className="h-3 w-3" />
-              <Link href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white/85">Open source — view source</Link>
+              <Link href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="text-sm font-medium transition-colors hover:text-white/85">Proudly open source</Link>
             </div>
           </div>
           <div className="flex flex-wrap gap-x-12 gap-y-6">

@@ -52,27 +52,27 @@ function SectionLabel({ children, light = false }: { children: React.ReactNode; 
 
 function Hero() {
   return (
-    <section className="relative isolate overflow-hidden bg-[#030611]">
+    <section className="relative isolate overflow-hidden bg-white">
       <div className="landing-grid pointer-events-none absolute inset-0 opacity-50" />
-      <div className="pointer-events-none absolute left-1/2 top-[-18rem] h-[44rem] w-[72rem] -translate-x-1/2 rounded-[50%] bg-blue-600/25 blur-[140px]" />
-      <div className="pointer-events-none absolute -left-48 top-[34rem] h-[34rem] w-[34rem] rounded-full bg-indigo-700/15 blur-[120px]" />
-      <div className="pointer-events-none absolute -right-52 top-[20rem] h-[38rem] w-[38rem] rounded-full bg-cyan-500/10 blur-[130px]" />
+      <div className="pointer-events-none absolute left-1/2 top-[-18rem] h-[44rem] w-[72rem] -translate-x-1/2 rounded-[50%] bg-slate-100/80 blur-[140px]" />
+      <div className="pointer-events-none absolute -left-48 top-[34rem] h-[34rem] w-[34rem] rounded-full bg-slate-100/70 blur-[120px]" />
+      <div className="pointer-events-none absolute -right-52 top-[20rem] h-[38rem] w-[38rem] rounded-full bg-blue-50/70 blur-[130px]" />
 
-      <div className="relative mx-auto max-w-7xl px-5 pb-20 pt-20 sm:px-8 sm:pb-28 sm:pt-28">
+      <div className="relative mx-auto max-w-7xl px-5 pb-20 pt-0 sm:px-8 sm:pb-28 sm:pt-0">
         <div className="mx-auto max-w-4xl text-center">
-          <div className="landing-hero-rise inline-flex items-center gap-2 rounded-full border border-blue-300/15 bg-blue-400/[0.07] px-3.5 py-1.5 text-[0.6875rem] font-medium text-blue-100 shadow-[inset_0_1px_rgba(255,255,255,0.05)]">
-            <span className="text-cyan-300"><SparkIcon /></span>
+          <div className="landing-hero-rise mt-10 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-[0.6875rem] font-medium text-slate-600">
+            <span className="text-brand-600"><SparkIcon /></span>
             Built for support teams entering the agent era
           </div>
 
-          <h1 className="landing-hero-rise [animation-delay:80ms] mt-7 text-balance text-[2.8rem] font-semibold leading-[0.98] tracking-[-0.055em] text-white sm:text-6xl md:text-[5rem]">
+          <h1 className="landing-hero-rise [animation-delay:80ms] mt-7 text-balance text-[2.8rem] font-semibold leading-[0.98] tracking-[-0.055em] text-slate-950 sm:text-6xl md:text-[5rem]">
             Support runs itself.
             <span className="mt-2 block bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">
               Your team stays in control.
             </span>
           </h1>
 
-          <p className="landing-hero-rise [animation-delay:160ms] mx-auto mt-7 max-w-2xl text-pretty text-base leading-relaxed text-slate-300/70 sm:text-lg">
+          <p className="landing-hero-rise [animation-delay:160ms] mx-auto mt-7 max-w-2xl text-pretty text-base leading-relaxed text-slate-600 sm:text-lg">
             AnswerLoops resolves repeat developer questions across Discord, Slack, Google Chat, GitHub, email, and your website—grounded in your knowledge, checked by a second model, and escalated when confidence is low.
           </p>
 
@@ -91,15 +91,19 @@ function Hero() {
                 Start your 14-day trial
               </Link>
             </div>
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[0.6875rem] font-medium text-white/55">
-              <span className="flex items-center gap-1.5"><CheckIcon className="h-3 w-3 text-emerald-400" /> 14-day hosted trial</span>
-              <span className="flex items-center gap-1.5"><CheckIcon className="h-3 w-3 text-emerald-400" /> Open-source core</span>
-              <span className="flex items-center gap-1.5"><CheckIcon className="h-3 w-3 text-emerald-400" /> Bring your own model</span>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-slate-500">
+              <span className="flex items-center gap-1.5"><CheckIcon className="h-4 w-4 text-brand-600" /> 14-day hosted trial</span>
+              <span className="flex items-center gap-1.5"><CheckIcon className="h-4 w-4 text-brand-600" /> Open-source core</span>
+              <span className="flex items-center gap-1.5"><CheckIcon className="h-4 w-4 text-brand-600" /> Bring your own model</span>
             </div>
           </div>
         </div>
 
-        <div className="landing-hero-rise [animation-delay:320ms] relative mx-auto mt-16 max-w-6xl sm:mt-20">
+        <div className="landing-hero-rise [animation-delay:280ms] mt-10">
+          <ChannelRail />
+        </div>
+
+        <div className="landing-hero-rise [animation-delay:320ms] relative mx-auto mt-10 max-w-6xl">
           <div className="pointer-events-none absolute -inset-x-20 -bottom-24 h-56 bg-blue-600/20 blur-[100px]" />
           <div className="relative rounded-[2rem] border border-white/8 bg-white/[0.025] p-2 shadow-[0_1px_0_rgba(255,255,255,0.06)_inset] sm:p-3">
             <AnimatedChat />
@@ -111,22 +115,56 @@ function Hero() {
   )
 }
 
-const CHANNELS = ['Discord', 'Slack', 'Google Chat', 'GitHub', 'Telegram', 'Email', 'Web widget']
+const CHANNELS = [
+  { name: 'Slack', color: '#36c5f0' },
+  { name: 'Google Chat', color: '#34a853' },
+  { name: 'GitHub', color: '#24292f' },
+  { name: 'Circle', color: '#7c3aed' },
+  { name: 'Discord', color: '#5865f2' },
+  { name: 'Discourse', color: '#e4572e' },
+  { name: 'Telegram', color: '#229ed9' },
+  { name: 'Email', color: '#64748b' },
+  { name: 'Web widget', color: '#2563eb' },
+] as const
+
+function IntegrationIcon({ name, color }: { name: string; color: string }) {
+  if (name === 'GitHub') {
+    return <svg className="h-6 w-6" viewBox="0 0 24 24" fill={color} aria-hidden="true"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.167 6.839 9.49.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.341-3.369-1.341-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.744 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z" /></svg>
+  }
+  if (name === 'Telegram') {
+    return <svg className="h-6 w-6" viewBox="0 0 24 24" fill={color} aria-hidden="true"><path d="M21.7 3.3 18.5 20c-.24 1.18-.87 1.47-1.77.92l-4.86-3.58-2.35 2.26c-.26.26-.48.48-.98.48l.35-4.96 9.03-8.16c.39-.35-.09-.55-.6-.2L6.16 13.5 1.4 12.01c-1.04-.33-1.06-1.04.22-1.54L20.2 3.1c.88-.32 1.65.2 1.5.2Z" /></svg>
+  }
+  if (name === 'Email') {
+    return <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></svg>
+  }
+  if (name === 'Web widget') {
+    return <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 7.7 7.7 0 0 1-3.2-.7L4 20l1.7-4.1A7.5 7.5 0 1 1 20 11.5Z" /><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01" strokeLinecap="round" strokeWidth="2.5" /></svg>
+  }
+  if (name === 'Circle') {
+    return <svg className="h-6 w-6" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill={color} /><path d="M15.7 8.1a5.1 5.1 0 1 0 0 7.8" fill="none" stroke="white" strokeLinecap="round" strokeWidth="2.2" /></svg>
+  }
+  if (name === 'Discourse') {
+    return <svg className="h-6 w-6" viewBox="0 0 24 24" aria-hidden="true"><path fill={color} d="M12 2a10 10 0 0 0-9.8 12.1L2 22l7.8-1.7A10 10 0 1 0 12 2Z" /><path fill="white" d="M8 7h4.3a4.2 4.2 0 1 1 0 8.4H8V7Zm2.1 1.9v4.6h2.2a2.3 2.3 0 1 0 0-4.6h-2.2Z" /></svg>
+  }
+  if (name === 'Google Chat') {
+    return <svg className="h-6 w-6" viewBox="0 0 24 24" aria-hidden="true"><path fill="#34a853" d="M4 4h9.5A6.5 6.5 0 0 1 20 10.5V15a5 5 0 0 1-5 5H9l-5 3v-5a5 5 0 0 1-3-4.5V9a5 5 0 0 1 3-5Z" /><path fill="#4285f4" d="M7 7h8a3 3 0 0 1 3 3v3H9a2 2 0 0 1-2-2V7Z" /></svg>
+  }
+  if (name === 'Slack') {
+    return <svg className="h-6 w-6" viewBox="0 0 24 24" aria-hidden="true"><path fill="#36c5f0" d="M9.1 2.5a2.1 2.1 0 1 0 0 4.2h2.1V4.6a2.1 2.1 0 0 0-2.1-2.1Zm0 6.3H4.6a2.1 2.1 0 1 0 0 4.2h4.5a2.1 2.1 0 1 0 0-4.2Z" /><path fill="#2eb67d" d="M21.5 9.1a2.1 2.1 0 1 0-4.2 0v2.1h2.1a2.1 2.1 0 0 0 2.1-2.1Zm-6.3 0v4.5a2.1 2.1 0 1 0 4.2 0V9.1a2.1 2.1 0 0 0-4.2 0Z" /><path fill="#ecb22e" d="M14.9 21.5a2.1 2.1 0 1 0 0-4.2h-2.1v2.1a2.1 2.1 0 0 0 2.1 2.1Zm0-6.3h4.5a2.1 2.1 0 1 0 0-4.2h-4.5a2.1 2.1 0 0 0 0 4.2Z" /><path fill="#e01e5a" d="M2.5 14.9a2.1 2.1 0 1 0 4.2 0v-2.1H4.6a2.1 2.1 0 0 0-2.1 2.1Zm6.3 0v-4.5a2.1 2.1 0 1 0-4.2 0v4.5a2.1 2.1 0 0 0 4.2 0Z" /></svg>
+  }
+  return <svg className="h-6 w-6" viewBox="0 0 24 24" fill={color} aria-hidden="true"><path d="M5 5.5A3.5 3.5 0 0 1 8.5 2h7A3.5 3.5 0 0 1 19 5.5v4A3.5 3.5 0 0 1 15.5 13H11l-4.5 3v-3.8A3.5 3.5 0 0 1 5 9.5v-4Z" /><path fill="white" d="M9 7.3h6v1.4H9z" /></svg>
+}
 
 function ChannelRail() {
   return (
-    <section className="relative overflow-hidden border-y border-white/10 bg-[#070b15]">
-      <div className="pointer-events-none absolute left-1/2 top-0 h-24 w-[42rem] -translate-x-1/2 bg-blue-500/10 blur-[70px]" />
-      <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-5 px-5 py-8 sm:px-8 lg:flex-row lg:justify-between">
-        <p className="shrink-0 text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-white/55">One brain. Every support channel.</p>
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {CHANNELS.map((channel, index) => (
-            <div key={channel} className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3 py-1.5 text-[0.6875rem] font-medium text-white/75 shadow-[inset_0_1px_rgba(255,255,255,0.035)]">
-              <span className={`h-1.5 w-1.5 rounded-full shadow-[0_0_10px_currentColor] ${index % 3 === 0 ? 'bg-indigo-400' : index % 3 === 1 ? 'bg-blue-400' : 'bg-cyan-300'}`} />
-              {channel}
-            </div>
-          ))}
-        </div>
+    <section aria-label="Supported channels" className="relative">
+      <div className="relative mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-3 px-5 text-center sm:px-8">
+        {CHANNELS.map((channel) => (
+          <div key={channel.name} className="flex items-center gap-2.5 text-sm font-medium text-slate-500">
+            <IntegrationIcon name={channel.name} color={channel.color} />
+            {channel.name}
+          </div>
+        ))}
       </div>
     </section>
   )
@@ -638,13 +676,12 @@ function StructuredData() {
 export default async function LandingPage() {
   const navState = await resolveNavState()
   return (
-    <div className="min-h-screen bg-white">
+    <div className="landing-monochrome min-h-screen bg-white">
       <PageSchema name="AnswerLoops — agentic support for developer communities" description="Agentic AI support for developer communities across Discord, Slack, Google Chat, GitHub, Telegram, email, and website chat." path="/" />
       <StructuredData />
       <Nav state={navState} />
       <main>
         <Hero />
-        <ChannelRail />
         <Outcomes />
         <HowItWorks />
         <Features />
