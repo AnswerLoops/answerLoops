@@ -23,8 +23,21 @@ const prepare: string = JSON.parse(
   fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8'),
 ).scripts.prepare
 
+/**
+ * git exports GIT_DIR, GIT_INDEX_FILE, GIT_WORK_TREE and related variables
+ * into the environment for the duration of a hook. When this suite runs
+ * from the pre-commit hook those leak all the way down here, and a `git
+ * init` in a fresh temp dir then binds to the real repository instead of
+ * the new one — so `.git/hooks` is never created and these tests fail only
+ * when run from a commit. Strip them from every subprocess this test
+ * spawns so it behaves identically run from the hook and run on its own.
+ */
+const cleanEnv: NodeJS.ProcessEnv = Object.fromEntries(
+  Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')),
+)
+
 function runIn(dir: string): number {
-  return spawnSync('sh', ['-c', prepare], { cwd: dir, encoding: 'utf-8' }).status ?? 1
+  return spawnSync('sh', ['-c', prepare], { cwd: dir, encoding: 'utf-8', env: cleanEnv }).status ?? 1
 }
 
 function tempDir(build: (dir: string) => void): string {
@@ -67,7 +80,7 @@ describe('the prepare script survives every install context', () => {
         path.join(process.cwd(), 'scripts/install-hooks.sh'),
         path.join(d, 'scripts/install-hooks.sh'),
       )
-      spawnSync('git', ['init', '--quiet'], { cwd: d })
+      spawnSync('git', ['init', '--quiet'], { cwd: d, env: cleanEnv })
     })
     try {
       expect(runIn(dir)).toBe(0)
@@ -85,7 +98,7 @@ describe('the prepare script survives every install context', () => {
         path.join(process.cwd(), 'scripts/install-hooks.sh'),
         path.join(d, 'scripts/install-hooks.sh'),
       )
-      spawnSync('git', ['init', '--quiet'], { cwd: d })
+      spawnSync('git', ['init', '--quiet'], { cwd: d, env: cleanEnv })
     })
     try {
       runIn(dir)
