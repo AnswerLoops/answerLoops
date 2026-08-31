@@ -8,12 +8,18 @@ name: Publish Image
 # under QEMU takes tens of minutes and regularly outlasts anyone's patience;
 # GitHub's arm64 runners are free for public repositories, so each architecture
 # builds on its own hardware and a final job stitches them into one manifest.
+#
+# Runs on a published release (and on demand), not on every push to main. The
+# `latest` tag only moves on a release anyway — see the metadata step in the
+# merge job — so a per-push run only ever produced a `main`/sha tag that no
+# deployment consumes. It also coupled the production deploy to this workflow:
+# the platform host waits on the whole check suite for a commit, so any red run
+# here held every deploy from main. Cutting the push trigger removes that
+# coupling; cut a release, or dispatch manually, to publish a fresh image.
 
 on:
   release:
     types: [published]
-  push:
-    branches: [main]
   workflow_dispatch:
 
 env:
