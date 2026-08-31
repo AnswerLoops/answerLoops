@@ -148,6 +148,27 @@ describe('reserveAutoDeflect: metered path holds the lock across count and write
   })
 })
 
+describe('reserveAutoDeflect: soft-cap plan keeps deflecting past the quota', () => {
+  const PRO_LIMIT = 3000 // PLANS.pro.deflectionsPerMonth
+
+  it('grants past the included quota — the overage is metered, not blocked', async () => {
+    onPlan('pro')
+    respond.deflections = PRO_LIMIT + 250
+    const { reserveAutoDeflect } = await usage()
+    const { fn, invocations } = markerWriteDecision()
+
+    const allowed = await reserveAutoDeflect(42, fn)
+
+    // Standard at its ceiling denies (see above); Pro is a soft cap, so the
+    // answer still goes out and the decision is written as allowed.
+    expect(allowed).toBe(true)
+    expect(invocations).toEqual([{ tx: expect.anything(), allowed: true }])
+    // Still counts under the lock — the overage number has to stay accurate.
+    expect(txCalls()[0].sql).toContain('pg_advisory_xact_lock')
+    expect(find('ai_assessments').length).toBeGreaterThan(0)
+  })
+})
+
 describe('reserveAutoDeflect: unlimited plan skips counting but still writes', () => {
   it('writes the decision without opening a transaction to count against a null ceiling', async () => {
     onPlan('enterprise')

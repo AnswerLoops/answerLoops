@@ -130,7 +130,7 @@ export async function sendWaitlistConfirmation(email: string): Promise<void> {
           You're on the list.
         </h2>
         <p style="${MUTED};margin-bottom:16px">
-          Thanks for your interest in AnswerLoops — AI-powered support for developer communities.
+          Thanks for your interest in AnswerLoops — AI support that lives in your community.
           We'll email you the moment we open early access.
         </p>
         <p style="${MUTED};margin-bottom:24px">

@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'What Is an Agentic Support Platform? — AnswerLoops',
   description:
-    'AnswerLoops is an open-source, self-hostable agentic support platform for developer communities. Resolve repeat questions across Discord, Slack, GitHub, email, Telegram, Google Chat, and web chat.',
+    'AnswerLoops is an open-source, self-hostable agentic support platform for teams whose users ask for help in a community. Resolve repeat questions across Discord, Slack, forums, GitHub, email, Telegram, Google Chat, and web chat.',
   alternates: { canonical: '/agentic-support' },
   openGraph: {
     title: 'What Is an Agentic Support Platform? — AnswerLoops',
@@ -18,13 +18,13 @@ export const metadata: Metadata = {
     url: '/agentic-support',
   },
   twitter: {
-    title: 'Agentic Support for Developer Communities — AnswerLoops',
+    title: 'Agentic Support for Your Community — AnswerLoops',
     description:
-      'Open-source, self-hostable agentic support across Discord, Slack, GitHub, email, Telegram, Google Chat, and web chat.',
+      'Open-source, self-hostable agentic support across Discord, Slack, forums, GitHub, email, Telegram, Google Chat, and web chat.',
   },
 }
 
-const CHANNELS = ['Discord', 'Slack', 'Google Chat', 'GitHub', 'Telegram', 'Email', 'Website chat']
+const CHANNELS = ['Discord', 'Slack', 'Discourse', 'Circle', 'Google Chat', 'GitHub', 'Telegram', 'Email', 'Website chat']
 
 const CAPABILITIES = [
   {
@@ -54,7 +54,7 @@ export default async function AgenticSupportPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f8fd]">
-      <PageSchema name="What is an agentic support platform?" description="Agentic support for developer communities across community channels." path="/agentic-support" breadcrumbs={[{ name: 'Product', path: '/' }]} />
+      <PageSchema name="What is an agentic support platform?" description="Agentic support that lives in your community, across every community channel." path="/agentic-support" breadcrumbs={[{ name: 'Product', path: '/' }]} />
       <Nav state={navState} />
 
       <main>
@@ -67,7 +67,7 @@ export default async function AgenticSupportPage() {
               What is an agentic support platform?
             </h1>
             <p className="mx-auto mt-7 max-w-3xl text-pretty text-base leading-relaxed text-slate-200/75 sm:text-xl">
-              AnswerLoops is an agentic support platform for developer communities. It resolves repeat questions across the channels where your users already ask for help, while your team stays in control of the answers that matter most.
+              AnswerLoops is an agentic support platform for teams whose users ask for help in a community. It resolves repeat questions across the channels where your users already ask for help, while your team stays in control of the answers that matter most.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link href="/login" className="w-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:brightness-110 sm:w-auto">

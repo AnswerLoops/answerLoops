@@ -9,9 +9,9 @@ import { PageSchema } from '@/components/marketing/page-schema'
 import { jsonLdHtml } from '@/lib/marketing/json-ld'
 
 export const metadata: Metadata = {
-  title: 'AnswerLoops — Agentic support for developer communities',
+  title: 'AnswerLoops — Support that lives in your community',
   description:
-    'Agentic AI support for developer communities: resolve repeat questions across Discord, Slack, Google Chat, GitHub, Telegram, email, and website chat. Open source, self-hosted, and MCP/API-ready.',
+    'AI support that lives in your community: answer repeat questions right in the channel — Discord, Slack, forums, GitHub, Telegram, email, and website chat — and only when the answer is confident enough to be right. Open source, self-hosted, and MCP/API-ready.',
   alternates: { canonical: '/' },
 }
 
@@ -62,18 +62,18 @@ function Hero() {
         <div className="mx-auto max-w-4xl text-center">
           <div className="landing-hero-rise mt-10 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-[0.6875rem] font-medium text-slate-600">
             <span className="text-brand-600"><SparkIcon /></span>
-            Built for support teams entering the agent era
+            Built for teams whose support lives in a community
           </div>
 
           <h1 className="landing-hero-rise [animation-delay:80ms] mt-7 text-balance text-[2.8rem] font-semibold leading-[0.98] tracking-[-0.055em] text-slate-950 sm:text-6xl md:text-[5rem]">
-            Support runs itself.
+            Support that lives
             <span className="mt-2 block bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">
-              Your team stays in control.
+              in your community.
             </span>
           </h1>
 
           <p className="landing-hero-rise [animation-delay:160ms] mx-auto mt-7 max-w-2xl text-pretty text-base leading-relaxed text-slate-600 sm:text-lg">
-            AnswerLoops resolves repeat developer questions across Discord, Slack, Google Chat, GitHub, email, and your website—grounded in your knowledge, checked by a second model, and escalated when confidence is low.
+            Your community asks the same questions every day. AnswerLoops answers them right in the channel — Discord, Slack, your forum, email — grounded in your knowledge, checked by a second model, and only when it&apos;s confident enough to be right.
           </p>
 
           <div className="landing-hero-rise [animation-delay:240ms] mx-auto mt-9 max-w-xl">
@@ -180,8 +180,8 @@ function Outcomes() {
     },
     {
       eyebrow: 'One knowledge layer',
-      value: '7 channels',
-      label: 'Discord, Slack, Google Chat, GitHub, Telegram, email, and web.',
+      value: 'Every channel',
+      label: 'Discord, Slack, forums, GitHub, Telegram, email, and web share one knowledge layer.',
       accent: 'from-blue-400 to-cyan-300',
     },
     {
@@ -528,7 +528,7 @@ function Ownership() {
 const FAQ_ITEMS = [
   {
     q: 'What is AnswerLoops?',
-    a: 'AnswerLoops is an AI support platform for developer communities. It watches Discord, Slack, Google Chat, GitHub Issues and Discussions, Telegram, email, and your website widget, answers repeat questions from your knowledge base, and routes uncertain questions to a human with a draft ready to edit.',
+    a: 'AnswerLoops is an AI support platform for teams whose users ask for help in a community instead of a support ticket. It watches Discord, Slack, Discourse and Circle forums, Google Chat, GitHub Issues and Discussions, Telegram, email, and your website widget, answers repeat questions from your knowledge base, and routes uncertain questions to a human with a draft ready to edit.',
   },
   {
     q: 'How does it decide when to auto-answer?',
@@ -621,7 +621,7 @@ function StructuredData() {
     name: 'AnswerLoops',
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
-    description: 'AI community support platform that auto-answers repeat Discord, Slack, Google Chat, GitHub, Telegram, and email questions from your knowledge base, escalating only the hard ones to a human.',
+    description: 'AI support that lives in your community — auto-answers repeat Discord, Slack, Google Chat, forum, GitHub, Telegram, and email questions from your knowledge base, escalating only the hard ones to a human.',
     url: 'https://answerloops.com',
     provider: { '@id': ORGANIZATION_ID },
     offers: [
@@ -677,7 +677,7 @@ export default async function LandingPage() {
   const navState = await resolveNavState()
   return (
     <div className="landing-monochrome min-h-screen bg-white">
-      <PageSchema name="AnswerLoops — agentic support for developer communities" description="Agentic AI support for developer communities across Discord, Slack, Google Chat, GitHub, Telegram, email, and website chat." path="/" />
+      <PageSchema name="AnswerLoops — support that lives in your community" description="AI support that lives in your community across Discord, Slack, Google Chat, forums, GitHub, Telegram, email, and website chat." path="/" />
       <StructuredData />
       <Nav state={navState} />
       <main>

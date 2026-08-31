@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useTransition } from 'react'
-import { ORDERED_PLANS, type Plan } from '@/lib/billing/plans'
+import { ORDERED_PLANS, type Plan, overageUnits } from '@/lib/billing/plans'
 import { useUpgrade } from '@/components/billing/use-upgrade'
 
 interface BillingData {
@@ -28,7 +28,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
     'Email support',
   ],
   pro: [
-    '2,000 AI deflections/mo',
+    '3,000 AI deflections/mo, then $5 per 100',
     'Everything in Standard',
     'CSAT scoring',
     'Human escalation routing',
@@ -80,6 +80,7 @@ function TrialBanner({ trialEndsAt }: { trialEndsAt: string }) {
 }
 
 function TrialExpiredBanner({ onUpgrade, pending }: { onUpgrade: (planId: string) => void; pending: boolean }) {
+  const standard = ORDERED_PLANS.find((p) => p.id === 'standard')!
   return (
     <div className="rounded-xl border-2 border-red-200 bg-red-50 p-6 text-center space-y-3">
       <p className="text-sm font-semibold text-red-800">Your trial has ended</p>
@@ -89,7 +90,7 @@ function TrialExpiredBanner({ onUpgrade, pending }: { onUpgrade: (planId: string
         disabled={pending}
         className="rounded-lg bg-brand-600 px-5 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60 transition-colors"
       >
-        {pending ? 'Redirecting…' : 'Start Standard — $29/mo'}
+        {pending ? 'Redirecting…' : `Start Standard — $${(standard.priceMonthly / 100).toFixed(0)}/mo`}
       </button>
     </div>
   )
@@ -104,14 +105,22 @@ const NEXT_TIER: Record<string, string | null> = {
 function LimitWarningBanner({ planId, onUpgrade, pending }: { planId: string; onUpgrade: (planId: string) => void; pending: boolean }) {
   const nextPlan = NEXT_TIER[planId] ?? null
   const nextPlanName = nextPlan ? ORDERED_PLANS.find((p) => p.id === nextPlan)?.name : null
+  const plan = ORDERED_PLANS.find((p) => p.id === planId)
+  const softCap = !!plan && plan.overageRatePer100Cents !== null
 
   return (
     <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
       <div className="flex items-start gap-3">
         <div className="mt-0.5 h-2 w-2 rounded-full flex-shrink-0 bg-amber-500" />
         <div>
-          <p className="text-sm font-semibold text-amber-800">Approaching your deflection limit</p>
-          <p className="mt-0.5 text-xs text-amber-700">You&apos;ve used over 80% of this month&apos;s deflections. Upgrade now to avoid interruption.</p>
+          <p className="text-sm font-semibold text-amber-800">
+            {softCap ? 'Approaching your included deflections' : 'Approaching your deflection limit'}
+          </p>
+          <p className="mt-0.5 text-xs text-amber-700">
+            {softCap
+              ? "You've used over 80% of this month's included deflections. Answers keep going out past the limit — usage beyond it is billed at $5 per 100."
+              : "You've used over 80% of this month's deflections. Upgrade now to avoid interruption."}
+          </p>
         </div>
       </div>
       {nextPlan && (
@@ -137,6 +146,12 @@ function UsageBar({ used, limit, planId, currentPeriodEnd, cancelAtPeriodEnd, st
 }) {
   const pct = limit ? Math.min((used / limit) * 100, 100) : 0
   const over = limit !== null && used >= limit
+  const plan = ORDERED_PLANS.find((p) => p.id === planId)
+  // A soft cap keeps answering past the quota and meters the overage; going
+  // over is a billing event, not a service interruption, so it reads amber
+  // rather than red.
+  const softCap = !!plan && plan.overageRatePer100Cents !== null
+  const overUnits = plan ? overageUnits(used, plan) : 0
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
@@ -164,19 +179,21 @@ function UsageBar({ used, limit, planId, currentPeriodEnd, cancelAtPeriodEnd, st
       ) : (
         <>
           <div className="flex items-end gap-1.5 mb-3">
-            <span className={`text-3xl font-bold ${over ? 'text-red-600' : 'text-gray-900'}`}>{used.toLocaleString()}</span>
+            <span className={`text-3xl font-bold ${over ? (softCap ? 'text-amber-600' : 'text-red-600') : 'text-gray-900'}`}>{used.toLocaleString()}</span>
             <span className="text-sm text-gray-500 mb-1">/ {limit.toLocaleString()} deflections</span>
           </div>
           <div className="h-2.5 w-full rounded-full bg-gray-100 overflow-hidden">
             <div
-              className={`h-2.5 rounded-full transition-all duration-500 ${over ? 'bg-red-500' : pct > 80 ? 'bg-amber-500' : 'bg-brand-500'}`}
+              className={`h-2.5 rounded-full transition-all duration-500 ${over ? (softCap ? 'bg-amber-500' : 'bg-red-500') : pct > 80 ? 'bg-amber-500' : 'bg-brand-500'}`}
               style={{ width: `${pct}%` }}
             />
           </div>
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-gray-400">{Math.round(pct)}% used</span>
+          <div className="flex items-start justify-between gap-3 mt-2">
+            <span className="shrink-0 text-xs text-gray-400">{Math.round(pct)}% used</span>
             {over
-              ? <span className="text-xs font-medium text-red-600">Limit reached — upgrade to resume</span>
+              ? softCap
+                ? <span className="text-xs font-medium text-amber-700">{overUnits.toLocaleString()} over your plan · answers keep going out, overage billed at $5 per 100</span>
+                : <span className="text-xs font-medium text-red-600">Limit reached — upgrade to resume</span>
               : <span className="text-xs text-gray-400">{(limit - used).toLocaleString()} remaining</span>
             }
           </div>

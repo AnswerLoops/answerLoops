@@ -43,4 +43,25 @@ describe('app/(dashboard)/billing/page.tsx — approaching-limit banner', () => 
     const body = src.slice(idx, src.indexOf('\nfunction UsageBar(', idx))
     expect(body).toContain('onUpgrade(nextPlan)')
   })
+
+  it('tells a soft-cap plan the overage rate rather than warning of an interruption', () => {
+    const idx = src.indexOf('function LimitWarningBanner(')
+    const body = src.slice(idx, src.indexOf('\nfunction UsageBar(', idx))
+    // Pro keeps answering past its quota, so "avoid interruption" copy would
+    // be wrong for it — the banner branches on the plan's overage rate.
+    expect(body).toContain('overageRatePer100Cents !== null')
+    expect(body).toMatch(/\$5 per 100/)
+  })
+})
+
+describe('app/(dashboard)/billing/page.tsx — over-limit usage bar', () => {
+  const src = read('app/(dashboard)/billing/page.tsx')
+
+  it('shows a hard-cap plan the "upgrade to resume" stop and a soft-cap plan the overage note', () => {
+    const idx = src.indexOf('function UsageBar(')
+    const body = src.slice(idx, src.indexOf('\nfunction PlanCard(', idx))
+    expect(body).toContain('Limit reached — upgrade to resume') // hard cap
+    expect(body).toContain('over your plan') // soft cap
+    expect(body).toContain('overageUnits')
+  })
 })

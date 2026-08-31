@@ -22,7 +22,7 @@ Open-source maintainers, developer-tool companies, and community teams who get r
 
 ## Pricing
 
-Self-hosted: free forever (AGPL-3.0). Hosted (managed SaaS): Standard $29/mo (500 deflections), Pro $79/mo (2,000), Enterprise $299/mo (unlimited) — all with a 14-day free trial, tiered by monthly deflection volume. Annual billing takes 20% off every tier.
+Self-hosted: free forever (AGPL-3.0). Hosted (managed SaaS): Standard $49/mo (500 deflections, hard cap), Pro $149/mo (3,000 deflections, then $5 per 100 over), Enterprise $499/mo (unlimited) — all with a 14-day free trial, tiered by monthly deflection volume. Annual billing takes 20% off every tier.
 
 ## Integrations
 

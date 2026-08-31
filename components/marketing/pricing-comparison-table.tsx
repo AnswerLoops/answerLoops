@@ -25,8 +25,9 @@ interface Row {
 }
 
 const ROWS: Row[] = [
-  { feature: 'AI deflections / month', standard: '500', pro: '2,000', enterprise: 'Unlimited' },
-  { feature: 'Discord, Slack, Google Chat, GitHub, Telegram, Email', standard: true, pro: true, enterprise: true },
+  { feature: 'AI deflections / month', standard: '500', pro: '3,000', enterprise: 'Unlimited' },
+  { feature: 'Usage beyond the monthly limit', standard: 'Hard cap', pro: '$5 per 100', enterprise: '—' },
+  { feature: 'Discord, Slack, Discourse, Circle, Google Chat, GitHub, Telegram, Email', standard: true, pro: true, enterprise: true },
   { feature: 'Website chat widget + lead capture', standard: true, pro: true, enterprise: true },
   { feature: 'Knowledge base (upload, URL, GitHub sync)', standard: true, pro: true, enterprise: true },
   { feature: 'Bring your own AI provider', standard: true, pro: true, enterprise: true },

@@ -192,7 +192,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-start justify-between gap-8">
           <div>
             <div className="mb-4"><NavWordmark /></div>
-            <p className="max-w-xs text-xs leading-relaxed text-white/50">Confidence-gated AI support for developer communities. Open source and self-hostable.</p>
+            <p className="max-w-xs text-xs leading-relaxed text-white/50">Confidence-gated AI support that lives in your community. Open source and self-hostable.</p>
             <div className="mt-4 flex items-center gap-1.5 text-xs text-white/50">
               <GithubIcon className="h-3 w-3" />
               <Link href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="text-sm font-medium transition-colors hover:text-white/85">Proudly open source</Link>

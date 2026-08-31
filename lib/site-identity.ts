@@ -24,7 +24,7 @@ export const siteIdentityJsonLd = {
         url: 'https://answerloops.com/logo.png',
       },
       description:
-        'Open-source, self-hostable agentic support for developer communities.',
+        'Open-source, self-hostable AI support that lives in your community — Discord, Slack, forums, email, and more.',
       sameAs: [GITHUB_URL],
       contactPoint: {
         '@type': 'ContactPoint',
