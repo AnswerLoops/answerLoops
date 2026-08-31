@@ -37,7 +37,7 @@ function PricingStructuredData() {
     operatingSystem: 'Web',
     url: 'https://answerloops.com/pricing',
     provider: { '@id': ORGANIZATION_ID },
-    description: 'AI support that lives in your community across Discord, Slack, Google Chat, forums, GitHub, Telegram, email, and website chat.',
+    description: 'AI support that lives in your community across Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and website chat.',
     offers: [
       {
         '@type': 'Offer',
@@ -100,7 +100,7 @@ const PRICING_FAQ = [
   },
   {
     q: 'What happens if I go over my deflection limit?',
-    a: 'You\'ll see a warning banner in the dashboard once you cross 80% of your monthly limit. If you hit the limit, AI auto-answering pauses and new questions route to your human queue instead — nothing breaks, and no surprise charges hit your card.',
+    a: 'You\'ll see a warning banner in the dashboard once you cross 80% of your monthly limit. On Standard the limit is a hard cap: AI auto-answering pauses and new questions route to your human queue instead — nothing breaks, and no surprise charges hit your card. On Pro the limit is a soft cap: answers keep going out past your included deflections and the overage is billed at $5 per 100. Enterprise is unlimited.',
   },
   {
     q: 'Do you offer a free trial?',
@@ -206,7 +206,7 @@ export default async function PricingPage({
           </div>
 
           <p className="mx-auto mt-7 max-w-3xl text-center text-xs leading-relaxed text-slate-500">
-            Hosted plans include Discord, Slack, Discourse, Circle, Google Chat, GitHub, Telegram, email ingest, the AI agent, knowledge base, analytics, and the embeddable widget. Card required at signup; cancel before the trial ends and you won&apos;t be charged.
+            Hosted plans include Discord, Slack, Discourse, Circle, GitHub, Telegram, email ingest (Google Chat too), the AI agent, knowledge base, analytics, and the embeddable widget. Card required at signup; cancel before the trial ends and you won&apos;t be charged.
           </p>
         </div>
       </section>

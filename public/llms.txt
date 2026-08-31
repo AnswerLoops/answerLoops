@@ -1,6 +1,6 @@
 # AnswerLoops
 
-> AnswerLoops turns a stream of community support questions (Discord, Slack, Google Chat, GitHub, Telegram, email, website chat) into a self-improving knowledge base that deflects repeat questions automatically, escalating only the long tail to a human.
+> AnswerLoops is support that lives in your community. It turns a stream of community support questions (Discord, Slack, forums, GitHub, Telegram, email, website chat) into a self-improving knowledge base that answers repeat questions automatically — and only when it's confident enough to be right — escalating the long tail to a human.
 
 ## What it does
 
@@ -8,12 +8,14 @@ A community member asks a question. AnswerLoops classifies it, searches the org'
 
 ## Who it's for
 
-Open-source maintainers, developer-tool companies, and community teams who get repeat support questions across Discord, Slack, Google Chat, GitHub Issues/Discussions, Telegram, email, or their own website — and want an AI layer that answers correctly instead of hallucinating, with humans only touching the questions the AI isn't sure about.
+Teams whose users ask for help in a chat community instead of a support ticket: software and dev-tool companies, open-source projects, online-course creators running a paid community, game studios with a player Discord, and crypto/DAO projects. They get the same repeat questions across Discord, Slack, a forum, GitHub Issues/Discussions, Telegram, email, or their own website — and want an AI layer that answers correctly instead of hallucinating, with humans only touching the questions the AI isn't sure about.
+
+It's not for teams running a traditional help desk like Zendesk, online stores doing email-based order support, or large enterprises buying an autonomous-agent platform.
 
 ## Core capabilities
 
 - **Confidence-gated auto-answer** — a second AI pass grades every drafted answer before it goes out; only answers that clear the bar post automatically, everything else queues for human review
-- **Multi-channel ingest** — Discord, Slack, Google Chat, GitHub Issues/Discussions, Telegram, email, and an embeddable website chat widget, all through one pipeline
+- **Multi-channel ingest** — Discord, Slack, Discourse and Circle forums, GitHub Issues/Discussions, Telegram, email, and an embeddable website chat widget, all through one pipeline (Google Chat is also supported)
 - **Self-improving knowledge base** — resolved tickets promote into a searchable KB; community 👍/👎 feedback prunes bad answers over time
 - **Bring your own LLM** — OpenAI, Anthropic, Google Gemini, Groq, Mistral, or any OpenAI-compatible endpoint (including local models via Ollama); each org configures its own key and cost
 - **Agent-first API access** — an MCP server (`POST /api/mcp`, JSON-RPC 2.0) lets AI agents (Claude, Cursor, custom bots) call `search_kb`, `get_faq`, `get_tickets`, `create_ticket`, and `generate_answer` directly against an org's data, authenticated with a per-org API key
@@ -29,6 +31,8 @@ Self-hosted: free forever (AGPL-3.0). Hosted (managed SaaS): Standard $49/mo (50
 <!-- BEGIN GENERATED INTEGRATION LINKS -->
 - Discord: https://answerloops.com/docs/integrations/discord
 - Slack: https://answerloops.com/docs/integrations/slack
+- Discourse: https://answerloops.com/docs/integrations/discourse
+- Circle: https://answerloops.com/docs/integrations/circle
 - Google Chat: https://answerloops.com/docs/integrations/google-chat
 - Telegram: https://answerloops.com/docs/integrations/telegram
 - Email: https://answerloops.com/docs/integrations/email

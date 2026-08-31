@@ -3,13 +3,14 @@ import Link from 'next/link'
 import { Footer, Nav } from '@/components/marketing/chrome'
 import { resolveNavState } from '@/lib/marketing/nav-state'
 import { PageSchema } from '@/components/marketing/page-schema'
+import { MARKETED_CHANNEL_NAMES } from '@/lib/marketing/channels'
 
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'What Is an Agentic Support Platform? — AnswerLoops',
   description:
-    'AnswerLoops is an open-source, self-hostable agentic support platform for teams whose users ask for help in a community. Resolve repeat questions across Discord, Slack, forums, GitHub, email, Telegram, Google Chat, and web chat.',
+    'AnswerLoops is an open-source, self-hostable agentic support platform for teams whose users ask for help in a community. Resolve repeat questions across Discord, Slack, Discourse and Circle forums, GitHub, email, Telegram, and web chat.',
   alternates: { canonical: '/agentic-support' },
   openGraph: {
     title: 'What Is an Agentic Support Platform? — AnswerLoops',
@@ -20,11 +21,12 @@ export const metadata: Metadata = {
   twitter: {
     title: 'Agentic Support for Your Community — AnswerLoops',
     description:
-      'Open-source, self-hostable agentic support across Discord, Slack, forums, GitHub, email, Telegram, Google Chat, and web chat.',
+      'Open-source, self-hostable agentic support across Discord, Slack, Discourse and Circle forums, GitHub, email, Telegram, and web chat.',
   },
 }
 
-const CHANNELS = ['Discord', 'Slack', 'Discourse', 'Circle', 'Google Chat', 'GitHub', 'Telegram', 'Email', 'Website chat']
+// Canonical marketed list — see lib/marketing/channels.ts.
+const CHANNELS = MARKETED_CHANNEL_NAMES
 
 const CAPABILITIES = [
   {

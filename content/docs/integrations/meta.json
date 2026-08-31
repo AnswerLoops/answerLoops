@@ -3,6 +3,8 @@
   "pages": [
     "discord",
     "slack",
+    "discourse",
+    "circle",
     "google-chat",
     "telegram",
     "email",

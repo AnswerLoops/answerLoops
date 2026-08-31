@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./.github/readme/hero.svg" alt="AnswerLoops — open-source support infrastructure for developer communities" width="100%" />
+<img src="./.github/readme/hero.svg" alt="AnswerLoops — open-source support infrastructure for teams whose support lives in a community" width="100%" />
 
 <br />
 
@@ -12,13 +12,13 @@
 
 </div>
 
-# AnswerLoops — Open-source AI support agent for developer communities
+# AnswerLoops — Open-source AI support agent for teams whose support lives in a community
 
 **Support automation you can inspect, extend, and own.**
 
-AnswerLoops is an open-source, self-hosted AI support agent for developer communities. It turns repeat questions from Discord, GitHub, Slack, Google Chat, Telegram, email, and an embeddable web widget into one structured support pipeline, with confidence-gated automation and human escalation for uncertain answers.
+AnswerLoops is an open-source, self-hosted AI support agent for teams whose support lives in a community. It turns repeat questions from Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and an embeddable web widget into one structured support pipeline, with confidence-gated automation and human escalation for uncertain answers.
 
-It is built for open-source maintainers, developer-relations teams, and community operators who want support automation they can inspect, extend, and run on their own infrastructure—not a generic chatbot or a seat-based helpdesk.
+It is built for teams whose users ask for help in a community instead of a support ticket — software and dev-tool companies, open-source projects, course creators with a paid community, game studios with a player Discord — and who want support automation they can inspect, extend, and run on their own infrastructure, not a generic chatbot or a seat-based helpdesk.
 
 The important part is the gate between “the model produced text” and “a customer saw it.” AnswerLoops retrieves evidence from your knowledge base and connected repositories, drafts an answer, and asks a separate reviewer pass to grade it. Strong answers can be posted automatically; uncertain answers stay in the human queue with the context and draft attached.
 
@@ -33,7 +33,7 @@ Resolved conversations can become new knowledge, negative feedback removes weak 
 | | Capability | What it gives you |
 |---|---|---|
 | **01** | **Confidence-gated automation** | A dedicated reviewer pass controls whether an answer is posted or routed to a human. Thresholds are configurable, and bug or feature-request tickets stay human-led. |
-| **02** | **One multi-channel pipeline** | Discord, Slack, Google Chat, GitHub Issues and Discussions, Telegram, email, and web chat all produce the same org-scoped ticket model. |
+| **02** | **One multi-channel pipeline** | Discord, Slack, Discourse and Circle forums, GitHub Issues and Discussions, Telegram, email, and web chat all produce the same org-scoped ticket model (Google Chat too). |
 | **03** | **Grounded retrieval** | Search across crawled documentation, uploaded files, published KB articles, resolved tickets, and connected GitHub repositories. |
 | **04** | **Model freedom** | Use OpenAI, Anthropic, Google Gemini, Groq, Mistral, Ollama, or another OpenAI-compatible endpoint with your own credentials. |
 | **05** | **Agent-native access** | Expose the same knowledge and support workflows over MCP JSON-RPC or a documented REST API with an OpenAPI schema. |
@@ -42,7 +42,7 @@ Resolved conversations can become new knowledge, negative feedback removes weak 
 ## How the loop works
 
 ```text
- Discord · Slack · Google Chat · GitHub · Telegram · Email · Web widget
+ Discord · Slack · Discourse · Circle · GitHub · Telegram · Email · Web widget
                                   │
                                   ▼
                     ┌─────────────────────────┐
@@ -85,6 +85,7 @@ The shared ingest pipeline lives in [`lib/ingest/pipeline.ts`](./lib/ingest/pipe
 
 - Discord text channels, forum threads, reactions, slash commands, and multiple connected servers
 - Slack Events API or polling mode, plus in-thread replies
+- Discourse and Circle forum ingestion and replies _(planned)_
 - Google Chat space pairing and replies
 - GitHub Issues, issue comments, Discussions, discussion comments, and repository sync
 - Telegram webhook ingestion and replies
