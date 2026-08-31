@@ -25,6 +25,13 @@ RUN pnpm build
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+# Bring the base image's OS packages current before anything else. The
+# `node:22-alpine` tag floats to the latest Node 22 patch, but Alpine's package
+# index is refreshed more often than the image is re-cut, so an explicit upgrade
+# is what keeps the shipped packages level with upstream. Its own layer, ahead
+# of the app COPY, so it caches independently. The image scan in
+# publish-image.yml enforces this on release builds.
+RUN apk upgrade --no-cache
 # Create non-root user before COPY so --chown can reference it.
 RUN npm install -g pnpm@11.6.0 \
   && addgroup -S app && adduser -S app -G app \
