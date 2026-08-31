@@ -42,6 +42,40 @@ describe('Dockerfile: multi-stage build integrity', () => {
     const content = fs.readFileSync(dockerfilePath, 'utf-8')
     expect(content).toContain('pnpm-workspace.yaml')
   })
+
+  // Regression guard for fix/railway-deploy-unblock: the runner stage must run
+  // `apk upgrade` so the production image ships OS packages level with upstream
+  // and the publish-image scan stays green on release builds. `apk add
+  // --no-cache` already exists in the deps stage, so these assertions match
+  // `apk upgrade` specifically.
+  const runnerStage = () => {
+    const content = fs.readFileSync(dockerfilePath, 'utf-8')
+    const start = content.indexOf('AS runner')
+    expect(start).toBeGreaterThan(-1)
+    // runner is the final stage — no further FROM after it
+    const rest = content.slice(start)
+    expect(rest).not.toMatch(/\nFROM /)
+    return rest
+  }
+
+  it('runner stage runs apk upgrade to pull OS security patches', () => {
+    expect(runnerStage()).toMatch(/RUN apk upgrade --no-cache/)
+  })
+
+  it('apk upgrade is its own layer, before the COPY --from=build', () => {
+    const stage = runnerStage()
+    const upgradeIdx = stage.search(/RUN apk upgrade --no-cache/)
+    const copyIdx = stage.search(/COPY .*--from=build/)
+    expect(upgradeIdx).toBeGreaterThan(-1)
+    expect(copyIdx).toBeGreaterThan(-1)
+    expect(upgradeIdx).toBeLessThan(copyIdx)
+  })
+
+  it('apk upgrade appears only in the runner stage, not earlier stages', () => {
+    const content = fs.readFileSync(dockerfilePath, 'utf-8')
+    const before = content.slice(0, content.indexOf('AS runner'))
+    expect(before).not.toMatch(/apk upgrade/)
+  })
 })
 
 describe('docker-compose.yml: dev stack', () => {
