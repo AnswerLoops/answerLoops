@@ -210,10 +210,10 @@
 
 .dashboard-grid {
   background-image:
-    radial-gradient(circle at 10% 0%, rgba(59, 130, 246, 0.09), transparent 28rem),
-    radial-gradient(circle at 92% 12%, rgba(6, 182, 212, 0.055), transparent 24rem),
-    linear-gradient(rgba(148, 163, 184, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.045) 1px, transparent 1px);
+    radial-gradient(circle at 10% 0%, rgba(148, 163, 184, 0.09), transparent 28rem),
+    radial-gradient(circle at 92% 12%, rgba(203, 213, 225, 0.12), transparent 24rem),
+    linear-gradient(rgba(100, 116, 139, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 116, 139, 0.035) 1px, transparent 1px);
   background-size: auto, auto, 56px 56px, 56px 56px;
   mask-image: linear-gradient(to bottom, black, transparent 62rem);
 }
@@ -235,7 +235,7 @@
 .dashboard-page :is(.rounded-lg, .rounded-xl, .rounded-2xl)[class*="border"][class*="bg-white"],
 .dashboard-page :is(.rounded-lg, .rounded-xl, .rounded-2xl)[class*="border"][class*="bg-surface"] {
   border-color: rgba(203, 213, 225, 0.72);
-  box-shadow: 0 14px 38px rgba(30, 64, 175, 0.055);
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.055);
 }
 
 .dashboard-page input:not([type="checkbox"]):not([type="radio"]),
@@ -253,6 +253,65 @@
   border-color: #60a5fa;
   outline: none;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+/* Landing-page brand preview: a restrained monochrome system with white space
+   doing the work that the previous blue glow treatment handled. Keeping this
+   scoped to the public landing page makes the direction easy to evaluate
+   without changing the authenticated product UI. */
+.landing-monochrome {
+  --landing-charcoal: #252525;
+  --landing-ink: #171717;
+  --landing-muted: #686868;
+  --landing-line: #dedede;
+  --landing-soft: #f4f4f2;
+}
+
+.landing-monochrome > header {
+  background-color: #fff !important;
+  border-color: var(--landing-line) !important;
+}
+
+.landing-monochrome > header a[href="/login"][class],
+.landing-monochrome > header a[href="/login"][class]:visited {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+.landing-monochrome > header a[class*="bg-gradient-to-r"] {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+
+.landing-monochrome :is([class*="bg-[#030611"], [class*="bg-[#050914"], [class*="bg-[#07101f"], [class*="bg-[#071126"], [class*="bg-[#070b15"]) {
+  background-color: var(--landing-ink) !important;
+  background-image: none !important;
+}
+
+.landing-monochrome :is([class*="bg-[#f6f8fc"], [class*="bg-[#f4f7fb"], [class*="bg-[#eef3fb"]) {
+  background-color: var(--landing-soft) !important;
+}
+
+.landing-monochrome :is([class*="text-white"], [class*="text-slate-200"], [class*="text-slate-300"]) {
+  color: #f7f7f5 !important;
+}
+
+.landing-monochrome :is([class*="text-slate-950"], [class*="text-slate-900"], [class*="text-slate-800"]) {
+  color: var(--landing-charcoal) !important;
+}
+
+.landing-monochrome :is([class*="border-blue-"], [class*="border-cyan-"], [class*="border-indigo-"], [class*="border-white"]) {
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+.landing-monochrome .landing-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+}
+
+.landing-monochrome :is([class*="shadow-blue"], [class*="shadow-cyan"], [class*="shadow-indigo"]) {
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.08) !important;
 }
 
 .dashboard-page .bg-gray-900 input,

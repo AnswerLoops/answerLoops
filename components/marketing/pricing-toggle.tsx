@@ -98,14 +98,14 @@ export function PricingToggle({ plans }: { plans: Plan[] }) {
               key={plan.id}
               className={`relative flex min-h-[540px] flex-col overflow-hidden rounded-[1.75rem] border p-7 transition duration-300 hover:-translate-y-1 ${
                 isHighlight
-                  ? 'border-blue-400/20 bg-[#07101f] text-white shadow-[0_26px_65px_rgba(15,23,42,0.22)]'
+                  ? 'border-slate-700 bg-[#252525] text-white shadow-[0_26px_65px_rgba(15,23,42,0.18)]'
                   : 'border-slate-200/90 bg-white text-slate-950 shadow-[0_16px_45px_rgba(30,64,175,0.055)] hover:shadow-[0_22px_60px_rgba(30,64,175,0.1)]'
               }`}
             >
               {isHighlight && (
                 <>
                   <div className="landing-grid pointer-events-none absolute inset-0 opacity-30" />
-                  <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-blue-500/25 blur-[90px]" />
+                  <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-blue-400/10 blur-[90px]" />
                 </>
               )}
               {isHighlight && (

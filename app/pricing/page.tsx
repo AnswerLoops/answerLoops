@@ -140,33 +140,33 @@ export default async function PricingPage({
   if (resume === '1' && navState === 'active') redirect('/dashboard')
 
   return (
-    <div className="min-h-screen bg-[#f5f8fd]">
+    <div className="landing-monochrome brand-system min-h-screen bg-[#f5f5f3]">
       <PageSchema name="AnswerLoops pricing" description="AnswerLoops pricing for agentic developer-community support." path="/pricing" breadcrumbs={[{ name: 'Product', path: '/agentic-support' }]} />
       <PricingStructuredData />
       <Nav state={navState} />
 
-      <section className="relative isolate overflow-hidden bg-[#030611] pb-48 pt-20 sm:pb-56 sm:pt-28">
+      <section className="relative isolate overflow-hidden bg-white pb-48 pt-0 sm:pb-56 sm:pt-0">
         <div className="landing-grid pointer-events-none absolute inset-0 opacity-55" />
-        <div className="pointer-events-none absolute left-1/2 top-[-22rem] h-[48rem] w-[76rem] -translate-x-1/2 rounded-[50%] bg-blue-600/25 blur-[140px]" />
-        <div className="pointer-events-none absolute -right-52 top-20 h-96 w-96 rounded-full bg-cyan-500/10 blur-[120px]" />
+        <div className="pointer-events-none absolute left-1/2 top-[-22rem] h-[48rem] w-[76rem] -translate-x-1/2 rounded-[50%] bg-slate-100/80 blur-[140px]" />
+        <div className="pointer-events-none absolute -right-52 top-20 h-96 w-96 rounded-full bg-blue-50/70 blur-[120px]" />
         <div className="relative mx-auto max-w-4xl px-5 text-center sm:px-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-300/20 bg-blue-400/[0.08] px-3.5 py-1.5 text-[0.6875rem] font-medium text-blue-100">
-            <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.8)]" />
+          <div className="mt-10 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-[0.6875rem] font-medium text-slate-600">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
             Pricing without the seat tax
           </div>
-          <h1 className="mt-7 text-balance text-[2.8rem] font-semibold leading-[0.98] tracking-[-0.055em] text-white sm:text-6xl md:text-[4.7rem]">
+          <h1 className="mt-7 text-balance text-[2.8rem] font-semibold leading-[0.98] tracking-[-0.055em] text-slate-950 sm:text-6xl md:text-[4.7rem]">
             Pay for resolved questions.
             <span className="mt-2 block bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">
               Not occupied seats.
             </span>
           </h1>
-          <p className="mx-auto mt-7 max-w-2xl text-pretty text-base leading-relaxed text-slate-200/75 sm:text-lg">
+          <p className="mx-auto mt-7 max-w-2xl text-pretty text-base leading-relaxed text-slate-600 sm:text-lg">
             Every hosted plan includes the complete support loop. Choose the answer volume you need, bring your own model provider, and upgrade only when automation is already creating value. Built agent-first — every plan ships with an MCP server and REST API so Claude, Cursor, or your own agents can search your KB and open tickets directly, not just human staff.
           </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[0.6875rem] font-medium text-white/55">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-slate-500">
             {['14-day hosted trial', 'No per-seat fees', 'No AI usage markup', 'MCP + Agent API included'].map((item) => (
               <span key={item} className="flex items-center gap-2">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-400/12 text-[0.5625rem] text-emerald-300">✓</span>
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-50 text-[0.5625rem] text-blue-600">✓</span>
                 {item}
               </span>
             ))}

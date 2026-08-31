@@ -3590,7 +3590,7 @@ export default function SettingsPage() {
             className={[
               'shrink-0 rounded-xl px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors',
               activeTab === tab.id
-                ? 'bg-[#07101f] text-white shadow-md'
+                ? 'bg-[#252525] text-white shadow-md'
                 : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900',
             ].join(' ')}
           >

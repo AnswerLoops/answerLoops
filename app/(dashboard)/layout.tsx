@@ -52,14 +52,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const sidebarContent = (
     <>
-      <div className="border-b border-white/8 px-4 py-5">
-        <Link href="/" className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-white/[0.04]">
+      <div className="border-b border-slate-200 px-4 py-5">
+        <Link href="/" className="flex items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-slate-50">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-300/15 bg-blue-400/10 shadow-[inset_0_1px_rgba(255,255,255,0.06)]">
             <LogoMark size={25} />
           </div>
           <div>
-            <div className="text-sm font-semibold tracking-[-0.02em] text-white">answer<span className="text-blue-400">Loops</span></div>
-            <div className="mt-0.5 text-[0.5625rem] font-medium uppercase tracking-[0.14em] text-white/35">Agent operations</div>
+            <div className="text-sm font-semibold tracking-[-0.02em] text-slate-950">answer<span className="text-blue-500">Loops</span></div>
+            <div className="mt-0.5 text-[0.5625rem] font-medium uppercase tracking-[0.14em] text-slate-400">Agent operations</div>
           </div>
         </Link>
       </div>
@@ -68,10 +68,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   )
 
   return (
-    <div className="dashboard-shell flex h-screen bg-[#f3f6fb]">
+    <div className="dashboard-shell brand-system flex h-screen bg-[#f3f4f2]">
       <AutoRefresh intervalMs={5000} />
       {/* Sidebar — desktop only */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-white/8 bg-[#070b15] shadow-[12px_0_40px_rgba(15,23,42,0.08)] md:flex">
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white shadow-[12px_0_40px_rgba(15,23,42,0.05)] md:flex">
         {sidebarContent}
       </aside>
 
@@ -80,7 +80,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {/* Topnav */}
         <header className="flex h-16 shrink-0 items-center border-b border-slate-200/80 bg-white/85 px-3 shadow-[0_1px_rgba(15,23,42,0.02)] backdrop-blur-xl md:px-7">
           <MobileDrawer triggerLabel="Open navigation" triggerClassName="md:hidden">
-            <div className="flex h-full flex-col bg-[#070b15]">{sidebarContent}</div>
+            <div className="flex h-full flex-col bg-white">{sidebarContent}</div>
           </MobileDrawer>
           <div className="ml-3 hidden items-center gap-3 md:flex">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600">
