@@ -7,11 +7,11 @@ description: Plan tiers, deflection limits, and pricing for AnswerLoops Cloud.
 
 Pricing is deflection-based, not per-seat. Every hosted plan includes the full AI pipeline — higher tiers add scale, insight, and support.
 
-| Plan | Price (monthly) | Price (annual, per mo) | Deflections/mo |
-|---|---|---|---|
-| Standard | $29 | $23.20 (20% off) | 500 |
-| Pro | $79 | $63.20 (20% off) | 2,000 |
-| Enterprise | $299 | $239.20 (20% off) | Unlimited |
+| Plan | Price (monthly) | Price (annual, per mo) | Deflections/mo | Beyond the limit |
+|---|---|---|---|---|
+| Standard | $49 | $39.20 (20% off) | 500 | Hard cap — auto-answering pauses |
+| Pro | $149 | $119.20 (20% off) | 3,000 | Soft cap — keeps answering, $5 per 100 over |
+| Enterprise | $499 | $399.20 (20% off) | Unlimited | — |
 
 There is no free tier. Every plan starts with a 14-day trial — see below.
 
@@ -33,13 +33,19 @@ Separate from the 14-day plan trial above: every new org also gets **5 lifetime 
 
 See the comparison table on the [pricing page](https://answerloops.com/pricing) for the full feature breakdown. Summary:
 
-- **Standard** — core channels (Discord, Slack, GitHub, Telegram, Email), website widget, knowledge base, bring-your-own AI provider, CSV export, and the white-label widget (removes "Powered by AnswerLoops").
-- **Pro** — everything in Standard, plus CSAT scoring, human escalation routing, simulation/dry-run mode, knowledge gap dashboard, and priority support.
+- **Standard** — core channels (Discord, Slack, Discourse, Circle, GitHub, Telegram, Email), website widget, knowledge base, bring-your-own AI provider, CSV export, and the white-label widget (removes "Powered by AnswerLoops"). Hard deflection cap.
+- **Pro** — everything in Standard, plus CSAT scoring, human escalation routing, simulation/dry-run mode, knowledge gap dashboard, and priority support. Soft deflection cap: answers keep going out past 3,000 and the overage is billed at $5 per 100.
 - **Enterprise** — everything in Pro, plus custom AI model configuration, SLA + dedicated support, and custom invoicing.
 
 ## Approaching or hitting your limit
 
-Once an org crosses 80% of its monthly deflection allowance, an in-app warning banner appears on **Settings → Billing** with a one-click upgrade to the next tier. If the limit is reached, AI auto-answering pauses for the rest of the billing period and new questions route straight to the human queue instead — nothing breaks, and there's no surprise overage charge.
+Once an org crosses 80% of its monthly deflection allowance, an in-app warning banner appears on **Settings → Billing** with a one-click upgrade to the next tier.
+
+What happens at the limit depends on the plan's cap:
+
+- **Standard (hard cap)** — AI auto-answering pauses for the rest of the billing period once 500 deflections are used, and new questions route straight to the human queue instead. Nothing breaks, and there is no overage charge.
+- **Pro (soft cap)** — answers keep going out past 3,000 deflections. Usage beyond the included amount is billed at $5 per 100 (rounded up to the nearest 100). The Billing page shows how far over the plan the org is.
+- **Enterprise** — unlimited; there is no cap to reach.
 
 ## Self-hosting
 

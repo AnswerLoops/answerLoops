@@ -8,7 +8,7 @@ import {
   markApiGenerationBilled,
   deleteApiGeneration,
 } from '@/lib/db/queries/api-generations'
-import { getPlan, isOverLimit, getDeploymentMode, isCloudMisconfigured, hasActiveAccess } from './plans'
+import { getPlan, isOverLimit, blocksAtLimit, getDeploymentMode, isCloudMisconfigured, hasActiveAccess } from './plans'
 import { logger } from '@/lib/logger'
 
 export async function getMonthlyDeflections(orgId: number): Promise<number> {
@@ -70,8 +70,10 @@ export async function checkDeflectionLimit(orgId: number): Promise<{
     return { allowed: false, used, limit: 0, planId: sub?.planId ?? 'none' }
   }
 
-  // trialing / active / past_due all use the plan's deflection limit
-  const allowed = !isOverLimit(used, plan)
+  // trialing / active / past_due all use the plan's deflection limit. A
+  // soft-cap plan keeps answering past the quota (the overage is metered, not
+  // blocked), so only a hard cap flips `allowed` to false here.
+  const allowed = !(blocksAtLimit(plan) && isOverLimit(used, plan))
   return { allowed, used, limit: plan.deflectionsPerMonth, planId: plan.id }
 }
 
@@ -196,7 +198,9 @@ export async function reserveGeneration(
 
     if (plan.deflectionsPerMonth !== null) {
       const deflections = await countDeflections(tx, orgId, periodStart)
-      if (isOverLimit(deflections, plan)) {
+      // Soft-cap plans meter the overage rather than blocking, so only a hard
+      // cap turns down a generation here.
+      if (blocksAtLimit(plan) && isOverLimit(deflections, plan)) {
         return {
           granted: false as const,
           reason: 'deflection-limit' as const,
@@ -292,7 +296,10 @@ export async function commitDeflection(orgId: number, generationId: number): Pro
     await tx.execute(sql`SELECT pg_advisory_xact_lock(${METERING_LOCK_CLASS}, ${orgId})`)
 
     const deflections = await countDeflections(tx, orgId, periodStart)
-    if (isOverLimit(deflections, plan)) return false
+    // Hard cap: don't bill a slot the plan doesn't cover. Soft cap: bill it —
+    // the deflection went out and the count needs to stay accurate for the
+    // overage meter.
+    if (blocksAtLimit(plan) && isOverLimit(deflections, plan)) return false
 
     await markApiGenerationBilled(generationId, tx)
     return true
@@ -352,7 +359,9 @@ export async function reserveAutoDeflect(
     await tx.execute(sql`SELECT pg_advisory_xact_lock(${METERING_LOCK_CLASS}, ${orgId})`)
 
     const deflections = await countDeflections(tx, orgId, periodStart)
-    const allowed = !isOverLimit(deflections, plan)
+    // Soft-cap plans keep auto-deflecting past the quota (overage is metered);
+    // only a hard cap withholds the answer.
+    const allowed = !(blocksAtLimit(plan) && isOverLimit(deflections, plan))
     await writeDecision(tx, allowed)
     return allowed
   })

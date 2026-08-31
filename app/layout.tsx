@@ -18,13 +18,13 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://answerloops.com'),
   title: "AnswerLoops",
   description:
-    "Agentic AI support for developer communities: AnswerLoops resolves repeat questions across Discord, Slack, Google Chat, GitHub, Telegram, email, and website chat. Open source, self-hosted, and MCP/API-ready.",
+    "AI support that lives in your community: AnswerLoops answers repeat questions right in the channel — Discord, Slack, Google Chat, forums, GitHub, Telegram, email, and website chat — and only when it's confident enough to be right. Open source, self-hosted, and MCP/API-ready.",
   openGraph: {
     type: 'website',
     siteName: 'AnswerLoops',
-    title: 'AnswerLoops — Agentic support for developer communities',
+    title: 'AnswerLoops — Support that lives in your community',
     description:
-      'Resolve repeat questions across every community channel with confidence-gated automation. Open source, self-hosted, and MCP/API-ready.',
+      'Answer repeat questions in the channel where your community already asks — with confidence-gated automation. Open source, self-hosted, and MCP/API-ready.',
     images: [
       {
         url: '/logo.png',
@@ -36,9 +36,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary',
-    title: 'AnswerLoops — Agentic support for developer communities',
+    title: 'AnswerLoops — Support that lives in your community',
     description:
-      'Resolve repeat questions across every community channel with confidence-gated automation. Open source, self-hosted, and MCP/API-ready.',
+      'Answer repeat questions in the channel where your community already asks — with confidence-gated automation. Open source, self-hosted, and MCP/API-ready.',
     images: ['/logo.png'],
   },
   icons: {

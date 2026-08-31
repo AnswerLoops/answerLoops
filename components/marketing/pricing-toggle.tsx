@@ -25,7 +25,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
     'Email support',
   ],
   pro: [
-    '2,000 questions answered automatically every month',
+    '3,000 questions answered automatically every month, then $5 per 100',
     'Everything in Standard',
     'Know exactly how happy your community is, automatically, after every answer',
     'Hard questions never sit unseen — auto-routed to the right person on your team',
@@ -132,6 +132,11 @@ export function PricingToggle({ plans }: { plans: Plan[] }) {
                 {plan.deflectionsPerMonth === null
                   ? 'Unlimited deflections'
                   : `${plan.deflectionsPerMonth.toLocaleString()} deflections/mo`}
+                {plan.overageRatePer100Cents !== null && (
+                  <span className={`ml-1 font-normal ${isHighlight ? 'text-slate-200/60' : 'text-slate-500'}`}>
+                    then ${(plan.overageRatePer100Cents / 100).toFixed(0)} per 100
+                  </span>
+                )}
               </div>
 
               <ul className="relative mt-6 flex-1 space-y-2.5">

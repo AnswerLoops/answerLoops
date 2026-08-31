@@ -15,16 +15,16 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Pricing — AnswerLoops',
-  description: 'AnswerLoops pricing for agentic developer-community support. Self-host the open-source platform for free, or choose a hosted plan with a 14-day trial and MCP/API access.',
+  description: 'AnswerLoops pricing for AI support that lives in your community. Self-host the open-source platform for free, or choose a hosted plan with a 14-day trial and MCP/API access.',
   alternates: { canonical: '/pricing' },
   openGraph: {
     title: 'Pricing — AnswerLoops',
-    description: 'Self-host AnswerLoops for free or choose a hosted plan for agentic support across Discord, Slack, GitHub, email, and web chat.',
+    description: 'Self-host AnswerLoops for free or choose a hosted plan for community-native support across Discord, Slack, forums, GitHub, email, and web chat.',
     url: '/pricing',
   },
   twitter: {
     title: 'Pricing — AnswerLoops',
-    description: 'Self-host AnswerLoops for free or choose a hosted plan for agentic support across every community channel.',
+    description: 'Self-host AnswerLoops for free or choose a hosted plan for support that lives in every community channel.',
   },
 }
 
@@ -37,7 +37,7 @@ function PricingStructuredData() {
     operatingSystem: 'Web',
     url: 'https://answerloops.com/pricing',
     provider: { '@id': ORGANIZATION_ID },
-    description: 'Agentic AI support for developer communities across Discord, Slack, Google Chat, GitHub, Telegram, email, and website chat.',
+    description: 'AI support that lives in your community across Discord, Slack, Google Chat, forums, GitHub, Telegram, email, and website chat.',
     offers: [
       {
         '@type': 'Offer',
@@ -141,7 +141,7 @@ export default async function PricingPage({
 
   return (
     <div className="landing-monochrome brand-system min-h-screen bg-[#f5f5f3]">
-      <PageSchema name="AnswerLoops pricing" description="AnswerLoops pricing for agentic developer-community support." path="/pricing" breadcrumbs={[{ name: 'Product', path: '/agentic-support' }]} />
+      <PageSchema name="AnswerLoops pricing" description="AnswerLoops pricing for AI support that lives in your community." path="/pricing" breadcrumbs={[{ name: 'Product', path: '/agentic-support' }]} />
       <PricingStructuredData />
       <Nav state={navState} />
 
@@ -206,7 +206,7 @@ export default async function PricingPage({
           </div>
 
           <p className="mx-auto mt-7 max-w-3xl text-center text-xs leading-relaxed text-slate-500">
-            Hosted plans include Discord, Slack, Google Chat, GitHub, Telegram, email ingest, the AI agent, knowledge base, analytics, and the embeddable widget. Card required at signup; cancel before the trial ends and you won&apos;t be charged.
+            Hosted plans include Discord, Slack, Discourse, Circle, Google Chat, GitHub, Telegram, email ingest, the AI agent, knowledge base, analytics, and the embeddable widget. Card required at signup; cancel before the trial ends and you won&apos;t be charged.
           </p>
         </div>
       </section>

@@ -25,6 +25,17 @@ export interface Plan {
   name: string
   deflectionsPerMonth: number | null // null = unlimited
   priceMonthly: number               // USD cents, 0 = free
+  // Cents charged per 100 deflections used beyond deflectionsPerMonth, or null
+  // for a hard cap: once the included quota is spent, no further deflections go
+  // out until the period resets or the org upgrades. A non-null rate is a soft
+  // cap — deflections keep flowing past the quota and the overage is billed.
+  //
+  // The metered charge is not wired to Stripe yet: a soft-cap plan currently
+  // keeps answering past its quota for free, and the dashboard shows the
+  // overage count so the number is visible before the billing lands. Enforcing
+  // the charge is a follow-up — until then this field only drives which plans
+  // block at the limit and what the UI says.
+  overageRatePer100Cents: number | null
   stripePriceId: string | null       // monthly price; null = not configured
   stripePriceIdAnnual: string | null // annual price; null = not configured
 }
@@ -56,7 +67,8 @@ export const PLANS: Record<PlanId, Plan> = {
     // display name shipped in PR #204.
     name: 'Standard',
     deflectionsPerMonth: 500,
-    priceMonthly: 2900,
+    priceMonthly: 4900,
+    overageRatePer100Cents: null, // hard cap
     stripePriceId: process.env.STRIPE_PRICE_STANDARD ?? null,
     stripePriceIdAnnual: process.env.STRIPE_PRICE_STANDARD_ANNUAL ?? null,
   },
@@ -66,8 +78,9 @@ export const PLANS: Record<PlanId, Plan> = {
     // *new* meaning of 'pro'; see plans.ts module comment history if this
     // reads as a regression of anything — it isn't.
     name: 'Pro',
-    deflectionsPerMonth: 2000,
-    priceMonthly: 7900,
+    deflectionsPerMonth: 3000,
+    priceMonthly: 14900,
+    overageRatePer100Cents: 500, // soft cap: $5 per 100 deflections over quota
     stripePriceId: process.env.STRIPE_PRICE_PRO ?? null,
     stripePriceIdAnnual: process.env.STRIPE_PRICE_PRO_ANNUAL ?? null,
   },
@@ -75,7 +88,8 @@ export const PLANS: Record<PlanId, Plan> = {
     id: 'enterprise',
     name: 'Enterprise',
     deflectionsPerMonth: null,
-    priceMonthly: 29900,
+    priceMonthly: 49900,
+    overageRatePer100Cents: null, // unlimited — no quota to exceed
     stripePriceId: process.env.STRIPE_PRICE_ENTERPRISE ?? null,
     stripePriceIdAnnual: process.env.STRIPE_PRICE_ENTERPRISE_ANNUAL ?? null,
   },
@@ -162,9 +176,49 @@ export function priceIdToPlan(priceId: string): Plan | null {
   )
 }
 
+/**
+ * Whether the org has used its full included deflection quota this period.
+ *
+ * This is the "past the included amount" predicate — it says nothing about
+ * whether further deflections are blocked. On a hard-cap plan it also means
+ * "blocked" (see `blocksAtLimit`); on a soft-cap plan it just means the
+ * overage meter has started.
+ */
 export function isOverLimit(deflections: number, plan: Plan): boolean {
   if (plan.deflectionsPerMonth === null) return false
   return deflections >= plan.deflectionsPerMonth
+}
+
+/**
+ * Whether reaching the included quota stops further deflections going out.
+ *
+ * True only for a metered plan with a hard cap (no overage rate). A soft-cap
+ * plan keeps answering past its quota, and an unlimited plan has no quota to
+ * reach. Enforcement paths gate on `blocksAtLimit(plan) && isOverLimit(...)`
+ * so a soft-cap org is never cut off mid-period.
+ */
+export function blocksAtLimit(plan: Plan): boolean {
+  return plan.deflectionsPerMonth !== null && plan.overageRatePer100Cents === null
+}
+
+/**
+ * Deflections used beyond the included quota this period, floored at zero.
+ * Zero for unlimited plans and for anyone still under quota.
+ */
+export function overageUnits(deflections: number, plan: Plan): number {
+  if (plan.deflectionsPerMonth === null) return 0
+  return Math.max(0, deflections - plan.deflectionsPerMonth)
+}
+
+/**
+ * What the overage used so far this period will cost, in cents, on a soft-cap
+ * plan. Billed per whole or partial block of 100. Zero on hard-cap and
+ * unlimited plans. (Display only until metered billing is wired to Stripe.)
+ */
+export function overageCostCents(deflections: number, plan: Plan): number {
+  if (plan.overageRatePer100Cents === null) return 0
+  const units = overageUnits(deflections, plan)
+  return Math.ceil(units / 100) * plan.overageRatePer100Cents
 }
 
 export function stripeConfigured(): boolean {

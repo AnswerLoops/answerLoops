@@ -25,6 +25,7 @@ const plan = (over: Partial<Plan> = {}): Plan => ({
   name: 'Standard',
   deflectionsPerMonth: 500,
   priceMonthly: 2900,
+  overageRatePer100Cents: null,
   stripePriceId: 'price_monthly',
   stripePriceIdAnnual: 'price_annual',
   ...over,
@@ -86,9 +87,9 @@ describe('annual pricing arithmetic', () => {
     // price changes here without the Stripe price changing too, the page and the
     // charge disagree — which is exactly how this went wrong before.
     const expected: Record<string, number> = {
-      standard: 27840,
-      pro: 75840,
-      enterprise: 287040,
+      standard: 47040,
+      pro: 143040,
+      enterprise: 479040,
     }
     for (const p of ORDERED_PLANS) {
       expect(annualTotalPrice(p), `annual total for ${p.id}`).toBe(expected[p.id])
