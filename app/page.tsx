@@ -7,6 +7,7 @@ import { resolveNavState } from '@/lib/marketing/nav-state'
 import { ORGANIZATION_ID } from '@/lib/site-identity'
 import { PageSchema } from '@/components/marketing/page-schema'
 import { jsonLdHtml } from '@/lib/marketing/json-ld'
+import { MARKETED_CHANNELS } from '@/lib/marketing/channels'
 
 export const metadata: Metadata = {
   title: 'AnswerLoops — Support that lives in your community',
@@ -115,21 +116,9 @@ function Hero() {
   )
 }
 
-// Canonical marketed channel list — keep this order and membership in sync with
-// the enumerations in app/layout.tsx, app/agentic-support, content/docs/
-// introduction.mdx, public/llms.txt, and the GitHub README. Google Chat is
-// supported but not marketed in the headline list (see the "also supported"
-// note in the docs); Discourse and Circle are marketed here as first-class.
-const CHANNELS = [
-  { name: 'Discord', color: '#5865f2' },
-  { name: 'Slack', color: '#36c5f0' },
-  { name: 'Discourse', color: '#e4572e' },
-  { name: 'Circle', color: '#7c3aed' },
-  { name: 'GitHub', color: '#24292f' },
-  { name: 'Telegram', color: '#229ed9' },
-  { name: 'Email', color: '#64748b' },
-  { name: 'Web widget', color: '#2563eb' },
-] as const
+// The channel rail renders the canonical marketed list — defined once in
+// lib/marketing/channels.ts and shared with every other enumeration.
+const CHANNELS = MARKETED_CHANNELS
 
 function IntegrationIcon({ name, color }: { name: string; color: string }) {
   if (name === 'GitHub') {
@@ -141,7 +130,7 @@ function IntegrationIcon({ name, color }: { name: string; color: string }) {
   if (name === 'Email') {
     return <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></svg>
   }
-  if (name === 'Web widget') {
+  if (name === 'Website widget') {
     return <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 7.7 7.7 0 0 1-3.2-.7L4 20l1.7-4.1A7.5 7.5 0 1 1 20 11.5Z" /><path d="M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01" strokeLinecap="round" strokeWidth="2.5" /></svg>
   }
   if (name === 'Circle') {
@@ -266,7 +255,7 @@ const LOOP_STEPS = [
   {
     n: '01',
     title: 'Listen everywhere',
-    body: 'Questions arrive from Discord, Slack, Google Chat, GitHub, Telegram, email, or your embedded widget. The channel changes; the workflow does not.',
+    body: 'Questions arrive from Discord, Slack, a Discourse or Circle forum, GitHub, Telegram, email, or your embedded widget. The channel changes; the workflow does not.',
     accent: 'from-indigo-500 to-blue-500',
   },
   {
@@ -532,7 +521,7 @@ function Ownership() {
 const FAQ_ITEMS = [
   {
     q: 'What is AnswerLoops?',
-    a: 'AnswerLoops is an AI support platform for teams whose users ask for help in a community instead of a support ticket. It watches Discord, Slack, Discourse and Circle forums, Google Chat, GitHub Issues and Discussions, Telegram, email, and your website widget, answers repeat questions from your knowledge base, and routes uncertain questions to a human with a draft ready to edit.',
+    a: 'AnswerLoops is an AI support platform for teams whose users ask for help in a community instead of a support ticket. It watches Discord, Slack, Discourse and Circle forums, GitHub Issues and Discussions, Telegram, email, and your website widget (Google Chat too), answers repeat questions from your knowledge base, and routes uncertain questions to a human with a draft ready to edit.',
   },
   {
     q: 'How does it decide when to auto-answer?',
@@ -552,7 +541,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What if I don’t have a knowledge base yet?',
-    a: 'You don’t need one to start. Connect wherever your community already asks questions — email, Discord, Slack, Google Chat, GitHub, Telegram, your site widget — and every incoming question becomes a ticket. Answer it once, and that answer becomes a KB article. No docs to write upfront: the knowledge base builds itself out of the real questions your community actually asks, and it gets sharper with every reply.',
+    a: 'You don’t need one to start. Connect wherever your community already asks questions — email, Discord, Slack, a Discourse or Circle forum, GitHub, Telegram, your site widget — and every incoming question becomes a ticket. Answer it once, and that answer becomes a KB article. No docs to write upfront: the knowledge base builds itself out of the real questions your community actually asks, and it gets sharper with every reply.',
   },
 ] as const
 
@@ -625,7 +614,7 @@ function StructuredData() {
     name: 'AnswerLoops',
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
-    description: 'AI support that lives in your community — auto-answers repeat Discord, Slack, Google Chat, forum, GitHub, Telegram, and email questions from your knowledge base, escalating only the hard ones to a human.',
+    description: 'AI support that lives in your community — auto-answers repeat Discord, Slack, forum, GitHub, Telegram, and email questions from your knowledge base, escalating only the hard ones to a human.',
     url: 'https://answerloops.com',
     provider: { '@id': ORGANIZATION_ID },
     offers: [
@@ -681,7 +670,7 @@ export default async function LandingPage() {
   const navState = await resolveNavState()
   return (
     <div className="landing-monochrome min-h-screen bg-white">
-      <PageSchema name="AnswerLoops — support that lives in your community" description="AI support that lives in your community across Discord, Slack, Google Chat, forums, GitHub, Telegram, email, and website chat." path="/" />
+      <PageSchema name="AnswerLoops — support that lives in your community" description="AI support that lives in your community across Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and website chat." path="/" />
       <StructuredData />
       <Nav state={navState} />
       <main>

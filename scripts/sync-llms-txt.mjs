@@ -26,6 +26,8 @@ const LABELS = {
 const INTEGRATION_LABELS = {
   discord: 'Discord',
   slack: 'Slack',
+  discourse: 'Discourse',
+  circle: 'Circle',
   'google-chat': 'Google Chat',
   telegram: 'Telegram',
   email: 'Email',

@@ -15,7 +15,7 @@ function CheckIcon({ inverted = false }: { inverted?: boolean }) {
 const PLAN_FEATURES: Record<string, string[]> = {
   standard: [
     '500 questions answered automatically every month',
-    'One bot everywhere your community already is — Discord, Slack, GitHub, Telegram, Email, and web chat',
+    'One bot everywhere your community already is — Discord, Slack, Discourse, Circle, GitHub, Telegram, Email, and web chat',
     'Self-improving knowledge base, trained from your docs, URLs, and GitHub repos',
     'Built for AI agents too — MCP server and REST API so Claude, Cursor, or your own agents can search your KB and open tickets directly',
     'Capture leads straight from the widget, no extra tool',

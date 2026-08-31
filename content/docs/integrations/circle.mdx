@@ -1,0 +1,33 @@
+---
+title: Circle
+description: Connect a Circle community to AnswerLoops so posts and comments in your spaces get AI-drafted answers, with a human paste step first and automatic replies once the write API is confirmed.
+---
+
+## Overview
+
+<Callout type="info">
+  **Planned.** The Circle channel is on the near-term roadmap and is not
+  available yet. This page describes the intended two-stage rollout so you can
+  plan for it; the steps below are not live.
+</Callout>
+
+Circle is where many course creators and paid communities live. When the integration ships it will roll out in two stages:
+
+1. **Read-only.** AnswerLoops ingests posts and comments from your chosen spaces, runs them through the standard pipeline, and drops the drafted answer into your AnswerLoops inbox for a team member to review and paste back. Nothing posts to Circle automatically.
+2. **Automatic replies.** Once Circle's write API limits are confirmed for the relevant plan tiers, high-confidence answers post back into the thread directly, the same as Discord or Slack.
+
+## How it will connect
+
+| You provide | Where it comes from |
+| --- | --- |
+| Circle API token | **Settings → API** in your Circle admin |
+| Watched spaces | Chosen in AnswerLoops settings after connecting |
+
+## Plan availability
+
+Circle will be a Standard-plan-and-above channel, gated the same way as Slack and GitHub.
+
+## Related
+
+- [Discourse integration](/docs/integrations/discourse) — the other forum channel on the roadmap
+- [Slack integration](/docs/integrations/slack) — the closest existing channel in setup shape

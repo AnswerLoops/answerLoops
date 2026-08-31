@@ -37,7 +37,7 @@ function PricingStructuredData() {
     operatingSystem: 'Web',
     url: 'https://answerloops.com/pricing',
     provider: { '@id': ORGANIZATION_ID },
-    description: 'AI support that lives in your community across Discord, Slack, Google Chat, forums, GitHub, Telegram, email, and website chat.',
+    description: 'AI support that lives in your community across Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and website chat.',
     offers: [
       {
         '@type': 'Offer',
@@ -206,7 +206,7 @@ export default async function PricingPage({
           </div>
 
           <p className="mx-auto mt-7 max-w-3xl text-center text-xs leading-relaxed text-slate-500">
-            Hosted plans include Discord, Slack, Discourse, Circle, Google Chat, GitHub, Telegram, email ingest, the AI agent, knowledge base, analytics, and the embeddable widget. Card required at signup; cancel before the trial ends and you won&apos;t be charged.
+            Hosted plans include Discord, Slack, Discourse, Circle, GitHub, Telegram, email ingest (Google Chat too), the AI agent, knowledge base, analytics, and the embeddable widget. Card required at signup; cancel before the trial ends and you won&apos;t be charged.
           </p>
         </div>
       </section>
