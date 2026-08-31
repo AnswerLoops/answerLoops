@@ -100,7 +100,7 @@ const PRICING_FAQ = [
   },
   {
     q: 'What happens if I go over my deflection limit?',
-    a: 'You\'ll see a warning banner in the dashboard once you cross 80% of your monthly limit. If you hit the limit, AI auto-answering pauses and new questions route to your human queue instead — nothing breaks, and no surprise charges hit your card.',
+    a: 'You\'ll see a warning banner in the dashboard once you cross 80% of your monthly limit. On Standard the limit is a hard cap: AI auto-answering pauses and new questions route to your human queue instead — nothing breaks, and no surprise charges hit your card. On Pro the limit is a soft cap: answers keep going out past your included deflections and the overage is billed at $5 per 100. Enterprise is unlimited.',
   },
   {
     q: 'Do you offer a free trial?',

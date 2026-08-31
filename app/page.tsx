@@ -115,13 +115,17 @@ function Hero() {
   )
 }
 
+// Canonical marketed channel list — keep this order and membership in sync with
+// the enumerations in app/layout.tsx, app/agentic-support, content/docs/
+// introduction.mdx, public/llms.txt, and the GitHub README. Google Chat is
+// supported but not marketed in the headline list (see the "also supported"
+// note in the docs); Discourse and Circle are marketed here as first-class.
 const CHANNELS = [
-  { name: 'Slack', color: '#36c5f0' },
-  { name: 'Google Chat', color: '#34a853' },
-  { name: 'GitHub', color: '#24292f' },
-  { name: 'Circle', color: '#7c3aed' },
   { name: 'Discord', color: '#5865f2' },
+  { name: 'Slack', color: '#36c5f0' },
   { name: 'Discourse', color: '#e4572e' },
+  { name: 'Circle', color: '#7c3aed' },
+  { name: 'GitHub', color: '#24292f' },
   { name: 'Telegram', color: '#229ed9' },
   { name: 'Email', color: '#64748b' },
   { name: 'Web widget', color: '#2563eb' },
