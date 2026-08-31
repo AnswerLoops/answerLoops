@@ -162,9 +162,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # `latest` moves only on a published release. A push to main publishes
-      # `main` and a sha tag instead, so someone running `latest` gets whatever
-      # was last released rather than whatever merged an hour ago.
+      # `latest` currently tracks the tip of main, because no release has ever
+      # been cut and the tag therefore did not exist at all — while
+      # docker-compose.ghcr.yml defaults to exactly that tag, so the documented
+      # self-hosting command pointed at nothing. Tracking main is the lesser
+      # problem: it resolves to something recent instead of to nothing.
+      #
+      # Restore `enable=${{ github.event_name == 'release' }}` when the first
+      # release is cut. Leaving it on main after that point means a merge
+      # landing after a release silently drags `latest` off it, and someone
+      # running `latest` receives unreleased code without having asked for it.
+      # Tracked as Roadmap Known Issues and GitHub issue #49.
+      #
+      # `{{major}}` stays out while versioning is undecided: on a 0.x line it
+      # publishes a bare `0` that moves across breaking changes, which is the
+      # one tag nobody should pin to.
       - uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         id: meta
         with:
@@ -172,8 +184,7 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value=latest,enable=${{ github.event_name == 'release' }}
+            type=raw,value=latest,enable={{is_default_branch}}
             type=ref,event=branch
             type=sha,format=long
 
