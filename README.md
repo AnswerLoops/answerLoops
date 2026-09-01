@@ -14,30 +14,30 @@
 
 # AnswerLoops — AI support that lives in your community
 
-**Your community asks the same questions every day. AnswerLoops answers them right in the channel — Discord, Slack, your forum, email — and only when it's confident enough to be right.**
+**Your community asks the same questions every day. AnswerLoops answers them in the channel, and only when it has a good answer.**
 
-AnswerLoops is an open-source, self-hosted AI support agent for teams whose support happens in a community instead of a help-desk inbox. It turns repeat questions from Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and an embeddable web widget into one structured support pipeline, with confidence-gated automation and human escalation for uncertain answers.
+Most communities have the same problem: the same questions come up over and over in Discord, in Slack, on the forum, in the issue tracker, and someone on the team answers them again. AnswerLoops takes the first pass. It watches the channels you connect, checks each new question against your docs and your past answers, and replies in the thread when it can. When it can't, it hands the question to a person with a draft already written.
 
-It is built for teams whose users ask for help in a community instead of a support ticket — software and dev-tool companies, open-source projects, course creators with a paid community, game studios with a player Discord, crypto and DAO projects — and who want support automation they can inspect, extend, and run on their own infrastructure, not a generic chatbot or a seat-based helpdesk.
+It's for teams whose support happens in public: software and API companies, open-source projects, course creators running a paid community, game studios with a player Discord, DAOs. If your users ask for help in a chat channel instead of a ticket form, this fits. If you run a Zendesk-style help desk, it probably doesn't.
 
-The important part is the gate between “the model produced text” and “a customer saw it.” AnswerLoops retrieves evidence from your knowledge base and connected repositories, drafts an answer, and asks a separate reviewer pass to grade it. Strong answers can be posted automatically; uncertain answers stay in the human queue with the context and draft attached.
+What matters is the step before a reply goes out. Every draft is scored by a second pass that checks it against the evidence it used. Answers that clear your threshold post on their own. Anything shaky waits in a queue for a human, with the context and the draft attached. You set where the line is.
 
-Resolved conversations can become new knowledge, negative feedback removes weak answers from retrieval, and the knowledge-gaps dashboard shows what your docs still need to cover. The result is a support system that gets more useful as it handles real questions—not another chatbot floating beside your documentation.
+Answers don't disappear when a ticket closes. A good one can go back into the knowledge base; a bad one gets down-voted and drops out of search. The knowledge-gaps view shows which questions the system still can't answer, so you know what to write next.
 
 <div align="center">
   <img src="./.github/readme/dashboard.png" alt="AnswerLoops dashboard showing deflection rate, open tickets, AI drafts, SLA status, and recent support activity" width="100%" />
 </div>
 
-## Why teams build on AnswerLoops
+## What you get
 
-| | Capability | What it gives you |
+| | | |
 |---|---|---|
-| **01** | **Confidence-gated automation** | A dedicated reviewer pass controls whether an answer is posted or routed to a human. Thresholds are configurable, and bug or feature-request tickets stay human-led. |
-| **02** | **One multi-channel pipeline** | Discord, Slack, Discourse and Circle forums, GitHub Issues and Discussions, Telegram, email, and web chat all produce the same org-scoped ticket model (Google Chat too). |
-| **03** | **Grounded retrieval** | Search across crawled documentation, uploaded files, published KB articles, resolved tickets, and connected GitHub repositories. |
-| **04** | **Model freedom** | Use OpenAI, Anthropic, Google Gemini, Groq, Mistral, Ollama, or another OpenAI-compatible endpoint with your own credentials. |
-| **05** | **Agent-native access** | Expose the same knowledge and support workflows over MCP JSON-RPC or a documented REST API with an OpenAPI schema. |
-| **06** | **Operational control** | Run the app, listener, and Postgres yourself; keep tenant data scoped by organization; encrypt integration credentials at rest. |
+| **01** | **A confidence gate** | A second pass decides whether an answer posts or goes to a human. You set the threshold. Bug reports and feature requests always stay human-led. |
+| **02** | **One pipeline for every channel** | Discord, Slack, Discourse and Circle forums, GitHub Issues and Discussions, Telegram, email, web chat, and Google Chat all land in the same ticket model, scoped to your org. |
+| **03** | **Answers grounded in your content** | Search runs across crawled docs, uploaded files, published KB articles, resolved tickets, and connected GitHub repos. |
+| **04** | **Your choice of model** | OpenAI, Anthropic, Google Gemini, Groq, Mistral, Ollama, or any OpenAI-compatible endpoint, on your own key. |
+| **05** | **Access for agents** | The same knowledge and workflows are exposed over MCP JSON-RPC and a REST API with an OpenAPI schema. |
+| **06** | **You run it** | The app, the listener, and Postgres are yours. Tenant data is scoped by organization and integration credentials are encrypted at rest. |
 
 ## How the loop works
 
@@ -77,7 +77,7 @@ Resolved conversations can become new knowledge, negative feedback removes weak 
                           back into the KB
 ```
 
-The shared ingest pipeline lives in [`lib/ingest/pipeline.ts`](./lib/ingest/pipeline.ts). Channel-specific adapters only handle verification, normalization, and reply delivery; ticket creation, retrieval, drafting, review, analytics, and escalation stay consistent across channels.
+The pipeline lives in [`lib/ingest/pipeline.ts`](./lib/ingest/pipeline.ts). Each channel adapter only handles its own auth, message parsing, and reply delivery. Everything after that — ticket creation, retrieval, drafting, review, analytics, escalation — is the same code regardless of where the question came from.
 
 ## What ships in the repository
 
@@ -122,7 +122,7 @@ The shared ingest pipeline lives in [`lib/ingest/pipeline.ts`](./lib/ingest/pipe
 
 ## Run it locally
 
-The fastest complete development environment uses Docker Compose. It starts the Next.js app, the channel-listener service, and PostgreSQL, then runs Drizzle migrations automatically.
+Docker Compose is the quickest way to get everything up. It starts the Next.js app, the channel listener, and PostgreSQL, and runs the Drizzle migrations for you.
 
 ### Prerequisites
 
@@ -182,7 +182,7 @@ For deployment, provider-specific setup, and every environment variable, follow 
 
 ## Native development
 
-Use Node.js 20.9 or newer and pnpm. Keeping Postgres in Docker is convenient while running the application processes directly:
+You'll need Node.js 20.9 or newer and pnpm. Running Postgres in Docker while the app processes run on the host works well:
 
 ```bash
 docker compose up -d postgres
@@ -228,7 +228,7 @@ e2e/                 Playwright end-to-end coverage
 public/widget.js     Embeddable widget loader
 ```
 
-The production topology is deliberately small: the `app` and `bot` processes are built from the same multi-stage image, with PostgreSQL as the durable store. See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the deeper pipeline and data-model walkthrough.
+Production is two processes — `app` and `bot` — built from one multi-stage image, with PostgreSQL behind them. [`ARCHITECTURE.md`](./ARCHITECTURE.md) goes through the pipeline and the data model in detail.
 
 ## Build with the APIs
 
@@ -240,28 +240,26 @@ Create an organization API key in **Settings → API Keys**, then use either sur
 | REST | `/api/agent/*` | Services, scripts, and custom integrations |
 | OpenAPI | `GET /api/agent/openapi.json` | Typed clients and API exploration |
 
-Available operations cover knowledge-base search, FAQ retrieval, ticket listing and creation, and grounded answer generation. Start with the [MCP guide](https://answerloops.com/docs/integrations/mcp) or [Agent API reference](https://answerloops.com/docs/integrations/agent-api).
+Both cover knowledge-base search, FAQ lookup, listing and creating tickets, and generating a grounded answer. See the [MCP guide](https://answerloops.com/docs/integrations/mcp) or the [Agent API reference](https://answerloops.com/docs/integrations/agent-api).
 
 ## Contributing
 
-AnswerLoops is preparing for a broader open-source launch, and focused contributions are welcome. Before opening a pull request:
+We're getting the project ready for a wider release. Contributions are welcome. A few things to know first:
 
-1. Open or reference an issue so the intended behavior is clear.
-2. Keep tenant isolation explicit in every data access path.
-3. Add regression coverage for behavior changes.
-4. Run `pnpm lint`, `pnpm test`, and `pnpm build`.
-5. Update the relevant page under `content/docs/` when product behavior, architecture, setup, or an integration changes.
+1. Open or link an issue so we agree on the behavior before you build it.
+2. Every data-access path has to scope by organization. Don't merge one that doesn't.
+3. Behavior changes need test coverage.
+4. Run `pnpm lint`, `pnpm test`, and `pnpm build` before you push.
+5. If you change product behavior, architecture, setup, or an integration, update the matching page under `content/docs/`.
 
-For vulnerabilities, follow [`SECURITY.md`](./SECURITY.md) instead of opening a public issue.
+Found a security issue? Follow [`SECURITY.md`](./SECURITY.md). Don't open a public issue for it.
 
 ## License
 
-AnswerLoops is licensed under [AGPL-3.0](./LICENSE). You can inspect, modify, and self-host it. If you run a modified version as a network service, the AGPL requires you to make the corresponding source available to its users.
+[AGPL-3.0](./LICENSE). Read it, change it, run it yourself. If you run a modified version as a network service, the AGPL says you have to make your source available to its users.
 
 <div align="center">
 
-**Make the next repeat question the last one.**
-
-[Explore the docs](https://answerloops.com/docs) · [Run it locally](#run-it-locally) · [Open an issue](https://github.com/answerLoops/answerLoops/issues)
+[Docs](https://answerloops.com/docs) · [Run it locally](#run-it-locally) · [Open an issue](https://github.com/answerLoops/answerLoops/issues)
 
 </div>
