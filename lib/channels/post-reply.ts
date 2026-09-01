@@ -8,7 +8,7 @@ import { postToDiscourseTopic } from '@/lib/discourse/send'
 
 const MOD = 'channels/post-reply'
 
-export type Platform = 'discord' | 'slack' | 'telegram' | 'email' | 'github' | 'mcp' | 'google_chat' | 'discourse'
+export type Platform = 'discord' | 'slack' | 'telegram' | 'email' | 'github' | 'mcp' | 'google_chat' | 'discourse' | 'circle'
 
 // Single per-platform send dispatch, shared by every caller that delivers a
 // reply to a customer channel: the auto-deflect path (lib/ai/agent.ts), the
@@ -51,6 +51,10 @@ export async function postReply(
   // saved separately and surfaced via the ticket itself (get_tickets tool /
   // dashboard), not pushed anywhere.
   if (platform === 'mcp') return null
+  // Circle is ingest-only (stage 1): its write API is unconfirmed, so the
+  // AI draft is parked on the ticket for a human to copy into Circle by
+  // hand. Nothing is transmitted.
+  if (platform === 'circle') return null
   // GitHub has no channelId-shaped destination (it needs owner/repo/issue
   // number, not a channel id + optional thread) — callers must branch to
   // postReplyToGithub below instead of calling this function. Explicit

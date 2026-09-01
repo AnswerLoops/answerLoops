@@ -192,6 +192,7 @@ export async function runAIAgent(
   // lives on the repo's own auto_deflect_enabled column instead.
   const autoDeflectEnabled = await (async () => {
     if (platform === 'mcp') return false // no live channel regardless
+    if (platform === 'circle') return false // ingest-only (stage 1) — no write path
     if (platform === 'github') {
       const [owner, repo] = channelId.split('/')
       if (!owner || !repo) return false
