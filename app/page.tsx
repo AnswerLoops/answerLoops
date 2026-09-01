@@ -670,7 +670,7 @@ export default async function LandingPage() {
   const navState = await resolveNavState()
   return (
     <div className="landing-monochrome min-h-screen bg-white">
-      <PageSchema name="AnswerLoops — support that lives in your community" description="AI support that lives in your community across Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and website chat." path="/" />
+      <PageSchema name="AnswerLoops — support that lives in your community" description="AI support that lives in your community across Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and website chat — answered in the channel, and only when confident enough to be right." path="/" />
       <StructuredData />
       <Nav state={navState} />
       <main>

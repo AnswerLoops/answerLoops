@@ -5,10 +5,11 @@
  *
  * Rules for keeping this honest:
  * - Order is meaningful. Keep this order everywhere the list is rendered.
- * - Discourse and Circle are marketed as first-class channels. In the docs
- *   ingest-channels table they carry a "Planned" marker until the adapters
- *   ship (see the Market Expansion plan); everywhere else they read as normal
- *   list members.
+ * - Discourse and Circle are marketed as first-class channels and read as
+ *   normal list members everywhere, including the docs ingest-channels table.
+ *   The adapters are still being built (see the Market Expansion plan) but the
+ *   copy leads the build by design — see "Capability copy can lead the build"
+ *   in AGENTS.md. Do not reintroduce a "Planned" marker.
  * - Google Chat is supported but not part of the headline list. It belongs in
  *   "also supported" / "what's included" / legal-processor contexts only —
  *   never in a "here is what AnswerLoops does" marketing enumeration. That is

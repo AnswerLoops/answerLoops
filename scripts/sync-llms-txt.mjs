@@ -23,15 +23,33 @@ const LABELS = {
   '/vs/intercom': 'AnswerLoops vs Intercom',
 }
 
+// The order llms.txt should present integrations in: first-class community
+// channels first, then the also-supported Google Chat, then the agent surfaces.
+// The AI-provider pages in content/docs/integrations/meta.json (openai,
+// anthropic, …) and Stripe are intentionally omitted — they are configuration,
+// not channels a crawler would connect.
+const INTEGRATION_ORDER = [
+  'discord',
+  'slack',
+  'discourse',
+  'circle',
+  'telegram',
+  'email',
+  'github',
+  'google-chat',
+  'mcp',
+  'agent-api',
+]
+
 const INTEGRATION_LABELS = {
   discord: 'Discord',
   slack: 'Slack',
   discourse: 'Discourse',
   circle: 'Circle',
-  'google-chat': 'Google Chat',
   telegram: 'Telegram',
   email: 'Email',
   github: 'GitHub',
+  'google-chat': 'Google Chat',
   mcp: 'MCP server',
   'agent-api': 'Agent API (REST)',
 }
@@ -55,8 +73,9 @@ function generatedBlock(source, start, end, lines) {
 export function syncLlmsText(llmsText, sitemapSource, integrationsJson) {
   const routes = extractStaticRoutes(sitemapSource)
   const publicLinks = routes.map((route) => `- ${LABELS[route] ?? route}: ${BASE_URL}${route}`)
-  const integrations = integrationsJson.pages
-    .filter((slug) => slug in INTEGRATION_LABELS)
+  const available = new Set(integrationsJson.pages)
+  const integrations = INTEGRATION_ORDER
+    .filter((slug) => available.has(slug) && slug in INTEGRATION_LABELS)
     .map((slug) => `- ${INTEGRATION_LABELS[slug]}: ${BASE_URL}/docs/integrations/${slug}`)
 
   let result = generatedBlock(llmsText, LINKS_START, LINKS_END, publicLinks)

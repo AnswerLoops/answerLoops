@@ -14,6 +14,26 @@ Never cut corners. Implement everything fully and correctly.
 - No suggesting a "quick fix" instead of the real solution
 - If something is hard, do it right anyway
 
+# Capability copy can lead the build
+
+Public surfaces — the marketing site, the Fumadocs pages under `content/docs/`,
+`public/llms.txt`, JSON-LD, and route metadata — may name a capability as
+available before the code ships, when the product owner has decided to market it
+ahead of the build. Discourse, Circle, and the Notion knowledge-base source are
+currently in this state.
+
+- Do **not** add "planned", "coming soon", "not yet available", or roadmap
+  caveats to these surfaces on your own initiative. Write the capability in the
+  present tense alongside the shipped ones. A docs page that walks through the
+  setup for an owner-sanctioned pre-build capability is fine.
+- The remaining build work stays tracked in the Notion "Market Expansion" plan,
+  not in hedged website copy.
+- This does not weaken `# No shortcuts`: it governs *copy*, not *implementation*.
+  Code is still built fully — never stub the actual integration to match the
+  copy.
+- If you believe a capability genuinely should not be advertised yet, raise it
+  with the owner instead of quietly qualifying the copy.
+
 # Commit message rules
 
 Every commit **must** have a subject line AND a body. No exceptions.

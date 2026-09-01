@@ -1,6 +1,6 @@
 ---
 title: "What is AnswerLoops?"
-description: "Support that lives in your community: AnswerLoops answers repeat questions right in the channel — Discord, Slack, forums, GitHub, Telegram, email, and website chat — and only when it's confident enough to be right. Open source and self-hostable."
+description: "AI support that lives in your community: AnswerLoops answers repeat questions right in the channel — Discord, Slack, forums, GitHub, Telegram, email, and website chat — and only when it's confident enough to be right. Open source and self-hostable."
 ---
 
 Every growing community hits the same wall: the same ten questions, asked by different people, forever. It doesn't matter whether you're a dev-tool company, an open-source project, a course creator with a paid community, or a game studio with a player Discord — if your users ask for help in a community instead of a support ticket, the pattern is the same. AnswerLoops watches the channels where your users actually ask — Discord, Slack, GitHub, Telegram, email, your website — and answers the ones it can from your knowledge base, so your team spends time on the questions that actually need a human.
@@ -20,8 +20,8 @@ It's not a chatbot bolted onto your support inbox. The confidence-gated pipeline
 | Feature | What it does |
 | --- | --- |
 | AI deflection | Answers questions from your docs automatically, gated by a configurable confidence threshold |
-| Multi-channel ingest | Discord (text + forum channels), Slack, GitHub Issues & Discussions, Telegram, Email, website widget — plus Discourse and Circle forums (planned) and Google Chat |
-| Knowledge base | Build it from a docs-site crawl, file upload (PDF/DOCX/MD/TXT/CSV), a GitHub repo sync, or resolved tickets |
+| Multi-channel ingest | Discord (text + forum channels), Slack, Discourse and Circle forums, GitHub Issues & Discussions, Telegram, Email, website widget, and Google Chat |
+| Knowledge base | Build it from a docs-site crawl, file upload (PDF/DOCX/MD/TXT/CSV), a GitHub repo sync, a Notion workspace, or resolved tickets |
 | Knowledge gaps | Surfaces the questions the AI couldn't answer, so you know exactly what content to add next |
 | Human escalation | Pings a support role when confidence is too low — never a silent failure |
 | CSAT scoring | A quick rating prompt after every auto-deflected answer, sent through the same channel |
@@ -37,8 +37,8 @@ It's not a chatbot bolted onto your support inbox. The confidence-gated pipeline
 | --- | --- | --- |
 | Discord | 1-click OAuth (cloud) or bot token (self-host) | Text channel messages, forum thread posts, and replies |
 | Slack | 1-click OAuth or polling mode | Channel messages |
-| Discourse | _Planned_ — REST API + webhook | Topics and posts in watched categories |
-| Circle | _Planned_ — API token | Space posts and comments |
+| Discourse | REST API + webhook | Topics and posts in watched categories |
+| Circle | API token | Space posts and comments |
 | GitHub | GitHub App webhook | Issues, issue comments, Discussions, discussion comments |
 | Telegram | Webhook via bot token | Messages in configured chats |
 | Email | Provider-agnostic inbound webhook | Any inbound email forwarded to the webhook URL |
