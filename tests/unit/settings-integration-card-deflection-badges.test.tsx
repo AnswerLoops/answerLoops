@@ -23,6 +23,8 @@ vi.mock('@/app/actions/integrations', () => ({
   deleteSlackIntegrationAction: vi.fn(),
   saveTelegramIntegrationAction: vi.fn(),
   deleteTelegramIntegrationAction: vi.fn(),
+  saveDiscourseIntegrationAction: vi.fn(),
+  deleteDiscourseIntegrationAction: vi.fn(),
   saveEmailIntegrationAction: vi.fn(),
   deleteEmailIntegrationAction: vi.fn(),
   generateGoogleChatConnectCodeAction: vi.fn(),
@@ -147,6 +149,27 @@ describe('Integration card deflection badges — always visible, no Edit click r
       const badge = screen.getByText('Automatic Deflections: Off')
       expect(badge.className).toContain('bg-red-100')
     })
+  })
+
+  it('Discourse: shows the badge on the connected summary without clicking "Edit categories & deflections"', async () => {
+    setTab('discourse')
+    vi.stubGlobal(
+      'fetch',
+      mockFetchByUrl({
+        '/api/integrations': [{
+          id: 7, platform: 'discourse', team_id: 'https://forum.example.com', bot_username: 'answerloops-bot',
+          channel_ids: ['12'], escalation_role_id: null, confidence_threshold: 0.8, auto_deflect_enabled: 0, enabled: 1,
+        }],
+      })
+    )
+
+    render(<SettingsPage />)
+
+    await waitFor(() => {
+      const badge = screen.getByText('Automatic Deflections: Off')
+      expect(badge.className).toContain('bg-red-100')
+    })
+    expect(screen.getByRole('button', { name: /edit categories/i })).toBeTruthy()
   })
 
   it('Email: shows the badge on the connected summary', async () => {

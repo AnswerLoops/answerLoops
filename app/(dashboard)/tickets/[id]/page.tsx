@@ -150,6 +150,18 @@ export default async function TicketDetailPage(props: { params: Promise<{ id: st
               </svg>
               View in Telegram ↗
             </a>
+          ) : ticket.source_platform === 'discourse' && ticket.source_url ? (
+            <a
+              href={ticket.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-orange-600 hover:text-orange-800 hover:underline"
+            >
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.021.5 3.926 1.383 5.6L0 24l6.578-1.353A11.94 11.94 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 3.6a8.4 8.4 0 0 1 7.29 12.57l.71 4.02-4.12-.94A8.4 8.4 0 1 1 12 3.6z"/>
+              </svg>
+              View in Discourse ↗
+            </a>
           ) : ticket.source_platform === 'slack' && ticket.source_channel_id && ticket.source_url ? (
             <a
               href={ticket.source_url}
@@ -337,6 +349,7 @@ export default async function TicketDetailPage(props: { params: Promise<{ id: st
                     {ticket.source_platform === 'github' ? 'GitHub user' :
                      ticket.source_platform === 'slack' ? 'Slack user' :
                      ticket.source_platform === 'telegram' ? 'Telegram user' :
+                     ticket.source_platform === 'discourse' ? 'Discourse user' :
                      ticket.source_platform === 'email' ? 'Email sender' :
                      ticket.source_platform === 'google_chat' ? 'Google Chat user' :
                      ticket.source_platform === 'mcp' ? 'Opened by' :

@@ -20,7 +20,7 @@ import { withRetry } from '@/lib/retry'
 import { parseAttachmentLines } from '@/lib/slack/attachment-lines'
 import type { Priority, Ticket } from '@/types'
 
-export type Platform = 'discord' | 'slack' | 'telegram' | 'email' | 'github' | 'mcp' | 'google_chat'
+export type Platform = 'discord' | 'slack' | 'telegram' | 'email' | 'github' | 'mcp' | 'google_chat' | 'discourse'
 
 export interface MessagePayload {
   messageId: string

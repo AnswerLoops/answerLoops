@@ -10,6 +10,7 @@ const PLATFORM_BADGE: Record<string, { label: string; className: string }> = {
   github:   { label: 'GitHub',   className: 'bg-gray-100 text-gray-700' },
   slack:    { label: 'Slack',    className: 'bg-green-100 text-green-700' },
   telegram: { label: 'Telegram', className: 'bg-sky-100 text-sky-700' },
+  discourse: { label: 'Discourse', className: 'bg-orange-100 text-orange-700' },
   email:    { label: 'Email',    className: 'bg-yellow-100 text-yellow-700' },
   mcp:      { label: 'Agent',    className: 'bg-brand-100 text-brand-700' },
 }

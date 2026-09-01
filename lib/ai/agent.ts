@@ -74,7 +74,7 @@ function formatEscalationMention(
     // (`users/12345`), so escalationRoleId is expected in that form here.
     return `\n\n<${escalationRoleId}> ${reasonText}`
   }
-  // Telegram: plain text mention
+  // Telegram and Discourse: plain `@username` mention
   return `\n\n@${escalationRoleId} ${reasonText}`
 }
 
