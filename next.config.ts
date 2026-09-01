@@ -94,6 +94,37 @@ const nextConfig: NextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
+      // Static marketing + docs pages. These carry no per-visitor content (the
+      // header CTA is a client island that calls /api/nav-state after
+      // hydration), and the auth proxy is scoped off them in proxy.ts so no
+      // session cookie is set — so Cloudflare can hold them at the edge and
+      // revalidate in the background. Kept off /pricing, which stays dynamic
+      // for its resume-flow redirect. `max-age=0` keeps browsers revalidating
+      // while `s-maxage` lets the shared cache serve hits.
+      {
+        source: '/(agentic-support|privacy|terms)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400' },
+        ],
+      },
+      {
+        source: '/',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400' },
+        ],
+      },
+      {
+        source: '/vs/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400' },
+        ],
+      },
+      {
+        source: '/docs/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400' },
+        ],
+      },
     ]
   },
   async redirects() {

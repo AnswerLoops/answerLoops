@@ -28,13 +28,13 @@ describe('the marketing header speaks to someone with no account', () => {
     // "anonymous" covers a brand-new visitor and a returning one whose session
     // expired, and nothing can tell them apart before they authenticate. A
     // single button therefore has to guess, and misleads whichever half it
-    // guessed wrong about. The header offers both instead.
-    const src = read('components/marketing/chrome.tsx')
-    const start = src.indexOf("state === 'anonymous' && (")
-    const anonBlock = src.slice(start, start + 400)
-
-    expect(anonBlock, 'the new visitor needs the trial').toContain('Start free trial')
-    expect(anonBlock, 'the returning visitor needs the way back in').toContain('Sign in')
+    // guessed wrong about. The header offers both instead. The CTA markup moved
+    // into the NavCta client island (so the marketing pages can stay static);
+    // marketing-nav-cta.test.tsx renders it and asserts the behaviour — this
+    // is the source-level backstop that both labels still exist.
+    const src = read('components/marketing/nav-cta.tsx')
+    expect(src, 'the new visitor needs the trial').toContain('Start free trial')
+    expect(src, 'the returning visitor needs the way back in').toContain('Sign in')
   })
 })
 

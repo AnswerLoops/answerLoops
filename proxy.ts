@@ -3,6 +3,18 @@
 export { auth as proxy } from '@/auth'
 
 export const config = {
-  // Run on everything except Next internals and static assets.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.json|.*\\.(?:png|svg|ico)$).*)'],
+  // Runs on everything except Next internals, static assets, and the static
+  // marketing surfaces.
+  //
+  // Every response the proxy touches gets Auth.js's CSRF + callback-url
+  // `Set-Cookie`, which forces `Cache-Control: private` and leaves Cloudflare
+  // nothing to cache. The pages excluded here are prerendered and need no
+  // session check, so excluding them is what lets them be cached at the edge.
+  // `/` and `/pricing` stay matched (they still resolve a session for their own
+  // logic); `/api/*`, `/dashboard/*`, the auth pages, and the not-yet-launched
+  // intent pages (/architecture, /support-*, /self-*, /mcp-support-agents,
+  // /discord-github-support, /open-source-support) all stay matched too.
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|sw.js|manifest.json|opengraph-image|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|agentic-support|privacy|terms|vs|docs|.*\\.(?:png|svg|ico)$).*)',
+  ],
 }

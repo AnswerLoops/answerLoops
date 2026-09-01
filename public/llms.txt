@@ -67,3 +67,5 @@ Self-hosted: free forever (AGPL-3.0). Hosted (managed SaaS): Standard $49/mo (50
 ## Full documentation
 
 https://answerloops.com/docs
+
+Every docs page inlined into one plain-text file: https://answerloops.com/llms-full.txt

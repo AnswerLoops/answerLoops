@@ -3,7 +3,6 @@ import type { Metadata } from 'next'
 import { ORDERED_PLANS } from '@/lib/billing/plans'
 import { AnimatedChat } from '@/components/animated-chat'
 import { Nav, Footer, GithubIcon, GITHUB_URL } from '@/components/marketing/chrome'
-import { resolveNavState } from '@/lib/marketing/nav-state'
 import { ORGANIZATION_ID } from '@/lib/site-identity'
 import { PageSchema } from '@/components/marketing/page-schema'
 import { jsonLdHtml } from '@/lib/marketing/json-ld'
@@ -15,8 +14,6 @@ export const metadata: Metadata = {
     'AI support that lives in your community: answer repeat questions right in the channel — Discord, Slack, forums, GitHub, Telegram, email, and website chat — and only when the answer is confident enough to be right. Open source, self-hosted, and MCP/API-ready.',
   alternates: { canonical: '/' },
 }
-
-export const dynamic = 'force-dynamic'
 
 function ArrowIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
@@ -666,13 +663,12 @@ function StructuredData() {
   )
 }
 
-export default async function LandingPage() {
-  const navState = await resolveNavState()
+export default function LandingPage() {
   return (
     <div className="landing-monochrome min-h-screen bg-white">
       <PageSchema name="AnswerLoops — support that lives in your community" description="AI support that lives in your community across Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and website chat — answered in the channel, and only when confident enough to be right." path="/" />
       <StructuredData />
-      <Nav state={navState} />
+      <Nav />
       <main>
         <Hero />
         <Outcomes />

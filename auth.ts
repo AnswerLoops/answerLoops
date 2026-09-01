@@ -9,7 +9,7 @@ import { resolveOrgIdForSessionUpdate, resolveOrgAccess } from '@/lib/auth/membe
 import { orgHasProductAccess, isAccessExempt } from '@/lib/billing/access'
 import { appOrigin } from '@/lib/site'
 
-const PUBLIC_PATHS = ['/', '/login', '/api/auth', '/api/ingest', '/api/feedback', '/api/slack', '/api/widget', '/widget', '/api/billing/webhook', '/api/waitlist', '/api/health', '/api/github/webhook', '/api/email/ingest', '/api/mcp', '/api/agent', '/api/google-chat', '/vs', '/pricing', '/agentic-support', '/docs', '/privacy', '/terms', '/robots.txt', '/sitemap.xml', '/llms.txt']
+const PUBLIC_PATHS = ['/', '/login', '/api/auth', '/api/ingest', '/api/feedback', '/api/slack', '/api/widget', '/widget', '/api/billing/webhook', '/api/waitlist', '/api/health', '/api/github/webhook', '/api/email/ingest', '/api/mcp', '/api/agent', '/api/google-chat', '/api/nav-state', '/vs', '/pricing', '/agentic-support', '/docs', '/privacy', '/terms', '/robots.txt', '/sitemap.xml', '/llms.txt', '/llms-full.txt']
 const ONBOARDING_PATH = '/onboarding'
 const ACCOUNT_DELETED_PATH = '/account-deleted'
 const START_TRIAL_PATH = '/start-trial'
@@ -25,7 +25,7 @@ function isPublic(pathname: string): boolean {
 // governs what host something lives on, and the two questions don't have the
 // same answer — /login needs no session but is still part of the platform,
 // while /docs, /privacy, and /terms need no session and genuinely are the website.
-const WEBSITE_PATHS = ['/', '/pricing', '/agentic-support', '/vs', '/docs', '/privacy', '/terms', '/robots.txt', '/sitemap.xml', '/llms.txt']
+const WEBSITE_PATHS = ['/', '/pricing', '/agentic-support', '/vs', '/docs', '/privacy', '/terms', '/robots.txt', '/sitemap.xml', '/llms.txt', '/llms-full.txt']
 function isWebsitePath(pathname: string): boolean {
   return WEBSITE_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }

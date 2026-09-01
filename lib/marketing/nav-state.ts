@@ -1,6 +1,6 @@
 import { auth } from '@/auth'
 import { orgHasProductAccess } from '@/lib/billing/access'
-import { navState, type NavState } from '@/components/marketing/chrome'
+import { navState, type NavState } from '@/components/marketing/nav-shared'
 
 /**
  * Resolves what the marketing header should offer the current visitor.
