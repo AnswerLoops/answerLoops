@@ -294,11 +294,36 @@ export const kbSources = pgTable(
     fileType: text('file_type').notNull(),
     sizeBytes: integer('size_bytes').notNull(),
     chunkCount: integer('chunk_count').notNull().default(0),
+    // Whether this source's chunks are searchable + served to the website
+    // widget. Defaults to 1 (every source before this column, and every
+    // importer except Notion). The Notion sync writes 0 — its content stays
+    // out of retrieval until the customer publishes it. Kept in lockstep with
+    // kb_articles.published by setKBSourcePublished().
+    published: integer('published').notNull().default(1),
     createdAt: text('created_at').notNull().default(now),
     updatedAt: text('updated_at').notNull().default(now),
   },
-  (t) => [index('idx_kb_sources_org').on(t.orgId)]
+  (t) => [
+    index('idx_kb_sources_org').on(t.orgId),
+    index('idx_kb_sources_published').on(t.published),
+  ]
 )
+
+// A connected Notion workspace, one row per org. The pasted internal
+// integration token is encrypted at rest (lib/crypto/tokens.ts). Notion has no
+// app-private-key path like GitHub, so the token must be persisted. Not read by
+// the bot process, so no config_changed trigger.
+export const notionConnections = pgTable('notion_connections', {
+  id: serial('id').primaryKey(),
+  orgId: integer('org_id').notNull().unique().references(() => orgs.id),
+  accessToken: text('access_token').notNull(),
+  workspaceName: text('workspace_name'),
+  kbSourceId: integer('kb_source_id'),
+  kbLastSynced: text('kb_last_synced'),
+  kbChunkCount: integer('kb_chunk_count').notNull().default(0),
+  createdAt: text('created_at').notNull().default(now),
+  updatedAt: text('updated_at').notNull().default(now),
+})
 
 export const kbArticles = pgTable(
   'kb_articles',

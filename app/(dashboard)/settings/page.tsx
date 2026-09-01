@@ -14,7 +14,8 @@ import { deleteAccountAction, getCurrentOrgName } from '@/app/actions/account'
 import { Button } from '@/components/ui/button'
 import { DeflectionStatusBadge } from '@/components/ui/badge'
 import { ToggleSwitch } from '@/components/ui/toggle-switch'
-import type { SLAConfig, GitHubRepo } from '@/types'
+import type { SLAConfig, GitHubRepo, NotionConnection } from '@/types'
+import { saveNotionConnectionAction, deleteNotionConnectionAction } from '@/app/actions/notion'
 
 interface Member {
   membership_id: number
@@ -3335,6 +3336,168 @@ export function ApiKeysSection() {
   )
 }
 
+export function NotionIntegrationCard() {
+  const [connection, setConnection] = useState<NotionConnection | null | undefined>(undefined)
+  const [editing, setEditing] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const { toastMessage, showToast } = useToast()
+  const [, startDeleteTransition] = useTransition()
+  const router = useRouter()
+
+  const reload = useCallback(async () => {
+    const data = await fetch('/api/notion').then((r) => r.json()).catch(() => ({ connection: null }))
+    setConnection(data.connection ?? null)
+  }, [])
+
+  useEffect(() => {
+    reload()
+  }, [reload])
+
+  const [saveState, saveAction, savePending] = useActionState(
+    async (prev: unknown, fd: FormData) => {
+      const result = await saveNotionConnectionAction(prev, fd)
+      if (!result?.error) {
+        await reload()
+        setEditing(false)
+        showToast('Notion connected')
+        router.refresh()
+      }
+      return result
+    },
+    null
+  )
+
+  const [deleteState, deleteAction, deletePending] = useActionState(
+    async (prev: unknown, fd: FormData) => {
+      const result = await deleteNotionConnectionAction(prev, fd)
+      if (!result?.error) { setConnection(null); setEditing(false) }
+      return result
+    },
+    null
+  )
+
+  async function handleSync() {
+    setSyncing(true)
+    try {
+      const res = await fetch('/api/notion/sync-kb')
+      const data = await res.json() as { synced?: number; truncated?: boolean; error?: string }
+      if (data.error) {
+        showToast(data.error)
+      } else {
+        showToast(
+          `Synced ${data.synced ?? 0} chunk${data.synced === 1 ? '' : 's'}${data.truncated ? ' — knowledge base is full, some content was skipped' : ''}`
+        )
+        await reload()
+      }
+    } catch {
+      showToast('Sync failed')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  if (connection === undefined) return <p className="text-sm text-gray-400">Loading…</p>
+
+  const connected = connection !== null
+  const showForm = !connected || editing
+
+  return (
+    <>
+      {toastMessage && <Toast message={toastMessage} />}
+      <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 shrink-0 rounded-full bg-neutral-900 flex items-center justify-center text-white text-sm font-bold">N</div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900">Notion</p>
+              <p className="text-xs text-gray-500 truncate">
+                {connected
+                  ? `Connected${connection.workspace_name ? ` · ${connection.workspace_name}` : ''}`
+                  : 'Not connected'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${connected ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+              {connected ? 'Active' : 'Inactive'}
+            </span>
+            {connected && !editing && (
+              <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
+                Replace token
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {connected && !editing && (
+          <>
+            <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 divide-y divide-gray-100">
+              <ReadOnlyRow label="Workspace" value={connection.workspace_name ?? '—'} />
+              <ReadOnlyRow label="Token" value="••••••••• (saved)" />
+              <ReadOnlyRow label="Last synced" value={connection.kb_last_synced ? new Date(connection.kb_last_synced).toLocaleString() : 'Never'} />
+              <ReadOnlyRow label="Chunks" value={String(connection.kb_chunk_count)} />
+            </div>
+            <div className="rounded-md bg-neutral-50 border border-neutral-200 p-3 space-y-2">
+              <p className="text-xs text-neutral-600">
+                Share the Notion pages and databases you want synced with your integration, then run a sync. Imported content stays unpublished until you publish it on the Knowledge Base page.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" size="sm" variant="secondary" disabled={syncing} onClick={handleSync}>
+                  {syncing ? 'Syncing…' : 'Sync now'}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="danger"
+                  disabled={deletePending}
+                  onClick={() => startDeleteTransition(() => { deleteAction(new FormData()) })}
+                >
+                  {deletePending ? 'Removing…' : 'Disconnect'}
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {showForm && (
+          <form key={editing ? 'edit' : 'new'} action={saveAction} className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Internal integration token</label>
+              <input
+                name="token"
+                type="password"
+                autoComplete="new-password"
+                placeholder={connected ? '••••••••• (leave blank to keep current)' : 'ntn_… or secret_…'}
+                className="w-full rounded border border-gray-200 px-3 py-1.5 text-sm font-mono"
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                In Notion: <span className="font-medium">Settings → Connections → Develop or manage integrations</span> → create an internal integration → copy its <span className="font-medium">Internal Integration Secret</span>. Then open each page or database you want synced, <span className="font-medium">•••  → Connections</span>, and add the integration. AnswerLoops syncs everything the integration can see.
+              </p>
+            </div>
+            {(saveState as { error?: string } | null)?.error && (
+              <p className="text-xs text-red-600">{(saveState as { error?: string }).error}</p>
+            )}
+            <div className="flex gap-2">
+              <Button type="submit" size="sm" disabled={savePending}>
+                {savePending ? 'Saving…' : connected ? 'Update' : 'Connect'}
+              </Button>
+              {editing && (
+                <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
+                  Cancel
+                </Button>
+              )}
+            </div>
+          </form>
+        )}
+
+        {(deleteState as { error?: string } | null)?.error && (
+          <p className="text-xs text-red-600">{(deleteState as { error?: string }).error}</p>
+        )}
+      </div>
+    </>
+  )
+}
+
 function GitHubIntegrationCard() {
   const [repos, setRepos] = useState<GitHubRepo[]>([])
   const [connecting, setConnecting] = useState(false)
@@ -3766,6 +3929,7 @@ const TABS = [
   { id: 'discourse', label: 'Discourse' },
   { id: 'email',     label: 'Email' },
   { id: 'github',    label: 'GitHub' },
+  { id: 'notion',    label: 'Notion' },
   { id: 'ai',        label: 'AI Model' },
   { id: 'widget',    label: 'Widget' },
   { id: 'api-keys',  label: 'API Keys' },
@@ -3954,6 +4118,12 @@ export default function SettingsPage() {
       {activeTab === 'github' && (
         <section>
           <GitHubIntegrationCard />
+        </section>
+      )}
+
+      {activeTab === 'notion' && (
+        <section>
+          <NotionIntegrationCard />
         </section>
       )}
 

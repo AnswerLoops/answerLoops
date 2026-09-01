@@ -30,6 +30,7 @@ import {
   apiGenerations,
   emailDomains,
   emailOauthConnections,
+  notionConnections,
   orgFeatureFlags,
 } from '../schema'
 
@@ -193,6 +194,7 @@ export async function hardPurgeOrg(orgId: number): Promise<void> {
     await tx.delete(apiKeys).where(eq(apiKeys.orgId, orgId))
     await tx.delete(emailDomains).where(eq(emailDomains.orgId, orgId))
     await tx.delete(emailOauthConnections).where(eq(emailOauthConnections.orgId, orgId))
+    await tx.delete(notionConnections).where(eq(notionConnections.orgId, orgId))
     await tx.delete(orgFeatureFlags).where(eq(orgFeatureFlags.orgId, orgId))
     await tx.delete(memberships).where(eq(memberships.orgId, orgId))
 

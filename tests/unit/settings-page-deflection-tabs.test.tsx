@@ -17,6 +17,7 @@ vi.mock('@/app/actions/api-keys', () => ({
   revokeApiKeyAction: vi.fn(),
 }))
 vi.mock('@/app/actions/sla', () => ({ updateSLAAction: vi.fn() }))
+vi.mock('@/app/actions/notion', () => ({ saveNotionConnectionAction: vi.fn(), deleteNotionConnectionAction: vi.fn() }))
 vi.mock('@/app/actions/integrations', () => ({
   saveDiscordIntegrationAction: vi.fn(),
   deleteDiscordIntegrationAction: vi.fn(),

@@ -164,6 +164,19 @@ export interface KBSource {
   file_type: string
   size_bytes: number
   chunk_count: number
+  published: 0 | 1
+  created_at: string
+  updated_at: string
+}
+
+/** A connected Notion workspace. Never carries the access token. */
+export interface NotionConnection {
+  id: number
+  org_id: number
+  workspace_name: string | null
+  kb_source_id: number | null
+  kb_last_synced: string | null
+  kb_chunk_count: number
   created_at: string
   updated_at: string
 }

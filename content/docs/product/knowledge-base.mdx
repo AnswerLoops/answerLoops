@@ -7,7 +7,7 @@ The knowledge base is the source of truth for AI deflection. When a question com
 
 ## Import methods
 
-There are three ways to add content to the knowledge base.
+There are four ways to add content to the knowledge base.
 
 ### 1. URL crawl (Firecrawl)
 
@@ -60,14 +60,18 @@ The sync respects the repo's file tree. Each markdown file becomes its own sourc
 
 ### 4. Notion workspace
 
-Connect a Notion workspace and pull selected pages and databases into the KB — useful for teams that keep their support content in Notion rather than a published docs site.
+Connect a Notion workspace and pull its pages and databases into the KB — useful for teams that keep their support content in Notion rather than a published docs site.
 
-1. Go to **Knowledge Base → Notion**
-2. Authorize AnswerLoops against your workspace
-3. Pick the pages and databases to sync
-4. Click **Sync now** for an immediate import; re-sync picks up edited pages and skips unchanged ones
+1. In Notion, go to **Settings → Connections → Develop or manage integrations** and create an **internal integration**. Copy its **Internal Integration Secret** (starts with `ntn_` or `secret_`).
+2. Open each Notion page or database you want synced, click **•••  → Connections**, and add your integration. AnswerLoops syncs everything the integration can see — you control the scope by sharing or unsharing pages in Notion.
+3. In AnswerLoops, go to **Settings → Notion**, paste the token, and click **Connect**.
+4. Go to the **Knowledge Base** page and click **Sync now** in the Notion panel. Each Notion page (and each row of a shared database) is converted to text, split into chunks, and embedded like every other source. Re-syncing replaces the previous Notion content.
 
-Each Notion page becomes its own source entry, split into chunks and embedded the same way as every other source.
+<Note>
+  Notion content imports **unpublished**. It is searchable from the dashboard but is not used to answer customer questions or served to the website widget until you click **Publish to widget** on the Notion panel. Every other source publishes automatically on import; Notion is the exception because workspace docs are often internal drafts. Your publish choice is kept across re-syncs.
+</Note>
+
+The token is stored encrypted (set `ENCRYPTION_KEY` before connecting in any real deployment). There is no environment variable to configure — Notion is set up per workspace in the Settings UI.
 
 ## Sources list
 
@@ -75,13 +79,14 @@ The **Sources** tab on the Knowledge Base page lists every imported source. Each
 
 | Column | Description |
 |---|---|
-| **Name** | File name or page URL |
+| **Name** | File name, page URL, repo, or "Notion workspace" |
 | **Type** | `url`, `file`, `github`, or `notion` |
 | **Chunks** | Number of vector chunks indexed from this source |
 | **Size** | Approximate content size |
-| **Last synced** | When the source was last imported or re-synced |
 
-To remove a source, click the **Delete** icon on its row. Deleting a source removes all its chunks from the vector index — any articles derived from it will no longer surface in search results.
+A source marked **Unpublished** (currently only Notion) is indexed and shows in dashboard search but is held back from customer-facing answers and the website widget until you publish it from the Notion panel.
+
+To remove a source, select it and click **Delete selected**. Deleting a source removes all its chunks from the vector index — any articles derived from it will no longer surface in search results.
 
 ## Promoting tickets to the KB
 
