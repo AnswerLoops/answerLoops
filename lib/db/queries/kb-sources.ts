@@ -11,6 +11,7 @@ function toSource(row: typeof kbSources.$inferSelect): KBSource {
     file_type: row.fileType,
     size_bytes: row.sizeBytes,
     chunk_count: row.chunkCount,
+    published: row.published as 0 | 1,
     created_at: row.createdAt,
     updated_at: row.updatedAt,
   }
@@ -21,6 +22,9 @@ export async function createKBSource(input: {
   filename: string
   fileType: string
   sizeBytes: number
+  // Omitted by every importer except Notion — the column default (1) then
+  // applies, so existing behaviour is unchanged.
+  published?: 0 | 1
 }): Promise<KBSource> {
   const [row] = await getDb()
     .insert(kbSources)
@@ -30,9 +34,32 @@ export async function createKBSource(input: {
       fileType: input.fileType,
       sizeBytes: input.sizeBytes,
       chunkCount: 0,
+      ...(input.published !== undefined && { published: input.published }),
     })
     .returning()
   return toSource(row)
+}
+
+/**
+ * Flip a source's published state and every one of its chunks in lockstep.
+ * `kb_articles.published` is what retrieval filters on; `kb_sources.published`
+ * is what the UI shows and toggles. Both writes are org-scoped.
+ */
+export async function setKBSourcePublished(
+  sourceId: number,
+  orgId: number,
+  published: 0 | 1
+): Promise<void> {
+  const db = getDb()
+  const ts = new Date().toISOString()
+  await db
+    .update(kbSources)
+    .set({ published, updatedAt: ts })
+    .where(and(eq(kbSources.id, sourceId), eq(kbSources.orgId, orgId)))
+  await db
+    .update(kbArticles)
+    .set({ published, updatedAt: ts })
+    .where(and(eq(kbArticles.sourceId, sourceId), eq(kbArticles.orgId, orgId)))
 }
 
 export async function updateKBSourceChunkCount(id: number, chunkCount: number): Promise<void> {

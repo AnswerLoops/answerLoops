@@ -166,6 +166,10 @@ If absent, email notifications skip silently — nothing breaks. Without `RESEND
 |---|---|
 | `FIRECRAWL_API_KEY` | API key from firecrawl.dev. Enables Settings → Import from URL to crawl docs sites into the KB. |
 
+## Notion KB source
+
+No environment variable. Each org connects its own Notion workspace in **Settings → Notion** by pasting an internal integration token, which is stored encrypted — make sure `ENCRYPTION_KEY` (above) is set before connecting in any real deployment.
+
 ## Web push notifications (optional)
 
 | Variable | Description |

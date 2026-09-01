@@ -26,6 +26,9 @@ function FileTypeIcon({ type }: { type: string }) {
     md: 'text-gray-600',
     txt: 'text-gray-500',
     csv: 'text-green-600',
+    github: 'text-gray-800',
+    'github-discussion': 'text-gray-800',
+    notion: 'text-neutral-800',
   }
   return (
     <span className={`text-xs font-bold uppercase tabular-nums ${colors[type] ?? 'text-gray-500'}`}>
@@ -122,7 +125,14 @@ function SourcesList({ onDeleted }: { onDeleted: () => void }) {
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <FileTypeIcon type={s.file_type} />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate">{s.filename}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-gray-800 truncate">
+                    {s.file_type === 'notion' ? 'Notion workspace' : s.filename}
+                  </p>
+                  {s.published === 0 && (
+                    <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[0.625rem] font-medium text-amber-700">Unpublished</span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-400">
                   {s.chunk_count} chunk{s.chunk_count !== 1 ? 's' : ''} · {formatBytes(s.size_bytes)}
                 </p>
@@ -208,6 +218,124 @@ function GitHubKBSection({ onSynced }: { onSynced: () => void }) {
           </li>
         ))}
       </ul>
+    </div>
+  )
+}
+
+export function NotionKBSection({ onSynced }: { onSynced: () => void }) {
+  const [connected, setConnected] = useState<boolean | null>(null)
+  const [workspace, setWorkspace] = useState<string | null>(null)
+  const [source, setSource] = useState<KBSource | null>(null)
+  const [lastSynced, setLastSynced] = useState<string | null>(null)
+  const [chunkCount, setChunkCount] = useState(0)
+  const [syncing, setSyncing] = useState(false)
+  const [togglingPublish, setTogglingPublish] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const [truncated, setTruncated] = useState(false)
+
+  const loadState = useCallback(async () => {
+    const [conn, sources] = await Promise.all([
+      fetch('/api/notion').then((r) => (r.ok ? r.json() : { connection: null })).catch(() => ({ connection: null })),
+      fetch('/api/kb/sources').then((r) => (r.ok ? r.json() : [])).catch(() => []),
+    ])
+    setConnected(!!conn.connection)
+    setWorkspace(conn.connection?.workspace_name ?? null)
+    setLastSynced(conn.connection?.kb_last_synced ?? null)
+    setChunkCount(conn.connection?.kb_chunk_count ?? 0)
+    setSource((sources as KBSource[]).find((s) => s.file_type === 'notion') ?? null)
+  }, [])
+
+  useEffect(() => { loadState() }, [loadState])
+
+  const sync = async () => {
+    setSyncing(true)
+    setTruncated(false)
+    try {
+      const res = await fetch('/api/notion/sync-kb')
+      const data = (await res.json()) as { synced?: number; truncated?: boolean; error?: string }
+      if (data.error) {
+        setToast(data.error)
+      } else {
+        setToast(`Synced ${data.synced ?? 0} chunk${data.synced === 1 ? '' : 's'} from Notion`)
+        setTruncated(!!data.truncated)
+        await loadState()
+        onSynced()
+      }
+    } catch {
+      setToast('Sync failed')
+    } finally {
+      setSyncing(false)
+      setTimeout(() => setToast(null), 4000)
+    }
+  }
+
+  const togglePublish = async () => {
+    if (!source) return
+    const next = source.published === 1 ? 0 : 1
+    setTogglingPublish(true)
+    try {
+      const res = await fetch(`/api/kb/sources/${source.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ published: next }),
+      })
+      if (res.ok) {
+        await loadState()
+        onSynced()
+      } else {
+        setToast('Could not update publish state')
+      }
+    } finally {
+      setTogglingPublish(false)
+      setTimeout(() => setToast(null), 4000)
+    }
+  }
+
+  if (connected === null || connected === false) return null
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+      <div>
+        <h2 className="text-sm font-semibold text-gray-900">Notion workspace</h2>
+        <p className="text-xs text-gray-500 mt-0.5 break-words">
+          {workspace ? `Connected to ${workspace}. ` : ''}Pages and databases shared with your integration are synced into the knowledge base.{' '}
+          <Link href="/settings?tab=notion" className="text-brand-600 hover:underline">Manage in Settings →</Link>
+        </p>
+      </div>
+
+      {toast && <p className="text-xs text-green-600">{toast}</p>}
+      {truncated && (
+        <p className="text-xs text-amber-600">Knowledge base is full — some Notion content wasn&apos;t imported.</p>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-gray-200 bg-white px-3 py-2.5">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-gray-800">
+            {chunkCount > 0
+              ? `${chunkCount} chunk${chunkCount === 1 ? '' : 's'} · last synced ${lastSynced ? new Date(lastSynced).toLocaleDateString() : 'never'}`
+              : 'Not yet synced'}
+          </p>
+          {source && (
+            <p className={`text-xs ${source.published === 1 ? 'text-green-600' : 'text-amber-600'}`}>
+              {source.published === 1 ? 'Live on the website widget' : 'Not visible to the website widget'}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="secondary" onClick={sync} disabled={syncing}>
+            {syncing ? 'Syncing…' : 'Sync now'}
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={togglePublish}
+            disabled={!source || togglingPublish}
+            title={!source ? 'Run a sync first' : undefined}
+          >
+            {togglingPublish ? '…' : source?.published === 1 ? 'Unpublish' : 'Publish to widget'}
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -588,6 +716,7 @@ export default function KBPage() {
       </div>
 
       <GitHubKBSection onSynced={loadAll} />
+      <NotionKBSection onSynced={() => { loadAll(); refreshSources() }} />
       <FileUploadSection onImported={() => { loadAll(); refreshSources() }} />
       <UrlIngestSection onImported={loadAll} />
       <SourcesList key={sourcesKey} onDeleted={() => { loadAll(); refreshSources() }} />

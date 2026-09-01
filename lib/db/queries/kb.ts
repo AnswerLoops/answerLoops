@@ -154,6 +154,9 @@ export async function createArticleFromSource(
     model: string
     sourceId: number
     sourcePage?: number
+    // Only the Notion importer passes this (0). Omitted everywhere else, so
+    // the column default (1) applies and every other source stays published.
+    published?: 0 | 1
   },
   orgId: number
 ): Promise<KBArticle> {
@@ -167,6 +170,7 @@ export async function createArticleFromSource(
       model: input.model,
       sourceId: input.sourceId,
       sourcePage: input.sourcePage ?? null,
+      ...(input.published !== undefined && { published: input.published }),
     })
     .returning()
   return toArticle(row)
