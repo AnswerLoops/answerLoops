@@ -162,6 +162,18 @@ export default async function TicketDetailPage(props: { params: Promise<{ id: st
               </svg>
               View in Discourse ↗
             </a>
+          ) : ticket.source_platform === 'circle' && ticket.source_url ? (
+            <a
+              href={ticket.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-violet-600 hover:text-violet-800 hover:underline"
+            >
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="9" />
+              </svg>
+              View in Circle ↗
+            </a>
           ) : ticket.source_platform === 'slack' && ticket.source_channel_id && ticket.source_url ? (
             <a
               href={ticket.source_url}
@@ -277,7 +289,9 @@ export default async function TicketDetailPage(props: { params: Promise<{ id: st
               </div>
               {assessment.auto_deflected !== 1 && deflectionsOffForSource && (
                 <p className="mb-1.5 text-xs font-medium text-amber-800">
-                  Automatic Deflections is off for {ticket.source_platform} — nothing was sent to the customer. Approve and send the draft below, or reply manually.
+                  {ticket.source_platform === 'circle'
+                    ? 'Circle is ingest-only — copy the draft below and paste it into Circle by hand.'
+                    : `Automatic Deflections is off for ${ticket.source_platform} — nothing was sent to the customer. Approve and send the draft below, or reply manually.`}
                 </p>
               )}
               {assessment.reasoning && (
@@ -350,6 +364,7 @@ export default async function TicketDetailPage(props: { params: Promise<{ id: st
                      ticket.source_platform === 'slack' ? 'Slack user' :
                      ticket.source_platform === 'telegram' ? 'Telegram user' :
                      ticket.source_platform === 'discourse' ? 'Discourse user' :
+                     ticket.source_platform === 'circle' ? 'Circle member' :
                      ticket.source_platform === 'email' ? 'Email sender' :
                      ticket.source_platform === 'google_chat' ? 'Google Chat user' :
                      ticket.source_platform === 'mcp' ? 'Opened by' :

@@ -32,7 +32,7 @@ export async function getCurrentDeploymentMode(): Promise<DeploymentMode> {
   return getDeploymentMode()
 }
 
-async function requireFeature(orgId: number, feature: 'discord_integration' | 'slack_integration' | 'google_chat_integration' | 'discourse_integration'): Promise<string | null> {
+async function requireFeature(orgId: number, feature: 'discord_integration' | 'slack_integration' | 'google_chat_integration' | 'discourse_integration' | 'circle_integration'): Promise<string | null> {
   if (await orgHasFeature(orgId, feature)) return null
   const requiredPlan = planRequiredFor(feature)
   return `This integration requires the ${requiredPlan[0].toUpperCase()}${requiredPlan.slice(1)} plan or above — upgrade in Billing to connect it.`
@@ -541,6 +541,81 @@ export async function deleteDiscourseIntegrationAction(
   const orgId = session.orgId ?? DEFAULT_ORG_ID
 
   await deleteIntegration(orgId, 'discourse')
+  refresh()
+  return null
+}
+
+// ── Circle ────────────────────────────────────────────────────────────────────
+
+const CircleIntegrationSchema = z.object({
+  communityUrl: z.string().optional(),
+  apiToken: z.string().optional(),
+  spaceIds: z.string().optional(),
+  escalationUser: z.string().optional(),
+  confidenceThreshold: z.coerce.number().min(0).max(1).optional(),
+})
+
+export async function saveCircleIntegrationAction(
+  _prevState: unknown,
+  formData: FormData
+): Promise<{ error?: string; webhookUrl?: string; webhookSecret?: string } | null> {
+  const session = await auth()
+  if (!session?.user) return { error: 'Unauthorized' }
+  const orgId = session.orgId ?? DEFAULT_ORG_ID
+
+  const gateError = await requireFeature(orgId, 'circle_integration')
+  if (gateError) return { error: gateError }
+
+  const parsed = CircleIntegrationSchema.safeParse(Object.fromEntries(formData))
+  if (!parsed.success) return { error: parsed.error.issues[0].message }
+
+  const { communityUrl, apiToken, spaceIds, escalationUser, confidenceThreshold } = parsed.data
+  const spaceList = (spaceIds ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+
+  const existing = await getIntegration(orgId, 'circle')
+
+  const normalizedUrl = communityUrl?.trim().replace(/\/+$/, '') || existing?.team_id || null
+  if (!normalizedUrl) return { error: 'Circle community URL is required' }
+  if (!/^https?:\/\/.+/.test(normalizedUrl)) {
+    return { error: 'Community URL must start with https:// (e.g. https://community.example.com)' }
+  }
+
+  const newToken = apiToken?.trim() || null
+  if (!newToken && !existing?.bot_token) return { error: 'API token is required' }
+
+  // Per-org inbound secret — preserved across re-saves so a saved Workflow
+  // keeps authenticating.
+  const botSecret = existing?.bot_secret ?? crypto.randomBytes(32).toString('hex')
+
+  await upsertIntegration({
+    orgId,
+    platform: 'circle',
+    botToken: newToken ?? undefined,
+    botSecret,
+    teamId: normalizedUrl,
+    channelIds: spaceList,
+    escalationRoleId: escalationUser?.trim() || null,
+    confidenceThreshold: confidenceThreshold ?? null,
+  })
+
+  refresh()
+
+  const baseUrl = process.env.AUTH_URL ?? ''
+  return { webhookUrl: `${baseUrl}/api/circle/webhook`, webhookSecret: botSecret }
+}
+
+export async function deleteCircleIntegrationAction(
+  _prevState: unknown,
+  _formData: FormData
+): Promise<{ error?: string } | null> {
+  const session = await auth()
+  if (!session?.user) return { error: 'Unauthorized' }
+  const orgId = session.orgId ?? DEFAULT_ORG_ID
+
+  await deleteIntegration(orgId, 'circle')
   refresh()
   return null
 }
