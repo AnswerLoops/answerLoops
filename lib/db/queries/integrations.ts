@@ -3,7 +3,7 @@ import { getDb } from '../drizzle'
 import { integrations } from '../schema'
 import { encryptToken, decryptToken } from '@/lib/crypto/tokens'
 
-export type Platform = 'discord' | 'slack' | 'telegram' | 'email' | 'google_chat'
+export type Platform = 'discord' | 'slack' | 'telegram' | 'email' | 'google_chat' | 'discourse'
 
 export interface Integration {
   id: number
@@ -11,6 +11,7 @@ export interface Integration {
   platform: string
   bot_token: string | null
   bot_secret: string | null
+  bot_username: string | null
   channel_ids: string | null
   guild_channel_map: string | null
   connected_guild_id: string | null
@@ -32,6 +33,7 @@ function toIntegration(row: typeof integrations.$inferSelect): Integration {
     platform: row.platform,
     bot_token: row.botToken,
     bot_secret: row.botSecret,
+    bot_username: row.botUsername ?? null,
     channel_ids: row.channelIds,
     guild_channel_map: row.guildChannelMap ?? null,
     connected_guild_id: row.connectedGuildId ?? null,
@@ -81,6 +83,31 @@ export async function getIntegrationByGuildId(guildId: string): Promise<Integrat
       and(
         eq(integrations.connectedGuildId, guildId),
         eq(integrations.platform, 'discord'),
+        eq(integrations.enabled, 1)
+      )
+    )
+    .limit(1)
+  return row ? decryptRow(toIntegration(row)) : null
+}
+
+/**
+ * Resolve the org connected to a Discourse forum. The inbound webhook has no
+ * OAuth handshake to learn the org↔site mapping — Discourse sends the forum's
+ * base URL in the `X-Discourse-Instance` header on every event, and the org
+ * stored that same URL in `teamId` at connect time (the generic-column reuse
+ * pattern Slack/Google Chat already follow). The per-webhook HMAC secret lives
+ * in `botSecret` (raw, not encrypted) so the signature can be checked against
+ * this row without a decrypt step.
+ */
+export async function getIntegrationByDiscourseSite(siteUrl: string): Promise<Integration | null> {
+  const normalized = siteUrl.replace(/\/+$/, '')
+  const [row] = await getDb()
+    .select()
+    .from(integrations)
+    .where(
+      and(
+        eq(integrations.teamId, normalized),
+        eq(integrations.platform, 'discourse'),
         eq(integrations.enabled, 1)
       )
     )
@@ -182,6 +209,7 @@ export async function upsertIntegration(input: {
   platform: Platform
   botToken?: string | null
   botSecret?: string | null
+  botUsername?: string | null
   channelIds?: string[]
   connectedGuildId?: string | null
   teamId?: string | null
@@ -212,6 +240,7 @@ export async function upsertIntegration(input: {
       .set({
         botToken: encryptedBotToken ?? undefined,
         botSecret: input.botSecret ?? undefined,
+        botUsername: input.botUsername !== undefined ? (input.botUsername ?? null) : undefined,
         channelIds: channelIdsJson ?? undefined,
         connectedGuildId: input.connectedGuildId !== undefined ? (input.connectedGuildId ?? null) : undefined,
         teamId: input.teamId ?? undefined,
@@ -234,6 +263,7 @@ export async function upsertIntegration(input: {
       platform: input.platform,
       botToken: encryptedBotToken,
       botSecret: input.botSecret ?? null,
+      botUsername: input.botUsername ?? null,
       channelIds: channelIdsJson,
       connectedGuildId: input.connectedGuildId ?? null,
       teamId: input.teamId ?? null,

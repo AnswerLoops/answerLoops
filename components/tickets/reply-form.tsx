@@ -8,6 +8,7 @@ const PLATFORM_LABELS: Record<string, { button: string; hint: string; success: s
   github:   { button: 'Send reply to GitHub',   hint: 'Posts as a comment on the GitHub issue',          success: 'Reply posted to GitHub!' },
   slack:    { button: 'Send reply to Slack',     hint: 'Posts in the Slack thread',                      success: 'Reply sent to Slack!' },
   telegram: { button: 'Send reply to Telegram',  hint: 'Posts in the Telegram chat',                     success: 'Reply sent to Telegram!' },
+  discourse: { button: 'Send reply to Discourse', hint: 'Posts as a reply in the Discourse topic',        success: 'Reply posted to Discourse!' },
   email:    { button: 'Send reply by email',     hint: 'Replies to the sender\'s email address',         success: 'Reply sent by email!' },
   discord:  { button: 'Send reply to Discord',   hint: 'Posts as "[Response from your name]" in the Discord thread', success: 'Reply sent to Discord!' },
   google_chat: { button: 'Send reply to Google Chat', hint: 'Posts as "[Response from your name]" in the Google Chat space', success: 'Reply sent to Google Chat!' },

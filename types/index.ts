@@ -8,7 +8,7 @@ export type TicketCategory = 'bug' | 'feature_request' | 'documentation' | 'how_
 // non-deflected outcome, so every consumer of this type must handle it.
 export type AIDraftStatus = 'pending' | 'needs_human' | 'posted' | 'approved' | 'overridden'
 
-export type SourcePlatform = 'discord' | 'slack' | 'telegram' | 'email' | 'github' | 'mcp' | 'google_chat'
+export type SourcePlatform = 'discord' | 'slack' | 'telegram' | 'email' | 'github' | 'mcp' | 'google_chat' | 'discourse'
 
 export interface Ticket {
   id: number
@@ -21,9 +21,9 @@ export interface Ticket {
   source_author_name: string | null
   discord_deleted_at: string | null
   // Precomputed deep link back to the original message. Set at ingest time
-  // for platforms (Slack) where a working URL can't be derived from stored
-  // IDs alone at render time — null on platforms whose link is constructed
-  // directly (Discord/Telegram/GitHub) or that have none (email).
+  // for platforms (Slack, Discourse) where a working URL can't be derived
+  // from stored IDs alone at render time — null on platforms whose link is
+  // constructed directly (Discord/Telegram/GitHub) or that have none (email).
   source_url: string | null
   source_platform: SourcePlatform
   content: string

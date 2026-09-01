@@ -331,6 +331,10 @@ export const integrations = pgTable(
     platform: text('platform').notNull(),
     botToken: text('bot_token'),
     botSecret: text('bot_secret').unique(),
+    // Discourse only: the forum account the bot posts replies as, sent as the
+    // `Api-Username` header on every write. Distinct from escalationRoleId,
+    // which is the human tagged on low-confidence answers.
+    botUsername: text('bot_username'),
     channelIds: text('channel_ids'),
     guildChannelMap: text('guild_channel_map'),
     teamId: text('team_id'),

@@ -4,10 +4,11 @@ import { sendToSlackChannel } from '@/lib/slack/send'
 import { sendToTelegramChat } from '@/lib/telegram/send'
 import { sendEmailReply } from '@/lib/email/reply'
 import { sendToGoogleChatSpace } from '@/lib/google-chat/send'
+import { postToDiscourseTopic } from '@/lib/discourse/send'
 
 const MOD = 'channels/post-reply'
 
-export type Platform = 'discord' | 'slack' | 'telegram' | 'email' | 'github' | 'mcp' | 'google_chat'
+export type Platform = 'discord' | 'slack' | 'telegram' | 'email' | 'github' | 'mcp' | 'google_chat' | 'discourse'
 
 // Single per-platform send dispatch, shared by every caller that delivers a
 // reply to a customer channel: the auto-deflect path (lib/ai/agent.ts), the
@@ -41,6 +42,10 @@ export async function postReply(
     return sendToGoogleChatSpace(spaceName, content, isThread ? channelId : undefined)
   }
   if (platform === 'telegram') return sendToTelegramChat(channelId, content, orgId)
+  // channelId here is the Discourse topic id — every caller passes
+  // `threadId ?? channelId` and the ingest route sets threadId to the topic
+  // id, so a reply is always a new post appended to that topic.
+  if (platform === 'discourse') return postToDiscourseTopic(channelId, content, orgId)
   if (platform === 'email') return sendEmailReply(channelId, content, orgId, ticketId)
   // MCP-created tickets have no live channel to post into — the draft is
   // saved separately and surfaced via the ticket itself (get_tickets tool /

@@ -26,6 +26,8 @@ vi.mock('@/app/actions/integrations', () => ({
   deleteSlackIntegrationAction: vi.fn(),
   saveTelegramIntegrationAction: vi.fn(),
   deleteTelegramIntegrationAction: vi.fn(),
+  saveDiscourseIntegrationAction: vi.fn(),
+  deleteDiscourseIntegrationAction: vi.fn(),
   saveEmailIntegrationAction: vi.fn(),
   deleteEmailIntegrationAction: vi.fn(),
   generateGoogleChatConnectCodeAction: vi.fn(),
@@ -153,6 +155,42 @@ describe('SettingsPage tab bar deflection dots', () => {
       const dots = screen.getAllByTitle('Automatic Deflections: On')
       expect(dots).toHaveLength(1)
     })
+  })
+
+  it('maps the discourse tab to the discourse platform and shows a green dot when its deflections are on', async () => {
+    vi.stubGlobal(
+      'fetch',
+      mockFetchByUrl({
+        '/api/integrations': [{ platform: 'discourse', enabled: 1, team_id: 'https://forum.example.com', auto_deflect_enabled: 1 }],
+        '/api/github/repos': [],
+      })
+    )
+
+    render(<SettingsPage />)
+
+    await waitFor(() => {
+      const dots = screen.getAllByTitle('Automatic Deflections: On')
+      expect(dots).toHaveLength(1)
+    })
+  })
+
+  it('renders no dot for a discourse row that has enabled=1 but no team_id (the !!row.team_id guard)', async () => {
+    // Regression: same partial-setup case as Google Chat — a discourse row
+    // can exist with enabled=1 before a site URL (team_id) is saved. The tab
+    // dot must not light up until the integration is actually connected.
+    vi.stubGlobal(
+      'fetch',
+      mockFetchByUrl({
+        '/api/integrations': [{ platform: 'discourse', enabled: 1, team_id: null, auto_deflect_enabled: 1 }],
+        '/api/github/repos': [],
+      })
+    )
+
+    render(<SettingsPage />)
+
+    await waitFor(() => expect(screen.getByText('Discourse')).toBeTruthy())
+    expect(screen.queryByTitle('Automatic Deflections: On')).toBeNull()
+    expect(screen.queryByTitle('Automatic Deflections: Off')).toBeNull()
   })
 
   it('shows GitHub as null (no dot) when zero repos are connected, distinct from "connected but off"', async () => {

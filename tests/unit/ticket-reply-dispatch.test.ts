@@ -14,6 +14,7 @@ const {
   sendToTelegramChat,
   sendEmailReply,
   sendToChannel,
+  postToDiscourseTopic,
   createComment,
   getRepoByOwnerAndName,
   getTicketById,
@@ -24,6 +25,7 @@ const {
   sendToTelegramChat: vi.fn(async (_channelId: string, _content: string, _orgId: number) => 'telegram-msg-id'),
   sendEmailReply: vi.fn(async (_channelId: string, _content: string, _orgId: number, _ticketId?: number) => 'email-msg-id'),
   sendToChannel: vi.fn(async (_channelId: string, _content: string, _orgId: number) => 'discord-msg-id'),
+  postToDiscourseTopic: vi.fn(async (_topicId: string, _content: string, _orgId: number) => 'discourse-post-id'),
   createComment: vi.fn(async (_params: { owner: string; repo: string; issue_number: number; body: string }) => ({ data: { id: 999 } })),
   getRepoByOwnerAndName: vi.fn(async () => ({ id: 1, org_id: 3, installation_id: 42 })),
   getTicketById: vi.fn(),
@@ -37,6 +39,7 @@ vi.mock('@/lib/telegram/send', () => ({ sendToTelegramChat }))
 vi.mock('@/lib/email/reply', () => ({ sendEmailReply }))
 vi.mock('@/lib/discord/send', () => ({ sendToChannel }))
 vi.mock('@/lib/google-chat/send', () => ({ sendToGoogleChatSpace: vi.fn() }))
+vi.mock('@/lib/discourse/send', () => ({ postToDiscourseTopic }))
 vi.mock('@/lib/db/queries/github', () => ({ getRepoByOwnerAndName }))
 vi.mock('@/lib/github/app', () => ({
   getInstallationOctokitById: vi.fn(async () => ({ rest: { issues: { createComment } } })),
@@ -109,6 +112,17 @@ describe('updateAIDraftAction: approve now sends on every platform, not just Git
     expect(createComment).toHaveBeenCalledWith(
       expect.objectContaining({ owner: 'owner', repo: 'repo', issue_number: 42, body: 'the approved answer' })
     )
+  })
+
+  it('approve posts the real draft into the Discourse topic (routes channelId = source_thread_id)', async () => {
+    getTicketById.mockResolvedValue(
+      ticket({ source_platform: 'discourse', source_channel_id: '12', source_thread_id: '345' })
+    )
+    const { updateAIDraftAction } = await import('@/app/actions/tickets')
+
+    await updateAIDraftAction(null, formData({ ticketId: '1', action: 'approve' }))
+
+    expect(postToDiscourseTopic).toHaveBeenCalledWith('345', 'the approved answer', 3)
   })
 
   it('approve never sends for an mcp-originated ticket — no live channel to post into', async () => {
