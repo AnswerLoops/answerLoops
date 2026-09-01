@@ -1,6 +1,6 @@
 # AnswerLoops
 
-> AnswerLoops is support that lives in your community. It turns a stream of community support questions (Discord, Slack, forums, GitHub, Telegram, email, website chat) into a self-improving knowledge base that answers repeat questions automatically — and only when it's confident enough to be right — escalating the long tail to a human.
+> AnswerLoops is AI support that lives in your community. It turns a stream of community support questions (Discord, Slack, forums, GitHub, Telegram, email, website chat) into a self-improving knowledge base that answers repeat questions automatically — and only when it's confident enough to be right — escalating the long tail to a human.
 
 ## What it does
 

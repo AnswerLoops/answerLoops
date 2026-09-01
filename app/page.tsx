@@ -614,7 +614,7 @@ function StructuredData() {
     name: 'AnswerLoops',
     applicationCategory: 'BusinessApplication',
     operatingSystem: 'Web',
-    description: 'Support that lives in your community — auto-answers repeat Discord, Slack, forum, GitHub, Telegram, and email questions from your knowledge base, escalating only the hard ones to a human.',
+    description: 'AI support that lives in your community — auto-answers repeat Discord, Slack, forum, GitHub, Telegram, and email questions from your knowledge base, escalating only the hard ones to a human.',
     url: 'https://answerloops.com',
     provider: { '@id': ORGANIZATION_ID },
     offers: [
@@ -670,7 +670,7 @@ export default async function LandingPage() {
   const navState = await resolveNavState()
   return (
     <div className="landing-monochrome min-h-screen bg-white">
-      <PageSchema name="AnswerLoops — support that lives in your community" description="Support that lives in your community across Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and website chat — answered in the channel, and only when confident enough to be right." path="/" />
+      <PageSchema name="AnswerLoops — support that lives in your community" description="AI support that lives in your community across Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and website chat — answered in the channel, and only when confident enough to be right." path="/" />
       <StructuredData />
       <Nav state={navState} />
       <main>

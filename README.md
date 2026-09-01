@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./.github/readme/hero.svg" alt="AnswerLoops — open-source support infrastructure for teams whose support lives in a community" width="100%" />
+<img src="./.github/readme/hero.svg" alt="AnswerLoops — open-source AI support infrastructure for teams whose support lives in a community" width="100%" />
 
 <br />
 
@@ -12,7 +12,7 @@
 
 </div>
 
-# AnswerLoops — support that lives in your community
+# AnswerLoops — AI support that lives in your community
 
 **Your community asks the same questions every day. AnswerLoops answers them right in the channel — Discord, Slack, your forum, email — and only when it's confident enough to be right.**
 
