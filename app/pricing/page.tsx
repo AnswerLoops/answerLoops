@@ -37,7 +37,7 @@ function PricingStructuredData() {
     operatingSystem: 'Web',
     url: 'https://answerloops.com/pricing',
     provider: { '@id': ORGANIZATION_ID },
-    description: 'Support that lives in your community across Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and website chat.',
+    description: 'AI support that lives in your community across Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and website chat.',
     offers: [
       {
         '@type': 'Offer',
