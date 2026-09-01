@@ -34,7 +34,7 @@
       {
         "name": "GitHub",
         "icon": "github",
-        "url": "https://github.com/AnswerLoops/answerLoops"
+        "url": "https://github.com/answerLoops/answerLoops"
       }
     ],
     "groups": [
@@ -111,6 +111,6 @@
     ]
   },
   "footerSocials": {
-    "github": "https://github.com/AnswerLoops/answerLoops"
+    "github": "https://github.com/answerLoops/answerLoops"
   }
 }

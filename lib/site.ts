@@ -9,7 +9,7 @@
  * recurring. Markdown and MDX cannot import this, so those files carry the
  * literal URL and a test keeps them honest.
  */
-export const GITHUB_URL = 'https://github.com/AnswerLoops/answerLoops'
+export const GITHUB_URL = 'https://github.com/answerLoops/answerLoops'
 
 export const GITHUB_ISSUES_URL = `${GITHUB_URL}/issues`
 

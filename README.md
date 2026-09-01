@@ -4,21 +4,21 @@
 
 <br />
 
-[![CI](https://img.shields.io/github/actions/workflow/status/AnswerLoops/answerLoops/ci.yml?branch=main&label=CI&logo=github&style=flat-square)](https://github.com/AnswerLoops/answerLoops/actions/workflows/ci.yml)
-[![Security](https://img.shields.io/github/actions/workflow/status/AnswerLoops/answerLoops/security.yml?branch=main&label=security&logo=github&style=flat-square)](https://github.com/AnswerLoops/answerLoops/actions/workflows/security.yml)
-[![License](https://img.shields.io/github/license/AnswerLoops/answerLoops?style=flat-square&label=license&color=2563eb)](./LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/answerLoops/answerLoops/ci.yml?branch=main&label=CI&logo=github&style=flat-square)](https://github.com/answerLoops/answerLoops/actions/workflows/ci.yml)
+[![Security](https://img.shields.io/github/actions/workflow/status/answerLoops/answerLoops/security.yml?branch=main&label=security&logo=github&style=flat-square)](https://github.com/answerLoops/answerLoops/actions/workflows/security.yml)
+[![License](https://img.shields.io/github/license/answerLoops/answerLoops?style=flat-square&label=license&color=2563eb)](./LICENSE)
 
 [Website](https://answerloops.com) · [Documentation](https://answerloops.com/docs) · [Hosted app](https://app.answerloops.com) · [Quickstart](#run-it-locally) · [Architecture](#how-the-loop-works)
 
 </div>
 
-# AnswerLoops — Open-source AI support agent for teams whose support lives in a community
+# AnswerLoops — support that lives in your community
 
-**Support automation you can inspect, extend, and own.**
+**Your community asks the same questions every day. AnswerLoops answers them right in the channel — Discord, Slack, your forum, email — and only when it's confident enough to be right.**
 
-AnswerLoops is an open-source, self-hosted AI support agent for teams whose support lives in a community. It turns repeat questions from Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and an embeddable web widget into one structured support pipeline, with confidence-gated automation and human escalation for uncertain answers.
+AnswerLoops is an open-source, self-hosted AI support agent for teams whose support happens in a community instead of a help-desk inbox. It turns repeat questions from Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and an embeddable web widget into one structured support pipeline, with confidence-gated automation and human escalation for uncertain answers.
 
-It is built for teams whose users ask for help in a community instead of a support ticket — software and dev-tool companies, open-source projects, course creators with a paid community, game studios with a player Discord — and who want support automation they can inspect, extend, and run on their own infrastructure, not a generic chatbot or a seat-based helpdesk.
+It is built for teams whose users ask for help in a community instead of a support ticket — software and dev-tool companies, open-source projects, course creators with a paid community, game studios with a player Discord, crypto and DAO projects — and who want support automation they can inspect, extend, and run on their own infrastructure, not a generic chatbot or a seat-based helpdesk.
 
 The important part is the gate between “the model produced text” and “a customer saw it.” AnswerLoops retrieves evidence from your knowledge base and connected repositories, drafts an answer, and asks a separate reviewer pass to grade it. Strong answers can be posted automatically; uncertain answers stay in the human queue with the context and draft attached.
 
@@ -85,7 +85,7 @@ The shared ingest pipeline lives in [`lib/ingest/pipeline.ts`](./lib/ingest/pipe
 
 - Discord text channels, forum threads, reactions, slash commands, and multiple connected servers
 - Slack Events API or polling mode, plus in-thread replies
-- Discourse and Circle forum ingestion and replies _(planned)_
+- Discourse and Circle forum ingestion and replies
 - Google Chat space pairing and replies
 - GitHub Issues, issue comments, Discussions, discussion comments, and repository sync
 - Telegram webhook ingestion and replies
@@ -94,7 +94,7 @@ The shared ingest pipeline lives in [`lib/ingest/pipeline.ts`](./lib/ingest/pipe
 
 ### Knowledge and automation
 
-- Website crawling, GitHub repository sync, and PDF, DOCX, Markdown, text, or CSV uploads
+- Website crawling, GitHub repository sync, Notion workspace sync, and PDF, DOCX, Markdown, text, or CSV uploads
 - Semantic search over KB articles and resolved support history
 - AI triage, priority, category, SLA deadlines, grounded drafting, and confidence review
 - Configurable auto-deflection, human escalation, CSAT feedback, and simulation mode
@@ -133,8 +133,8 @@ The fastest complete development environment uses Docker Compose. It starts the 
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/AnswerLoops/answerLoops.git
-cd AnswerLoops
+git clone https://github.com/answerLoops/answerLoops.git
+cd answerLoops
 cp .env.example .env
 ```
 
@@ -262,6 +262,6 @@ AnswerLoops is licensed under [AGPL-3.0](./LICENSE). You can inspect, modify, an
 
 **Make the next repeat question the last one.**
 
-[Explore the docs](https://answerloops.com/docs) · [Run it locally](#run-it-locally) · [Open an issue](https://github.com/AnswerLoops/answerLoops/issues)
+[Explore the docs](https://answerloops.com/docs) · [Run it locally](#run-it-locally) · [Open an issue](https://github.com/answerLoops/answerLoops/issues)
 
 </div>
