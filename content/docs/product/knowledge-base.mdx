@@ -58,6 +58,17 @@ The sync respects the repo's file tree. Each markdown file becomes its own sourc
   GitHub repo sync requires the GitHub App to be installed and `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, and `GITHUB_WEBHOOK_SECRET` to be configured. See [GitHub App setup](/docs/self-hosting/environment-variables#github) for details.
 </Note>
 
+### 4. Notion workspace
+
+Connect a Notion workspace and pull selected pages and databases into the KB — useful for teams that keep their support content in Notion rather than a published docs site.
+
+1. Go to **Knowledge Base → Notion**
+2. Authorize AnswerLoops against your workspace
+3. Pick the pages and databases to sync
+4. Click **Sync now** for an immediate import; re-sync picks up edited pages and skips unchanged ones
+
+Each Notion page becomes its own source entry, split into chunks and embedded the same way as every other source.
+
 ## Sources list
 
 The **Sources** tab on the Knowledge Base page lists every imported source. Each row shows:
@@ -65,7 +76,7 @@ The **Sources** tab on the Knowledge Base page lists every imported source. Each
 | Column | Description |
 |---|---|
 | **Name** | File name or page URL |
-| **Type** | `url`, `file`, or `github` |
+| **Type** | `url`, `file`, `github`, or `notion` |
 | **Chunks** | Number of vector chunks indexed from this source |
 | **Size** | Approximate content size |
 | **Last synced** | When the source was last imported or re-synced |

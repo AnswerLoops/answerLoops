@@ -15,8 +15,8 @@ It's not for teams running a traditional help desk like Zendesk, online stores d
 ## Core capabilities
 
 - **Confidence-gated auto-answer** — a second AI pass grades every drafted answer before it goes out; only answers that clear the bar post automatically, everything else queues for human review
-- **Multi-channel ingest** — Discord, Slack, Discourse and Circle forums, GitHub Issues/Discussions, Telegram, email, and an embeddable website chat widget, all through one pipeline (Google Chat is also supported)
-- **Self-improving knowledge base** — resolved tickets promote into a searchable KB; community 👍/👎 feedback prunes bad answers over time
+- **Multi-channel ingest** — Discord, Slack, Discourse and Circle forums, GitHub Issues/Discussions, Telegram, email, and an embeddable website chat widget, all through one pipeline (Google Chat also supported)
+- **Self-improving knowledge base** — resolved tickets promote into a searchable KB; content also imports from a docs-site crawl, file upload, a GitHub repo sync, or a Notion workspace; community 👍/👎 feedback prunes bad answers over time
 - **Bring your own LLM** — OpenAI, Anthropic, Google Gemini, Groq, Mistral, or any OpenAI-compatible endpoint (including local models via Ollama); each org configures its own key and cost
 - **Agent-first API access** — an MCP server (`POST /api/mcp`, JSON-RPC 2.0) lets AI agents (Claude, Cursor, custom bots) call `search_kb`, `get_faq`, `get_tickets`, `create_ticket`, and `generate_answer` directly against an org's data, authenticated with a per-org API key
 - **Self-hostable** — AGPL-3.0 licensed; `docker compose up` runs the full stack on your own infrastructure with no data leaving your servers
@@ -33,10 +33,10 @@ Self-hosted: free forever (AGPL-3.0). Hosted (managed SaaS): Standard $49/mo (50
 - Slack: https://answerloops.com/docs/integrations/slack
 - Discourse: https://answerloops.com/docs/integrations/discourse
 - Circle: https://answerloops.com/docs/integrations/circle
-- Google Chat: https://answerloops.com/docs/integrations/google-chat
 - Telegram: https://answerloops.com/docs/integrations/telegram
 - Email: https://answerloops.com/docs/integrations/email
 - GitHub: https://answerloops.com/docs/integrations/github
+- Google Chat: https://answerloops.com/docs/integrations/google-chat
 - MCP server: https://answerloops.com/docs/integrations/mcp
 - Agent API (REST): https://answerloops.com/docs/integrations/agent-api
 <!-- END GENERATED INTEGRATION LINKS -->

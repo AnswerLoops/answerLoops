@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://answerloops.com'),
   title: "AnswerLoops",
   description:
-    "AI support that lives in your community: AnswerLoops answers repeat questions right in the channel — Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and website chat — and only when it's confident enough to be right. Open source, self-hosted, and MCP/API-ready.",
+    "Support that lives in your community: AnswerLoops answers repeat questions right in the channel — Discord, Slack, Discourse and Circle forums, GitHub, Telegram, email, and website chat — and only when it's confident enough to be right. Open source, self-hosted, and MCP/API-ready.",
   openGraph: {
     type: 'website',
     siteName: 'AnswerLoops',

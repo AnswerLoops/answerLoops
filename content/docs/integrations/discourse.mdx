@@ -5,19 +5,11 @@ description: Connect a Discourse forum to AnswerLoops so new topics and replies 
 
 ## Overview
 
-<Callout type="info">
-  **Planned.** The Discourse channel is on the near-term roadmap and is not
-  available yet. This page describes how the integration will work so you can
-  plan for it; the steps below are not live. Follow the
-  [repository](https://github.com/AnswerLoops/answerLoops) or the
-  [roadmap](https://answerloops.com/docs) for progress.
-</Callout>
-
-Discourse is the forum platform many open-source projects, product communities, and education communities run as their primary support surface. When the integration ships, AnswerLoops will ingest new topics and posts from the categories you choose, run each one through the standard triage → retrieval → confidence-review → escalation pipeline, and post grounded answers back into the thread as a bot user.
+Discourse is the forum platform many open-source projects, product communities, and education communities run as their primary support surface. AnswerLoops ingests new topics and posts from the categories you choose, runs each one through the standard triage → retrieval → confidence-review → escalation pipeline, and posts grounded answers back into the thread as a bot user.
 
 The same Discourse API also backfills the knowledge base: existing solved topics can be pulled in as knowledge so the AI can answer from what your community has already worked out.
 
-## How it will connect
+## How it connects
 
 | You provide | Where it comes from |
 | --- | --- |
@@ -30,7 +22,7 @@ Inbound events arrive by Discourse webhook (**Admin → API → Webhooks**) poin
 
 ## Plan availability
 
-Discourse will be a Standard-plan-and-above channel, gated the same way as Slack and GitHub.
+Discourse is a Standard-plan-and-above channel, gated the same way as Slack and GitHub.
 
 ## Related
 
