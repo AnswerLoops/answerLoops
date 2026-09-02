@@ -4,6 +4,7 @@ import { ComparisonPage } from '@/components/marketing/comparison-page'
 export const metadata: Metadata = {
   title: 'AnswerLoops vs Intercom — AI support platform comparison',
   description: 'How AnswerLoops compares to Intercom for community-native support: AI-first confidence-gated auto-answer vs. a human-first helpdesk with AI added on top, self-hosting, and open source.',
+  alternates: { canonical: '/vs/intercom' },
 }
 
 const ROWS = [

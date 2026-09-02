@@ -21,6 +21,9 @@ const LABELS = {
   '/terms': 'Terms of service',
   '/vs/chatbase': 'AnswerLoops vs Chatbase',
   '/vs/intercom': 'AnswerLoops vs Intercom',
+  '/vs/plain': 'AnswerLoops vs Plain',
+  '/vs/pylon': 'AnswerLoops vs Pylon',
+  '/vs/zendesk-ai': 'AnswerLoops vs Zendesk AI',
 }
 
 // The order llms.txt should present integrations in: first-class community

@@ -33,6 +33,9 @@ const STATIC_ROUTES: { path: string; priority: number; changeFrequency: ChangeFr
   { path: '/terms', priority: 0.2, changeFrequency: 'yearly' },
   { path: '/vs/chatbase', priority: 0.8, changeFrequency: 'monthly' },
   { path: '/vs/intercom', priority: 0.8, changeFrequency: 'monthly' },
+  { path: '/vs/plain', priority: 0.8, changeFrequency: 'monthly' },
+  { path: '/vs/pylon', priority: 0.8, changeFrequency: 'monthly' },
+  { path: '/vs/zendesk-ai', priority: 0.8, changeFrequency: 'monthly' },
 ]
 
 export default function sitemap(): MetadataRoute.Sitemap {
