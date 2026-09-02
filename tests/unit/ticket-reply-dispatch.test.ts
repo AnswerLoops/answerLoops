@@ -135,6 +135,21 @@ describe('updateAIDraftAction: approve now sends on every platform, not just Git
     expect(sendToChannel).not.toHaveBeenCalled()
     expect(updateTicketAIDraftStatus).toHaveBeenCalledWith(1, 'approved')
   })
+
+  it('approve never sends for a circle ticket — ingest-only, reviewer copies the answer in by hand', async () => {
+    getTicketById.mockResolvedValue(
+      ticket({ source_platform: 'circle', source_channel_id: '9', source_thread_id: '55' })
+    )
+    const { updateAIDraftAction } = await import('@/app/actions/tickets')
+
+    await updateAIDraftAction(null, formData({ ticketId: '1', action: 'approve' }))
+
+    expect(sendToSlackChannel).not.toHaveBeenCalled()
+    expect(sendToChannel).not.toHaveBeenCalled()
+    expect(postToDiscourseTopic).not.toHaveBeenCalled()
+    // the draft status is still recorded
+    expect(updateTicketAIDraftStatus).toHaveBeenCalledWith(1, 'approved')
+  })
 })
 
 describe('updateAIDraftAction: edit dispatches on slack/telegram/email too (previously only github/google_chat/discord)', () => {

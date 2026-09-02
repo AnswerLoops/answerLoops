@@ -1,29 +1,80 @@
 ---
 title: Circle
-description: Connect a Circle community to AnswerLoops so posts and comments in your spaces flow through the same confidence-gated support pipeline as every other channel.
+description: Connect a Circle community to AnswerLoops so new posts and comments become tickets with an AI-drafted answer, ready for a team member to review and paste back into Circle.
 ---
 
 ## Overview
 
-Circle is where many course creators and paid communities live. AnswerLoops ingests posts and comments from the spaces you choose, runs them through the standard triage → retrieval → confidence-review → escalation pipeline, and returns grounded answers.
+Circle is where many course creators and paid communities run member support. AnswerLoops ingests new posts and comments from the spaces you choose and runs each one through the standard triage → retrieval → confidence-review pipeline, producing a grounded draft answer on a ticket.
 
-Answer delivery has two modes, set per connection:
+<Callout type="info">
+  **Circle is ingest-only.** The drafted answer lands in your AnswerLoops inbox — a team member reviews it and pastes it into Circle by hand. Nothing is posted back to Circle automatically. Automatic replies are on the roadmap, pending confirmation of Circle's write API for comments.
+</Callout>
 
-1. **Review-first.** The drafted answer lands in your AnswerLoops inbox for a team member to review and paste back. Nothing posts to Circle automatically.
-2. **Automatic replies.** High-confidence answers post back into the thread directly, the same as Discord or Slack.
+Inbound events arrive through a Circle automation **Workflow** you set up in your community admin — there is no API subscription to register.
 
-## How it connects
+---
 
-| You provide | Where it comes from |
+## Setup
+
+### 1. Create an Admin API token
+
+In Circle, go to **Settings → Developers → Tokens**, create a new token, and choose type **Admin V2**. Copy it.
+
+### 2. Connect in AnswerLoops
+
+Go to **Settings → Circle** and fill in:
+
+| Field | Value |
 | --- | --- |
-| Circle API token | **Settings → API** in your Circle admin |
-| Watched spaces | Chosen in AnswerLoops settings after connecting |
+| Community URL | Your Circle community's base URL, e.g. `https://community.example.com` |
+| Admin API token | The token from step 1 (used to fetch the full post/comment body when a webhook payload is thin) |
+| Watched space IDs | Numeric space IDs, comma-separated — leave blank to watch every space |
 
-## Plan availability
+Click **Connect**. The card then shows a **Webhook URL** and a secret token.
 
-Circle is a Standard-plan-and-above channel, gated the same way as Slack and GitHub.
+### 3. Create the Circle Workflow
+
+In Circle, go to **Settings → Workflows** and create a workflow:
+
+- **Trigger:** *New post* (create a second workflow for *New comment* the same way)
+- **Action:** *Send webhook*
+  - **URL:** the Webhook URL from step 2
+  - **Header:** `X-AnswerLoops-Token` = the secret from step 2 (if your Workflow action can't set headers, append `?token=<secret>` to the URL instead)
+
+### 4. Set an escalation user (optional)
+
+Enter a Circle username in **Escalation user** to have that person noted on the draft when AI confidence is below your threshold.
+
+### 5. Set the confidence threshold
+
+**Confidence threshold** (0–1, default `0.8`) is the score below which the draft is flagged as low-confidence on the ticket.
+
+---
+
+## Environment variables reference
+
+Circle is configured entirely per-organization in the Settings UI. There is no community-wide credential and no environment variable to set. The API token is stored encrypted at rest — set `ENCRYPTION_KEY` before connecting in any real deployment.
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Posts aren't creating tickets">
+    Check the Circle Workflow is **active** and its recent runs show the webhook action succeeded. Confirm the URL matches exactly and the `X-AnswerLoops-Token` header (or `?token=` query) carries the secret shown on the Circle card. If you set **Watched space IDs**, a post in any other space is ignored on purpose — clear the field to watch everything. Posts shorter than 10 characters are skipped.
+  </Accordion>
+  <Accordion title="Tickets are created but the content is empty or truncated">
+    Circle Workflow webhook payloads vary in how much of the post body they include. AnswerLoops falls back to the Admin API to fetch the full body — make sure the **Admin API token** you saved is a valid **Admin V2** token and hasn't been revoked.
+  </Accordion>
+  <Accordion title="Nothing is posted back to Circle">
+    That's expected — Circle is ingest-only. Open the ticket, use **Copy draft** on the AI Draft panel, and paste the answer into Circle's own reply box. Marking the draft **Approved** records your decision on the ticket but sends nothing.
+  </Accordion>
+</AccordionGroup>
+
+---
 
 ## Related
 
-- [Discourse integration](/docs/integrations/discourse) — the other forum channel
+- [Discourse integration](/docs/integrations/discourse) — the other forum channel, with automatic replies
 - [Slack integration](/docs/integrations/slack) — the closest existing channel in setup shape
