@@ -59,6 +59,9 @@ Self-hosted: free forever (AGPL-3.0). Hosted (managed SaaS): Standard $49/mo (50
 - Terms of service: https://answerloops.com/terms
 - AnswerLoops vs Chatbase: https://answerloops.com/vs/chatbase
 - AnswerLoops vs Intercom: https://answerloops.com/vs/intercom
+- AnswerLoops vs Plain: https://answerloops.com/vs/plain
+- AnswerLoops vs Pylon: https://answerloops.com/vs/pylon
+- AnswerLoops vs Zendesk AI: https://answerloops.com/vs/zendesk-ai
 <!-- END GENERATED PUBLIC LINKS -->
 - Documentation: https://answerloops.com/docs
 - Source code (self-hosted): https://github.com/answerLoops/answerLoops

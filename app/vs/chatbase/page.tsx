@@ -4,6 +4,7 @@ import { ComparisonPage } from '@/components/marketing/comparison-page'
 export const metadata: Metadata = {
   title: 'AnswerLoops vs Chatbase — AI support platform comparison',
   description: 'How AnswerLoops compares to Chatbase for community and website support: confidence-gated auto-answer, Discord/Slack/GitHub ingest, self-hosting, and bring-your-own-LLM.',
+  alternates: { canonical: '/vs/chatbase' },
 }
 
 const ROWS = [

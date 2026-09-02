@@ -23,10 +23,16 @@ export interface ComparisonPageProps {
   bestFor: { us: string; them: string }
   /** Question-shaped Q&A rendered on the page and emitted as FAQPage JSON-LD. */
   faq?: ComparisonFaqItem[]
+  /**
+   * URL slug, when it can't be derived from `competitor` — a multi-word name
+   * like "Zendesk AI" needs an explicit "zendesk-ai". Defaults to `competitor`
+   * lowercased.
+   */
+  slug?: string
 }
 
-export function ComparisonPage({ competitor, competitorSummary, intro, rows, bestFor, faq }: ComparisonPageProps) {
-  const slug = competitor.toLowerCase()
+export function ComparisonPage({ competitor, competitorSummary, intro, rows, bestFor, faq, slug: slugProp }: ComparisonPageProps) {
+  const slug = slugProp ?? competitor.toLowerCase()
   const url = `https://answerloops.com/vs/${slug}`
 
   // SoftwareApplication + FAQPage give answer engines discrete, liftable
