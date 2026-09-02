@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { Nav, Footer, GITHUB_URL } from '@/components/marketing/chrome'
-import type { NavState } from '@/components/marketing/chrome'
 import { PageSchema } from '@/components/marketing/page-schema'
+import { jsonLdHtml } from '@/lib/marketing/json-ld'
+import { ORGANIZATION_ID } from '@/lib/site-identity'
 
 export interface ComparisonRow {
   feature: string
@@ -9,20 +10,68 @@ export interface ComparisonRow {
   them: string
 }
 
+export interface ComparisonFaqItem {
+  question: string
+  answer: string
+}
+
 export interface ComparisonPageProps {
-  navState: NavState
   competitor: string
   competitorSummary: string
   intro: string
   rows: ComparisonRow[]
   bestFor: { us: string; them: string }
+  /** Question-shaped Q&A rendered on the page and emitted as FAQPage JSON-LD. */
+  faq?: ComparisonFaqItem[]
 }
 
-export function ComparisonPage({ navState, competitor, competitorSummary, intro, rows, bestFor }: ComparisonPageProps) {
+export function ComparisonPage({ competitor, competitorSummary, intro, rows, bestFor, faq }: ComparisonPageProps) {
+  const slug = competitor.toLowerCase()
+  const url = `https://answerloops.com/vs/${slug}`
+
+  // SoftwareApplication + FAQPage give answer engines discrete, liftable
+  // structures for exactly the "X vs Y" / "X alternative" prompts these pages
+  // target. Built entirely from server-controlled strings, never user input;
+  // jsonLdHtml escapes `<` so the payload can't break out of the script tag.
+  const comparisonJsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'SoftwareApplication',
+        '@id': `${url}#software`,
+        name: 'AnswerLoops',
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Web, Docker (self-hosted)',
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+          description: 'Self-hosted under AGPL-3.0; hosted plans from $49/mo.',
+        },
+        publisher: { '@id': ORGANIZATION_ID },
+      },
+      ...(faq && faq.length > 0
+        ? [
+            {
+              '@type': 'FAQPage',
+              '@id': `${url}#faq`,
+              mainEntity: faq.map((item) => ({
+                '@type': 'Question',
+                name: item.question,
+                acceptedAnswer: { '@type': 'Answer', text: item.answer },
+              })),
+            },
+          ]
+        : []),
+    ],
+  }
+
   return (
     <div className="min-h-screen bg-white">
-      <PageSchema name={`AnswerLoops vs ${competitor}`} description={intro} path={`/vs/${competitor.toLowerCase()}`} breadcrumbs={[{ name: 'Comparisons', path: '/pricing' }]} />
-      <Nav state={navState} />
+      <PageSchema name={`AnswerLoops vs ${competitor}`} description={intro} path={`/vs/${slug}`} breadcrumbs={[{ name: 'Comparisons', path: '/pricing' }]} />
+      {/* nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(comparisonJsonLd) }} />
+      <Nav />
 
       <section className="bg-ink-950 py-20">
         <div className="mx-auto max-w-4xl px-6 text-center">
@@ -73,6 +122,20 @@ export function ComparisonPage({ navState, competitor, competitorSummary, intro,
               <p className="text-sm text-gray-600 leading-relaxed">{bestFor.them}</p>
             </div>
           </div>
+
+          {faq && faq.length > 0 && (
+            <div className="mt-14">
+              <h2 className="text-xl font-bold text-gray-900">Frequently asked questions</h2>
+              <dl className="mt-6 divide-y divide-gray-100 border-t border-gray-100">
+                {faq.map((item) => (
+                  <div key={item.question} className="py-5">
+                    <dt className="text-sm font-semibold text-gray-900">{item.question}</dt>
+                    <dd className="mt-2 text-sm text-gray-600 leading-relaxed">{item.answer}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
 
           <div className="mt-14 rounded-2xl border-2 border-gray-200 bg-gray-50 p-8 text-center">
             <h2 className="text-xl font-bold text-gray-900">Try AnswerLoops free</h2>

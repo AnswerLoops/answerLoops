@@ -1,9 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { Nav, Footer } from '@/components/marketing/chrome'
-import { resolveNavState } from '@/lib/marketing/nav-state'
-
-export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — AnswerLoops',
@@ -21,11 +18,10 @@ function Section({ id, title, children }: { id: string; title: string; children:
   )
 }
 
-export default async function PrivacyPolicyPage() {
-  const navState = await resolveNavState()
+export default function PrivacyPolicyPage() {
   return (
     <div className="min-h-screen bg-[#f5f8fd]">
-      <Nav state={navState} />
+      <Nav />
 
       <section className="bg-[#030611] py-16 sm:py-20">
         <div className="mx-auto max-w-3xl px-5 sm:px-8">

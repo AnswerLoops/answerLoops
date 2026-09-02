@@ -25,21 +25,14 @@ export const metadata: Metadata = {
     title: 'AnswerLoops — Support that lives in your community',
     description:
       'Answer repeat questions in the channel where your community already asks — with confidence-gated automation. Open source, self-hosted, and MCP/API-ready.',
-    images: [
-      {
-        url: '/logo.png',
-        width: 900,
-        height: 900,
-        alt: 'AnswerLoops logo',
-      },
-    ],
+    // Social card image comes from app/opengraph-image.tsx (1200×630) via the
+    // Next file convention — it fills both openGraph and twitter automatically.
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'AnswerLoops — Support that lives in your community',
     description:
       'Answer repeat questions in the channel where your community already asks — with confidence-gated automation. Open source, self-hosted, and MCP/API-ready.',
-    images: ['/logo.png'],
   },
   icons: {
     icon: [

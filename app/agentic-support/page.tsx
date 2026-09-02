@@ -1,11 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Footer, Nav } from '@/components/marketing/chrome'
-import { resolveNavState } from '@/lib/marketing/nav-state'
 import { PageSchema } from '@/components/marketing/page-schema'
 import { MARKETED_CHANNEL_NAMES } from '@/lib/marketing/channels'
-
-export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'What Is an Agentic Support Platform? — AnswerLoops',
@@ -51,13 +48,11 @@ const CAPABILITIES = [
   },
 ]
 
-export default async function AgenticSupportPage() {
-  const navState = await resolveNavState()
-
+export default function AgenticSupportPage() {
   return (
     <div className="min-h-screen bg-[#f5f8fd]">
       <PageSchema name="What is an agentic support platform?" description="Agentic support that lives in your community, across every community channel." path="/agentic-support" breadcrumbs={[{ name: 'Product', path: '/' }]} />
-      <Nav state={navState} />
+      <Nav />
 
       <main>
         <section className="relative isolate overflow-hidden bg-[#030611] py-24 sm:py-32">

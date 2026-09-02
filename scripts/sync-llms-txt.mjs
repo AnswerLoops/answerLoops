@@ -55,9 +55,14 @@ const INTEGRATION_LABELS = {
 }
 
 function extractStaticRoutes(sitemapSource) {
-  const match = sitemapSource.match(/const STATIC_ROUTES = \[([\s\S]*?)\]/)
+  const match = sitemapSource.match(/const STATIC_ROUTES[^=]*=\s*\[([\s\S]*?)\n\]/)
   if (!match) throw new Error('Could not find STATIC_ROUTES in app/sitemap.ts')
-  return [...match[1].matchAll(/'([^']*)'/g)].map(([, route]) => route)
+  const block = match[1]
+  // Current shape is an array of `{ path: '...', priority, changeFrequency }`
+  // objects; fall back to the older bare-string-array shape.
+  const pathEntries = [...block.matchAll(/path:\s*'([^']*)'/g)].map(([, route]) => route)
+  if (pathEntries.length > 0) return pathEntries
+  return [...block.matchAll(/'([^']*)'/g)].map(([, route]) => route)
 }
 
 function generatedBlock(source, start, end, lines) {

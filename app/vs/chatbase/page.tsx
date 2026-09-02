@@ -1,8 +1,5 @@
 import type { Metadata } from 'next'
 import { ComparisonPage } from '@/components/marketing/comparison-page'
-import { resolveNavState } from '@/lib/marketing/nav-state'
-
-export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'AnswerLoops vs Chatbase — AI support platform comparison',
@@ -19,11 +16,9 @@ const ROWS = [
   { feature: 'Knowledge base source', us: 'Auto-promotes resolved tickets, plus doc/URL ingest', them: 'Manual doc/URL/file upload' },
 ]
 
-export default async function VsChatbasePage() {
-  const navState = await resolveNavState()
+export default function VsChatbasePage() {
   return (
     <ComparisonPage
-      navState={navState}
       competitor="Chatbase"
       competitorSummary="a widely-used tool for adding an AI chat widget to a website, trained on your uploaded docs and URLs."
       intro="Chatbase is built around one surface: a chatbot on your website. AnswerLoops is built around the ticket — Discord, Slack, Discourse, Circle, GitHub, email, and your website all feed the same confidence-gated triage pipeline, with resolved answers feeding back into a self-improving knowledge base."
@@ -32,6 +27,28 @@ export default async function VsChatbasePage() {
         us: 'your support questions come in across Discord, Slack, or GitHub as much as (or more than) your website, you want a ticket/SLA layer around every question, or you need to self-host and control your own AI costs.',
         them: 'your only support surface is a website chat widget and you want the fastest path to embedding one.',
       }}
+      faq={[
+        {
+          question: 'Is there an open-source alternative to Chatbase?',
+          answer:
+            'Yes. AnswerLoops is AGPL-3.0 licensed and self-hostable with docker compose, so your data never leaves your servers. Chatbase is hosted SaaS only.',
+        },
+        {
+          question: 'What does AnswerLoops do that a website chatbot does not?',
+          answer:
+            'AnswerLoops answers questions where communities actually ask them — Discord, Slack, Discourse and Circle forums, GitHub, Telegram, and email — not just a website widget. Every question becomes a classified, prioritized ticket with SLA tracking, and a second AI pass grades each answer before it posts automatically.',
+        },
+        {
+          question: 'Can I bring my own LLM?',
+          answer:
+            'Yes. AnswerLoops lets each workspace use its own key for OpenAI, Anthropic, Google Gemini, Groq, Mistral, or any OpenAI-compatible endpoint, so you control model choice and cost. Chatbase uses platform-hosted models.',
+        },
+        {
+          question: 'When is Chatbase the better choice?',
+          answer:
+            'If your only support surface is a website chat widget and you want the fastest path to embedding one, Chatbase is purpose-built for that.',
+        },
+      ]}
     />
   )
 }

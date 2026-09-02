@@ -1,11 +1,19 @@
 import Link from 'next/link'
 import { LogoMark } from '@/components/logo'
 import { MobileDrawer } from '@/components/ui/mobile-drawer'
+import { NavCta } from '@/components/marketing/nav-cta'
 
 // Re-exported so the many marketing pages that already import it from here keep
 // working, while lib/site.ts stays the single definition.
 export { GITHUB_URL } from '@/lib/site'
 import { GITHUB_URL } from '@/lib/site'
+
+// The CTA state type + mapping now live in a component-free module so the
+// client CTA island and this server shell share them without an import cycle.
+// Re-exported here because many marketing pages import them from chrome.
+export { navState } from '@/components/marketing/nav-shared'
+export type { NavState } from '@/components/marketing/nav-shared'
+import type { NavState } from '@/components/marketing/nav-shared'
 
 export const GithubIcon = ({ className = 'h-4 w-4' }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -25,70 +33,23 @@ export function NavWordmark() {
   )
 }
 
-// Nav-only sizing: +5% on top of the site-wide +5% (app/globals.css html
-// font-size: 105%), so the nav reads ~10% larger than the original baseline
-// while the rest of the site stays at the single +5% bump. Kept local to
-// Nav rather than added to the shared NavWordmark, which the Footer also
-// uses — Footer wasn't asked for and shouldn't inherit this.
-// Points marketing-site CTAs at the dedicated app subdomain when one's
-// configured (cloud); self-hosted deployments never set this and keep the
-// relative link, since there's only ever one domain to begin with.
-const CTA_CLASS =
-  'flex items-center gap-1.5 whitespace-nowrap rounded-full border border-blue-300/20 bg-gradient-to-r from-blue-600 to-cyan-500 px-3 py-2 text-[0.7875rem] font-semibold !text-white shadow-lg shadow-blue-600/20 transition hover:brightness-110 sm:px-4'
-
-// The quieter half of the anonymous pair. A returning user and a new one want
-// opposite things from the same header, and one button cannot serve both: a
-// lone "Create account" makes the returning user hunt for a way in, while a
-// lone "Sign in" hides the trial from everyone else. Two buttons, weighted —
-// filled for the action the business wants, outlined for the one a returning
-// user is already looking for.
-//
-// Hidden below sm for the same reason the header nav is: the drawer carries
-// both, and three controls do not fit beside the wordmark on a narrow phone.
-const SECONDARY_CTA_CLASS =
-  'hidden items-center gap-1.5 whitespace-nowrap rounded-full border border-white/30 py-2 text-[0.7875rem] font-semibold text-white/80 transition hover:border-white/50 hover:text-white sm:flex sm:px-4'
-
-// Returning users land on the sign-in copy rather than "Create your account".
-// Google is the only provider, so both modes run the same OAuth flow — what
-// differs is what the page claims to be, and telling someone with an account
-// to create one invites them to wonder whether they are making a second.
-const SIGNIN_HREF = '/login?mode=signin'
-
-const DASHBOARD_HREF = process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard` : '/dashboard'
-
 // Deep link to the plan cards, not to /pricing itself: a header button whose
 // only effect is re-rendering the page the visitor is already on reads as
 // broken, and choosing a plan is the action they are actually here for.
 export const PLANS_HREF = '/pricing#plans'
 
-// Every "start" action in the marketing site lands here, and /checkout is where
-// authenticating leaves you. Choosing a plan is not the commitment it looks
-// like — the trial is free and the plan is switchable on that same screen — so
-// making it a gate before signing up spends the visitor's attention on the
-// cheapest decision they will make. Sign in first, choose on the way through.
-const START_HREF = '/login'
-
-// A signed-in visitor with no plan is already past auth, so the same journey
-// resumes one step further along: straight to the combined plan-and-card page.
-const CHECKOUT_HREF = '/checkout'
-
 /**
- * What the header CTA should offer.
+ * The marketing header.
  *
- * Signing in and being able to use the product are different things now that
- * access is scoped to a subscription. A header that knows only the first sends
- * someone who has signed in but not chosen a plan to a dashboard the access
- * gate immediately bounces back to this page — a loop with no indication of
- * what went wrong or what to do about it.
+ * `state` is optional. When a caller resolves the session server-side
+ * (/pricing, which needs it for its own resume logic) it's passed through and
+ * the CTA renders that state with no client round-trip. When it's omitted the
+ * page is static and the `NavCta` island fills in the personalized CTA after
+ * hydration via /api/nav-state — so crawlers and first paint never pay for a
+ * per-request session read, which is what used to force every marketing page
+ * to `dynamic = 'force-dynamic'` and left Cloudflare nothing to cache.
  */
-export type NavState = 'anonymous' | 'no-plan' | 'active'
-
-export function navState(loggedIn: boolean, hasAccess: boolean): NavState {
-  if (!loggedIn) return 'anonymous'
-  return hasAccess ? 'active' : 'no-plan'
-}
-
-export function Nav({ state }: { state: NavState }) {
+export function Nav({ state }: { state?: NavState }) {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 sm:px-8">
@@ -119,44 +80,13 @@ export function Nav({ state }: { state: NavState }) {
           </nav>
         </div>
         <div className="flex items-center gap-3">
-          {state === 'active' && (
-            <Link href={DASHBOARD_HREF} className={CTA_CLASS}>
-              <span className="!text-white" style={{ color: '#fff', WebkitTextFillColor: '#fff' }}>Go to dashboard →</span>
-            </Link>
-          )}
-          {/* Signed in without a plan. Pointing at the dashboard here is what
-              produced a loop: the gate sends them back to /pricing, and the
-              header offers the same door again.
-
-              The label names the one thing left to do, and the link lands on
-              the plan cards rather than the top of the page — so the button
-              still moves them forward when they are already reading /pricing,
-              which is exactly where the gate puts them. */}
-          {state === 'no-plan' && (
-            <Link href={CHECKOUT_HREF} className={CTA_CLASS}>
-              <span className="!text-white" style={{ color: '#fff', WebkitTextFillColor: '#fff' }}>Choose a plan →</span>
-            </Link>
-          )}
-          {/* Anonymous covers both a brand-new visitor and a returning one whose
-              session expired, and there is no way to tell them apart before
-              they authenticate — so serve both rather than guessing. The trial
-              is the primary action and keeps the filled treatment; sign-in sits
-              beside it, quieter, where a returning user expects to find it.
-
-              Both point at auth. The plan is chosen after signing in, on the
-              same screen that takes the card, because a free trial makes the
-              plan a small decision and putting it first spends attention
-              before anyone is invested. */}
-          {state === 'anonymous' && (
-            <>
-              <Link href={SIGNIN_HREF} className={SECONDARY_CTA_CLASS}>
-                Sign in
-              </Link>
-              <Link href={START_HREF} className={CTA_CLASS}>
-                <span className="!text-white" style={{ color: '#fff', WebkitTextFillColor: '#fff' }}>Start free trial</span>
-              </Link>
-            </>
-          )}
+          {/* The CTA is a client island: on a static marketing page it paints
+              the anonymous pair, then swaps to the dashboard / choose-a-plan
+              link after asking /api/nav-state. On /pricing, `state` is passed
+              and it renders that verbatim with no round-trip. The loop this
+              guards against — offering a no-plan visitor the dashboard the
+              access gate immediately bounces — lives in NavCta now. */}
+          <NavCta variant="header" initialState={state} />
           <MobileDrawer triggerLabel="Open navigation" triggerClassName="md:hidden">
             <nav className="flex flex-col p-4 gap-1">
               <Link href="/#features" className="rounded-lg px-3 py-2.5 text-[0.91875rem] font-medium text-ink-600 hover:bg-gray-100">Features</Link>
@@ -166,17 +96,7 @@ export function Nav({ state }: { state: NavState }) {
               {/* Both halves of the anonymous pair, since the header hides them
                   below sm — without these the drawer is the only navigation on
                   a phone and offers no way to sign in at all. */}
-              {state === 'anonymous' && (
-                <>
-                  <Link href={SIGNIN_HREF} className="rounded-lg px-3 py-3 text-[0.91875rem] font-medium text-ink-600 hover:bg-gray-100">Sign in</Link>
-                  {/* Filled, like its counterpart in the header. The drawer is
-                      the only navigation a phone gets, so the weighting between
-                      these two has to survive the move — a blue text link next
-                      to a grey one reads as two equal options rather than a
-                      primary action and its alternative. */}
-                  <Link href={START_HREF} className="mt-1 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 px-3 py-3 text-center text-[0.91875rem] font-semibold !text-white shadow-sm"><span style={{ color: '#fff', WebkitTextFillColor: '#fff' }}>Start free trial</span></Link>
-                </>
-              )}
+              <NavCta variant="drawer" initialState={state} />
             </nav>
           </MobileDrawer>
         </div>
