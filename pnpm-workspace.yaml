@@ -53,3 +53,4 @@ overrides:
   esbuild: '>=0.24.3'   # GHSA-67mh-4wv8-2f99 (dev server accepts requests from any origin) — reached via drizzle-kit>@esbuild-kit
   hono: '>=4.12.34'   # GHSA-8j4g-w8fx-2239, GHSA-f23p-vx2j-j53r, GHSA-54fx-42gc-7vw4, GHSA-79qm-7rj5-m7r9 — reached via @mastra/core>@modelcontextprotocol/sdk
   '@ai-sdk/provider-utils': '>=3.0.31'   # GHSA-866g-f22w-33x8 (uncontrolled resource consumption) — reached via @mastra/core, which npm-aliases this exact package to a pinned 3.0.30; 3.0.31 is the newest 3.0.x published (no 3.0.98 exists despite the advisory's stated patched range)
+  fast-uri: '>=3.1.6 <4.0.0'   # four advisories (2026-75899/75931/75975/76172) fixed in 3.1.6 — transitive via @mastra/core / @modelcontextprotocol/sdk > ajv@8.20.0, which declares fast-uri@^3.0.6; capped below 4.x (a major) per the open-range lesson above
