@@ -63,12 +63,20 @@ describe('NotionKBSection', () => {
     vi.clearAllMocks()
   })
 
-  it('renders nothing when /api/notion reports no connection', async () => {
-    mockFetch.mockImplementation(routeFetch({ conn: null }))
+  it('renders nothing while the connection is still loading', () => {
+    mockFetch.mockImplementation(() => new Promise(() => {})) // never resolves
     const { container } = render(<NotionKBSection onSynced={vi.fn()} />)
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  it('shows a "Connect Notion" prompt when /api/notion reports no connection', async () => {
+    mockFetch.mockImplementation(routeFetch({ conn: null }))
+    render(<NotionKBSection onSynced={vi.fn()} />)
 
     await waitFor(() => expect(mockFetch).toHaveBeenCalledWith('/api/notion'))
-    await waitFor(() => expect(container).toBeEmptyDOMElement())
+    await waitFor(() => expect(screen.getByText('Connect Notion →')).toBeTruthy())
+    // no sync/publish controls until connected
+    expect(screen.queryByRole('button', { name: /sync now/i })).toBeNull()
   })
 
   it('shows "Not visible to the website widget" and a "Publish to widget" button for an unpublished notion source', async () => {

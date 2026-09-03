@@ -291,7 +291,19 @@ export function NotionKBSection({ onSynced }: { onSynced: () => void }) {
     }
   }
 
-  if (connected === null || connected === false) return null
+  if (connected === null) return null // still loading
+
+  if (connected === false) {
+    return (
+      <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4">
+        <h2 className="text-sm font-semibold text-gray-900">Notion workspace</h2>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Keep your support docs in Notion? Connect a workspace and sync its pages and databases into the knowledge base.{' '}
+          <Link href="/settings?tab=notion" className="text-brand-600 hover:underline">Connect Notion →</Link>
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
