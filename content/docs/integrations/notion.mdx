@@ -1,0 +1,69 @@
+---
+title: Notion
+description: Connect a Notion workspace and sync its pages and databases into the Knowledge Base so the AI can answer from docs your team keeps in Notion.
+---
+
+## Overview
+
+Notion is a **Knowledge Base source**, not a support channel — it doesn't bring in tickets, it feeds the content the AI answers from. Connect a workspace, and AnswerLoops pulls every page and database your Notion integration can see into the KB, alongside URL crawls, file uploads, GitHub repo sync, and resolved tickets.
+
+Two things make Notion different from the other KB sources:
+
+- **You control scope by sharing.** There's no page picker in AnswerLoops. A Notion integration only sees pages that have been explicitly shared with it, so you decide what syncs by sharing (or unsharing) pages in Notion.
+- **Notion imports unpublished.** Its content is searchable from the dashboard immediately, but it is **not** used to answer customer questions or served to the website widget until you click **Publish to widget** on the Knowledge Base page. Every other source publishes on import; Notion is the exception because workspace docs are often internal drafts. Your publish choice is kept across re-syncs.
+
+## Prerequisites
+
+- A Notion **internal integration** created in the workspace you want to sync
+- `ENCRYPTION_KEY` set in your environment (the integration token is stored encrypted at rest)
+
+There is no environment variable to configure for Notion itself — it is set up per workspace in the Settings UI.
+
+## 1. Create a Notion internal integration
+
+In Notion, go to **Settings → Connections → Develop or manage integrations → New integration**. Give it a name (e.g. `AnswerLoops`), select the workspace, and create it. Copy the **Internal Integration Secret** — it starts with `ntn_` or `secret_`.
+
+The integration only needs read access. It does not need any of the "capabilities" checkboxes beyond the default read content permission.
+
+## 2. Share the pages you want synced
+
+For each Notion page or database you want in the KB, open it, click **•••  → Connections**, and add your integration. Sharing a page also shares its subpages. AnswerLoops syncs everything the integration can see — nothing more.
+
+## 3. Connect in AnswerLoops
+
+Go to **Settings → Notion**, paste the Internal Integration Secret, and click **Connect**. The card shows the connected workspace name once it validates the token.
+
+## 4. Sync
+
+Go to the **Knowledge Base** page. The Notion panel there has a **Sync now** button. Each sync walks every shared page and database, converts the content to text, splits it into chunks, and embeds it — the same pipeline every other KB source uses. Re-syncing **replaces** the previous Notion content (it does not merge), so removing a page from the integration's access and re-syncing removes it from the KB.
+
+Sync is manual. Notion has no content-change webhooks, so there is no automatic re-sync yet.
+
+## 5. Publish to the widget
+
+Right after a sync, the Notion source shows as **Unpublished** in the Sources list — it's searchable on the dashboard but held back from customer-facing answers and the website widget. When you're happy with what imported, click **Publish to widget** on the Notion panel. **Unpublish** reverses it. Re-syncing preserves whichever state you last chose.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Connect fails — 'Notion rejected that token'">
+    The token was truncated on copy, or the integration was deleted. In Notion, go back to **Settings → Connections → Develop or manage integrations**, open your integration, and copy the **Internal Integration Secret** in full (it starts with `ntn_` or `secret_`).
+  </Accordion>
+  <Accordion title="Sync completes but imports 0 chunks">
+    The integration can't see any pages. In Notion, open each page you want synced and add the integration under **•••  → Connections** — being an admin of the workspace is not enough; the integration itself must be added to each page (or a parent of it). Also confirm an AI provider is configured in **Settings → AI Model**, since embedding requires an API key.
+  </Accordion>
+  <Accordion title="Notion content isn't answering customer questions">
+    Expected until you publish it. Go to the **Knowledge Base** page → Notion panel → **Publish to widget**. Until then the content only shows in dashboard search.
+  </Accordion>
+  <Accordion title="A synced page has garbled or missing formatting">
+    The block-to-text conversion is pragmatic, not pixel-perfect: nested numbered lists, multi-column layouts, synced blocks and equations don't render exactly, and images, files, and embeds are dropped (their captions are kept). Very deep pages are truncated. The chunker only needs readable prose, so this is usually fine — but if a page relies on a table or diagram to make sense, add a text summary to it in Notion.
+  </Accordion>
+  <Accordion title="'Knowledge base is full' after a Notion sync">
+    There's a hard cap of 2000 KB articles per workspace, shared across all sources. A large Notion workspace can consume the remaining budget; the sync reports what it skipped. Delete unused sources, or narrow what's shared with the Notion integration, and re-sync.
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+- [Knowledge Base](/docs/product/knowledge-base) — how the KB works, all four import methods, and publishing
+- [GitHub integration](/docs/integrations/github) — the other repo/docs KB source

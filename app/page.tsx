@@ -375,7 +375,7 @@ function Features() {
     },
     {
       title: 'One source of truth',
-      body: 'The same living knowledge base powers community channels, your website widget, and MCP-compatible agents.',
+      body: 'Import what you already have — a docs site, a GitHub repo, a Notion workspace, PDFs — and let resolved tickets top it up. The same living knowledge base powers community channels, your website widget, and MCP-compatible agents.',
       color: 'bg-cyan-500',
     },
   ]
@@ -538,7 +538,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What if I don’t have a knowledge base yet?',
-    a: 'You don’t need one to start. Connect wherever your community already asks questions — email, Discord, Slack, a Discourse or Circle forum, GitHub, Telegram, your site widget — and every incoming question becomes a ticket. Answer it once, and that answer becomes a KB article. No docs to write upfront: the knowledge base builds itself out of the real questions your community actually asks, and it gets sharper with every reply.',
+    a: 'You don’t need one to start. Connect wherever your community already asks questions — email, Discord, Slack, a Discourse or Circle forum, GitHub, Telegram, your site widget — and every incoming question becomes a ticket. Answer it once, and that answer becomes a KB article. If you do have docs, import them: crawl a docs site, sync a GitHub repo or a Notion workspace, or upload PDFs. Either way the knowledge base gets sharper with every reply.',
   },
 ] as const
 
