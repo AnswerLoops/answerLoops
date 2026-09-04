@@ -86,7 +86,32 @@ jobs:
       # GHSA-5p2g-fcmc-qvqq on image-size via @mastra/memory, and
       # GHSA-866g-f22w-33x8 on @ai-sdk/provider-utils via @mastra/core, both
       # advisories with a stated patched version that isn't actually published).
-      - run: pnpm audit --audit-level=high --ignore-unfixable
+      #
+      # `pnpm audit` reaches out to registry.npmjs.org's advisory endpoint and
+      # exits 1 on *any* failure — a real high/critical finding OR the endpoint
+      # timing out. A registry outage would otherwise block every PR's Required
+      # check with nothing wrong in the tree. This retries, and tolerates only
+      # the network-error case (Trivy's offline scan is the real dependency
+      # gate); a genuine advisory still fails the job on the first attempt.
+      - name: pnpm audit
+        run: |
+          audit='pnpm audit --audit-level=high --ignore-unfixable'  # disclosure-ok: pnpm CLI flag, same as the step this replaces
+          for attempt in 1 2 3; do
+            if out=$($audit 2>&1); then
+              echo "$out"
+              exit 0
+            fi
+            echo "$out"
+            if echo "$out" | grep -qiE 'advisories/bulk error|TimeoutError|operation was aborted|ECONNRESET|ENOTFOUND|EAI_AGAIN|socket hang up|network'; then
+              echo "::warning::pnpm audit attempt $attempt could not reach the npm advisory registry; retrying"
+              sleep 20
+              continue
+            fi
+            echo "::error::pnpm audit exited non-zero for a reason other than an unreachable registry"
+            exit 1
+          done
+          echo "::warning::pnpm audit could not reach the npm advisory registry after 3 attempts — relying on the Trivy dependency scan for this run"
+          exit 0
 
   semgrep:
     name: Semgrep SAST
