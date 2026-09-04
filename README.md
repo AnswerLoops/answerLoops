@@ -41,41 +41,9 @@ Answers don't disappear when a ticket closes. A good one can go back into the kn
 
 ## How the loop works
 
-```text
- Discord · Slack · Discourse · Circle · GitHub · Telegram · Email · Web widget
-                                  │
-                                  ▼
-                    ┌─────────────────────────┐
-                    │  Validate + normalize   │
-                    │  Deduplicate + triage   │
-                    │  Create ticket + SLA    │
-                    └────────────┬────────────┘
-                                 │
-                                 ▼
-            ┌────────────────────────────────────────┐
-            │ Search KB articles, docs, code, and    │
-            │ previously resolved conversations      │
-            └───────────────────┬────────────────────┘
-                                │
-                         draft grounded answer
-                                │
-                                ▼
-                    ┌─────────────────────────┐
-                    │ Independent AI review   │
-                    │ Confidence + evidence   │
-                    └───────────┬─────────────┘
-                       above threshold?
-                         yes /       \ no
-                            ▼         ▼
-                    post in thread   human queue
-                            │         with draft
-                            └────┬────┘
-                                 ▼
-                       feedback + resolution
-                                 │
-                         promote useful answers
-                          back into the KB
-```
+<div align="center">
+  <img src="./.github/readme/workflow.svg" alt="AnswerLoops workflow: community channels flow through one ticket model, grounded retrieval, confidence review, and automatic or human resolution before improving reusable knowledge" width="100%" />
+</div>
 
 The pipeline lives in [`lib/ingest/pipeline.ts`](./lib/ingest/pipeline.ts). Each channel adapter only handles its own auth, message parsing, and reply delivery. Everything after that — ticket creation, retrieval, drafting, review, analytics, escalation — is the same code regardless of where the question came from.
 

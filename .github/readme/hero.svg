@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
   <title id="title">AnswerLoops — open-source support infrastructure</title>
-  <desc id="desc">A dark blue developer-focused banner showing the AnswerLoops confidence-gated support loop and a Docker Compose quickstart.</desc>
+  <desc id="desc">A dark blue banner showing AnswerLoops as a multi-channel, confidence-gated support system with a self-hosted quickstart.</desc>
 
   <defs>
     <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
@@ -43,9 +43,9 @@
     <text x="34" y="22" fill="#bfdbfe" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="650" letter-spacing="1.25">OPEN SOURCE · AGPL</text>
   </g>
 
-  <text x="64" y="155" fill="#93c5fd" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="2.25">SUPPORT INFRASTRUCTURE FOR DEVELOPER COMMUNITIES</text>
-  <text x="64" y="221" fill="#ffffff" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="58" font-weight="700" letter-spacing="-2.8">Support runs itself.</text>
-  <text x="64" y="286" fill="url(#brand)" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="58" font-weight="700" letter-spacing="-2.8">Your team stays in control.</text>
+  <text x="64" y="155" fill="#93c5fd" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="700" letter-spacing="2.25">ONE SUPPORT LOOP FOR EVERY COMMUNITY CHANNEL</text>
+  <text x="64" y="221" fill="#ffffff" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="58" font-weight="700" letter-spacing="-2.8">Every question has a path.</text>
+  <text x="64" y="286" fill="url(#brand)" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="58" font-weight="700" letter-spacing="-2.8">Every answer gets better.</text>
   <text x="66" y="334" fill="#94a3b8" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="17">Grounded answers. Independent review. Human escalation.</text>
 
   <g transform="translate(790 130)">
@@ -74,7 +74,7 @@
     <rect width="238" height="66" rx="14" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.08"/>
     <circle cx="27" cy="25" r="4" fill="#818cf8"/>
     <text x="41" y="29" fill="#cbd5e1" font-size="11" font-weight="700" letter-spacing="1.4">01 · INGEST</text>
-    <text x="22" y="51" fill="#64748b" font-size="11">Seven channels, one pipeline</text>
+    <text x="22" y="51" fill="#64748b" font-size="11">Every channel, one pipeline</text>
 
     <path d="M314 33H334" stroke="#60a5fa" stroke-opacity="0.5"/>
     <path d="m330 29 5 4-5 4" fill="none" stroke="#60a5fa" stroke-opacity="0.5"/>
@@ -82,7 +82,7 @@
     <rect x="346" width="238" height="66" rx="14" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.08"/>
     <circle cx="373" cy="25" r="4" fill="#60a5fa"/>
     <text x="387" y="29" fill="#cbd5e1" font-size="11" font-weight="700" letter-spacing="1.4">02 · GROUND</text>
-    <text x="368" y="51" fill="#64748b" font-size="11">Docs, code, and resolved tickets</text>
+    <text x="368" y="51" fill="#64748b" font-size="11">Docs, code, and past answers</text>
 
     <path d="M660 33H680" stroke="#67e8f9" stroke-opacity="0.5"/>
     <path d="m676 29 5 4-5 4" fill="none" stroke="#67e8f9" stroke-opacity="0.5"/>

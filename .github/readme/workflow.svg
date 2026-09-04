@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="720" viewBox="0 0 1400 720" role="img" aria-labelledby="title desc">
+  <title id="title">AnswerLoops multi-channel support workflow</title>
+  <desc id="desc">Questions from Discord, Slack, GitHub, forums, email, and web chat flow into one ticket model, grounded retrieval, and a confidence gate that chooses automatic reply or human review before improving reusable knowledge.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#030611"/><stop offset=".55" stop-color="#071126"/><stop offset="1" stop-color="#081b28"/></linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#60a5fa"/><stop offset=".5" stop-color="#67e8f9"/><stop offset="1" stop-color="#818cf8"/></linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#34d399"/><stop offset="1" stop-color="#67e8f9"/></linearGradient>
+    <radialGradient id="glow" cx="50%" cy="0%" r="75%"><stop stop-color="#2563eb" stop-opacity=".3"/><stop offset="1" stop-color="#2563eb" stop-opacity="0"/></radialGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#94a3b8" stroke-opacity=".055"/></pattern>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000" flood-opacity=".28"/></filter>
+    <filter id="glowLine" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+
+  <rect width="1400" height="720" rx="28" fill="url(#bg)"/>
+  <rect width="1400" height="720" rx="28" fill="url(#grid)"/>
+  <rect width="1400" height="720" rx="28" fill="url(#glow)"/>
+  <rect x="1" y="1" width="1398" height="718" rx="27" fill="none" stroke="#fff" stroke-opacity=".1"/>
+
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">
+    <g transform="translate(64 52)">
+      <path d="M7 24C12 6 23 5 26 19c2 12-2 25-10 25-9 0-10-14-1-18 10-5 29 1 26 12" fill="none" stroke="url(#brand)" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="20" cy="32" r="2.7" fill="#67e8f9"/>
+      <text x="55" y="35" fill="#f8fafc" font-size="27" font-weight="650" letter-spacing="-.6">answer<tspan fill="#60a5fa">Loops</tspan></text>
+    </g>
+    <text x="64" y="151" fill="#93c5fd" font-size="13" font-weight="700" letter-spacing="2.3">ONE SUPPORT LOOP FOR EVERY COMMUNITY CHANNEL</text>
+    <text x="64" y="210" fill="#fff" font-size="53" font-weight="720" letter-spacing="-2.5">Every question has a path.</text>
+    <text x="64" y="268" fill="url(#brand)" font-size="53" font-weight="720" letter-spacing="-2.5">Every answer gets better.</text>
+    <text x="66" y="312" fill="#94a3b8" font-size="17">Grounded answers, independent review, and human escalation—right where users ask.</text>
+
+    <g transform="translate(64 360)" filter="url(#shadow)">
+      <rect width="1272" height="276" rx="22" fill="#030712" fill-opacity=".68" stroke="#fff" stroke-opacity=".1"/>
+      <rect x="24" y="24" width="362" height="228" rx="16" fill="#0b162b" stroke="#fff" stroke-opacity=".08"/>
+      <text x="50" y="57" fill="#93c5fd" font-size="11" font-weight="700" letter-spacing="1.6">COMMUNITY CHANNELS</text>
+      <g font-size="13" font-weight="600">
+        <rect x="50" y="78" width="145" height="43" rx="11" fill="#111d35" stroke="#60a5fa" stroke-opacity=".22"/><circle cx="71" cy="99" r="9" fill="#5865f2"/><text x="90" y="104" fill="#e2e8f0">Discord</text>
+        <rect x="211" y="78" width="145" height="43" rx="11" fill="#111d35" stroke="#60a5fa" stroke-opacity=".22"/><circle cx="232" cy="99" r="9" fill="#36c5f0"/><text x="251" y="104" fill="#e2e8f0">Slack</text>
+        <rect x="50" y="135" width="145" height="43" rx="11" fill="#111d35" stroke="#60a5fa" stroke-opacity=".22"/><circle cx="71" cy="156" r="9" fill="#24292f"/><text x="90" y="161" fill="#e2e8f0">GitHub</text>
+        <rect x="211" y="135" width="145" height="43" rx="11" fill="#111d35" stroke="#60a5fa" stroke-opacity=".22"/><circle cx="232" cy="156" r="9" fill="#7c3aed"/><text x="251" y="161" fill="#e2e8f0">Forums</text>
+      </g>
+      <text x="50" y="214" fill="#64748b" font-size="12">Email · Telegram · web chat</text>
+      <text x="50" y="235" fill="#475569" font-size="11">source context stays attached</text>
+
+      <path d="M405 138H455" stroke="url(#brand)" stroke-width="2" stroke-linecap="round" filter="url(#glowLine)"/><path d="m448 131 9 7-9 7" fill="none" stroke="#67e8f9" stroke-width="2"/>
+
+      <rect x="475" y="54" width="270" height="168" rx="16" fill="#0d172b" stroke="#818cf8" stroke-opacity=".3"/>
+      <rect x="475" y="54" width="4" height="168" rx="2" fill="url(#brand)"/>
+      <text x="503" y="86" fill="#818cf8" font-size="11" font-weight="700" letter-spacing="1.5">THE SHARED PIPELINE</text>
+      <text x="503" y="120" fill="#f8fafc" font-size="20" font-weight="700">One ticket model</text>
+      <text x="503" y="147" fill="#94a3b8" font-size="12">normalize · triage · prioritize</text>
+      <rect x="503" y="172" width="165" height="25" rx="12.5" fill="#60a5fa" fill-opacity=".1"/><text x="516" y="189" fill="#bfdbfe" font-size="11" font-weight="600">organization context attached</text>
+
+      <path d="M764 138H814" stroke="url(#brand)" stroke-width="2" stroke-linecap="round" filter="url(#glowLine)"/><path d="m807 131 9 7-9 7" fill="none" stroke="#67e8f9" stroke-width="2"/>
+
+      <rect x="834" y="54" width="270" height="168" rx="16" fill="#102b32" stroke="#67e8f9" stroke-opacity=".3"/>
+      <rect x="834" y="54" width="4" height="168" rx="2" fill="url(#green)"/>
+      <text x="862" y="86" fill="#67e8f9" font-size="11" font-weight="700" letter-spacing="1.5">EVIDENCE FIRST</text>
+      <text x="862" y="120" fill="#f8fafc" font-size="20" font-weight="700">Grounded draft</text>
+      <text x="862" y="147" fill="#94a3b8" font-size="12">docs · code · past answers</text>
+      <text x="862" y="188" fill="#a7f3d0" font-size="12" font-weight="600">3 sources matched</text>
+      <circle cx="1064" cy="184" r="8" fill="#34d399" fill-opacity=".16"/><path d="m1060 184 3 3 5-6" fill="none" stroke="#6ee7b7" stroke-width="1.7"/>
+
+      <path d="M1123 138H1170" stroke="url(#green)" stroke-width="2" stroke-linecap="round" filter="url(#glowLine)"/><path d="m1163 131 9 7-9 7" fill="none" stroke="#6ee7b7" stroke-width="2"/>
+      <rect x="1188" y="89" width="56" height="99" rx="16" fill="#172b2a" stroke="#6ee7b7" stroke-opacity=".35"/>
+      <circle cx="1216" cy="116" r="14" fill="#6ee7b7" fill-opacity=".13"/><path d="m1209 116 5 5 9-11" fill="none" stroke="#a7f3d0" stroke-width="2.5" stroke-linecap="round"/>
+      <text x="1216" y="151" fill="#d1fae5" font-size="10" font-weight="700" text-anchor="middle">90%+</text><text x="1216" y="168" fill="#86efac" font-size="9" text-anchor="middle">gate</text>
+
+      <path d="M1110 226C1010 262 723 260 610 232" fill="none" stroke="#6ee7b7" stroke-opacity=".35" stroke-width="1.5" stroke-dasharray="5 6"/><path d="m617 226-9 6 10 4" fill="none" stroke="#6ee7b7" stroke-opacity=".5" stroke-width="1.5"/>
+      <text x="795" y="259" fill="#6ee7b7" fill-opacity=".72" font-size="11" font-weight="600" text-anchor="middle">resolved answers become reusable knowledge</text>
+    </g>
+  </g>
+</svg>
