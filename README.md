@@ -14,7 +14,7 @@
 
 # AnswerLoops — AI support that lives in your community
 
-**Your community asks the same questions every day. AnswerLoops answers them in the channel, and only when it has a good answer.**
+**Your community asks the same questions every day. AnswerLoops AI agents answers them in your community channel, based on your knowledge source.**
 
 Most communities have the same problem: the same questions come up over and over in Discord, in Slack, on the forum, in the issue tracker, and someone on the team answers them again. AnswerLoops takes the first pass. It watches the channels you connect, checks each new question against your docs and your past answers, and replies in the thread when it can. When it can't, it hands the question to a person with a draft already written.
 
